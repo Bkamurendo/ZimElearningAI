@@ -1,0 +1,145 @@
+'use client'
+
+import { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { logout } from '@/app/actions/auth'
+import {
+  LayoutDashboard,
+  BookOpen,
+  ClipboardList,
+  LogOut,
+  Menu,
+  X,
+  GraduationCap,
+  ChevronRight,
+  Library,
+} from 'lucide-react'
+
+const NAV = [
+  { href: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/teacher/courses', label: 'My Courses', icon: BookOpen },
+  { href: '/teacher/assignments', label: 'Assignments', icon: ClipboardList },
+  { href: '/teacher/resources', label: 'My Resources', icon: Library },
+]
+
+interface Props {
+  userName: string
+}
+
+export default function TeacherSidebar({ userName }: Props) {
+  const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + '/')
+
+  return (
+    <>
+      {/* Mobile backdrop */}
+      {open && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-30"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40 flex flex-col shadow-xl lg:shadow-sm transform transition-transform duration-300 ease-in-out ${
+          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Brand */}
+        <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+              <GraduationCap size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm leading-tight">ZimLearn</p>
+              <p className="text-xs text-blue-600 font-medium">Teacher Portal</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition"
+            aria-label="Close menu"
+          >
+            <X size={16} className="text-gray-400" />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">
+            Navigation
+          </p>
+          <div className="space-y-0.5">
+            {NAV.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                    active
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon
+                    size={17}
+                    className={active ? 'text-blue-600' : 'text-gray-400'}
+                  />
+                  <span className="flex-1">{label}</span>
+                  {active && (
+                    <ChevronRight size={13} className="text-blue-400 flex-shrink-0" />
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
+
+        {/* Footer */}
+        <div className="px-3 py-4 border-t border-gray-100 space-y-1.5">
+          <div className="flex items-center gap-2.5 px-3 py-2">
+            <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-blue-700 text-xs font-bold">
+                {userName[0]?.toUpperCase() ?? 'T'}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-gray-700 truncate">{userName}</p>
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+            >
+              <LogOut size={14} />
+              Sign out
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      {/* Mobile top bar */}
+      <header className="lg:hidden fixed top-0 inset-x-0 h-14 bg-white border-b border-gray-100 z-20 flex items-center justify-between px-4 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+            <GraduationCap size={13} className="text-white" />
+          </div>
+          <span className="font-bold text-gray-900 text-sm">ZimLearn</span>
+        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="p-2 rounded-xl hover:bg-gray-100 transition"
+          aria-label="Open menu"
+        >
+          <Menu size={20} className="text-gray-600" />
+        </button>
+      </header>
+    </>
+  )
+}
