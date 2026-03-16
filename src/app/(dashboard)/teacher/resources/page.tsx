@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
   Upload, FileText, Clock, CheckCircle2, XCircle, Eye,
-  AlertCircle, BookOpen,
+  AlertCircle, BookOpen, Globe,
 } from 'lucide-react'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
@@ -103,13 +103,22 @@ export default async function TeacherResourcesPage() {
                 Upload and manage ZIMSEC materials for your students
               </p>
             </div>
-            <Link
-              href="/teacher/resources/upload"
-              className="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition shadow-sm flex-shrink-0"
-            >
-              <Upload size={16} />
-              Upload
-            </Link>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                href="/teacher/resources/fetch-web"
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition border border-white/20"
+              >
+                <Globe size={16} />
+                Fetch from Web
+              </Link>
+              <Link
+                href="/teacher/resources/upload"
+                className="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition shadow-sm"
+              >
+                <Upload size={16} />
+                Upload
+              </Link>
+            </div>
           </div>
 
           {/* Quick stats */}

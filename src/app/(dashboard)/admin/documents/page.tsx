@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { FileText, Upload, CheckCircle, Clock, XCircle, AlertCircle, Plus, BookOpen } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Clock, XCircle, AlertCircle, Plus, BookOpen, Globe } from 'lucide-react'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending:     { label: 'Pending',     color: 'bg-gray-100 text-gray-600',   icon: Clock },
@@ -61,12 +61,20 @@ export default async function AdminDocumentsPage() {
             <h1 className="text-xl font-bold text-gray-900">Document Library</h1>
             <p className="text-sm text-gray-500 mt-0.5">Manage and moderate uploaded ZIMSEC content</p>
           </div>
-          <Link
-            href="/admin/documents/upload"
-            className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition shadow-sm"
-          >
-            <Plus size={16} /> Upload Document
-          </Link>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Link
+              href="/admin/documents/fetch-web"
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition shadow-sm"
+            >
+              <Globe size={16} /> Fetch from Web
+            </Link>
+            <Link
+              href="/admin/documents/upload"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition shadow-sm"
+            >
+              <Plus size={16} /> Upload Document
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
