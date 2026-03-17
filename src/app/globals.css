@@ -130,3 +130,28 @@ body {
   .stagger-5 { animation-delay: 0.25s; }
   .stagger-6 { animation-delay: 0.30s; }
 }
+
+/* Dark mode colour overrides */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Dark mode utility overrides */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-gray-50 { background-color: #0f172a !important; }
+.dark .bg-gray-50\/50 { background-color: rgba(15,23,42,0.5) !important; }
+.dark .border-gray-100 { border-color: #334155 !important; }
+.dark .border-gray-50 { border-color: #1e293b !important; }
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-500 { color: #64748b !important; }
+.dark .text-gray-400 { color: #475569 !important; }
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: #1e293b !important; }
+.dark .hover\:bg-emerald-50\/30:hover { background-color: rgba(6,78,59,0.15) !important; }

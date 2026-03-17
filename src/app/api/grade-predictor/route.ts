@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
+import { checkAIQuota } from '@/lib/ai-quota'
+import crypto from 'crypto'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -21,7 +23,29 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const quota = await checkAIQuota(supabase, user.id)
+  if (!quota.allowed) {
+    return NextResponse.json({
+      error: `Daily AI limit reached (${quota.used}/${quota.limit}). Resets at midnight UTC. Upgrade to Pro for unlimited access.`,
+      quota,
+    }, { status: 429 })
+  }
+
   const { studentId, subjectId, subjectName, level } = await req.json()
+
+  // Cache key: hash of student + subject + level
+  const cacheKey = crypto.createHash('md5').update(`grade-predictor:${user.id}:${subjectId}:${level}`).digest('hex')
+
+  // Check cache (6 hour TTL)
+  const { data: cached } = await supabase
+    .from('ai_cache')
+    .select('response, expires_at')
+    .eq('cache_key', cacheKey)
+    .single()
+
+  if (cached && new Date(cached.expires_at) > new Date()) {
+    return NextResponse.json({ ...cached.response, cached: true })
+  }
 
   // Gather all performance data for this subject
   const [
@@ -135,6 +159,13 @@ Based on this data, provide a grade prediction. Return ONLY valid JSON (no markd
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
     const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
     const prediction = JSON.parse(cleaned)
+
+    // Save to cache (6 hours)
+    const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
+    await supabase.from('ai_cache').upsert(
+      { cache_key: cacheKey, user_id: user.id, route: 'grade-predictor', response: prediction, generated_at: new Date().toISOString(), expires_at: expiresAt },
+      { onConflict: 'cache_key' }
+    )
 
     return NextResponse.json(prediction)
   } catch (err) {

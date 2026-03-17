@@ -1,0 +1,20 @@
+{
+  "name": "ZimLearn — ZIMSEC E-Learning",
+  "short_name": "ZimLearn",
+  "description": "Zimbabwe's AI-powered ZIMSEC e-learning platform",
+  "start_url": "/student/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["education"],
+  "lang": "en-ZW",
+  "shortcuts": [
+    { "name": "AI Tutor", "url": "/student/subjects", "description": "Chat with AI Tutor" },
+    { "name": "Study Planner", "url": "/student/study-planner", "description": "View study plan" }
+  ]
+}

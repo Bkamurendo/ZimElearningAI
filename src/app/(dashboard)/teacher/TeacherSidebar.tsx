@@ -8,6 +8,7 @@ import {
   LayoutDashboard, BookOpen, ClipboardList, LogOut, Menu, X,
   GraduationCap, Library, MessageSquare, Sparkles,
 } from 'lucide-react'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const NAV = [
   { href: '/teacher/dashboard',   label: 'Dashboard',        icon: LayoutDashboard, badge: null },
@@ -138,6 +139,7 @@ export default function TeacherSidebar({ userName, unreadMessages = 0 }: Props) 
               <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
               <p className="text-[10px] text-slate-500">Teacher</p>
             </div>
+            <ThemeToggle />
           </div>
 
           {/* Sign out */}

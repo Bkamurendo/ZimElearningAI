@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
+import { checkAIQuota } from '@/lib/ai-quota'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -23,6 +24,14 @@ export async function POST(req: NextRequest) {
       status: 429,
       headers: rateLimitHeaders(rl, RATE_LIMIT.limit),
     })
+  }
+
+  const quota = await checkAIQuota(supabase, user.id)
+  if (!quota.allowed) {
+    return new Response(
+      `data: ${JSON.stringify({ type: 'error', message: `Daily AI limit reached (${quota.used}/${quota.limit}). Resets at midnight UTC.` })}\n\ndata: [DONE]\n\n`,
+      { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } }
+    )
   }
 
   const {

@@ -9,6 +9,7 @@ import {
   Flame, Menu, X, GraduationCap, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings,
 } from 'lucide-react'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const NAV = [
   { href: '/student/dashboard',         label: 'Dashboard',       icon: LayoutDashboard, badge: null },
@@ -141,6 +142,7 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
               <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
               <p className="text-[10px] text-slate-500">Student</p>
             </div>
+            <ThemeToggle />
           </div>
 
           {/* Sign out */}

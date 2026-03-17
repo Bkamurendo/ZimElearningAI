@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
+import { checkAIQuota } from '@/lib/ai-quota'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -19,6 +20,14 @@ export async function POST(req: NextRequest) {
       { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
       { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
     )
+  }
+
+  const quota = await checkAIQuota(supabase, user.id)
+  if (!quota.allowed) {
+    return NextResponse.json({
+      error: `Daily AI limit reached (${quota.used}/${quota.limit}). Resets at midnight UTC. Upgrade to Pro for unlimited access.`,
+      quota,
+    }, { status: 429 })
   }
 
   const { subjectCode, subjectName, level, topic, difficulty = 'medium', count = 5 } = await req.json()
@@ -61,6 +70,12 @@ Rules:
     return NextResponse.json({ questions, topic, subjectCode, subjectName, level })
   } catch (err) {
     console.error('Quiz generation error:', err)
-    return NextResponse.json({ error: 'Failed to generate quiz' }, { status: 500 })
+    const raw = err instanceof Error ? err.message : String(err)
+    const friendly = raw.includes('credit balance') || raw.includes('credit')
+      ? 'AI credits exhausted — please top up at console.anthropic.com → Plans & Billing.'
+      : raw.includes('overloaded')
+      ? 'AI service is busy. Please try again in a moment.'
+      : 'Failed to generate. Please try again.'
+    return NextResponse.json({ error: friendly }, { status: 500 })
   }
 }

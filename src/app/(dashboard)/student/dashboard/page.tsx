@@ -111,6 +111,13 @@ export default async function StudentDashboard() {
     error: unknown
   }
 
+  // Get exam date from study plan
+  const { data: studyPlan } = await supabase
+    .from('study_plans')
+    .select('exam_date')
+    .eq('student_id', studentProfile?.id ?? '')
+    .single()
+
   const levelLabel =
     studentProfile?.zimsec_level === 'primary'
       ? 'Primary'
@@ -212,6 +219,38 @@ export default async function StudentDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Exam Countdown */}
+        {studyPlan?.exam_date && (() => {
+          const examDate = new Date(studyPlan.exam_date)
+          const today = new Date()
+          const daysLeft = Math.max(0, Math.ceil((examDate.getTime() - today.getTime()) / 86400000))
+          const urgency = daysLeft <= 14 ? 'red' : daysLeft <= 30 ? 'amber' : 'emerald'
+          const colors = {
+            red: { bg: 'from-red-500 to-rose-600', pill: 'bg-red-400/30', text: '🚨 Exam soon!' },
+            amber: { bg: 'from-amber-500 to-orange-500', pill: 'bg-amber-400/30', text: '⏰ Keep studying!' },
+            emerald: { bg: 'from-emerald-500 to-teal-600', pill: 'bg-emerald-400/30', text: '📅 On track!' },
+          }[urgency]
+          return (
+            <div className={`relative text-white rounded-2xl px-6 py-5 overflow-hidden bg-gradient-to-r ${colors.bg} flex items-center justify-between gap-4`}>
+              <div className="absolute inset-0 opacity-10"
+                style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 80%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+              <div className="relative">
+                <p className="text-white/80 text-xs font-medium mb-0.5">ZIMSEC Exam Countdown</p>
+                <p className="text-2xl font-bold">{daysLeft} days left</p>
+                <p className="text-white/70 text-xs mt-0.5">{examDate.toLocaleDateString('en-ZW', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+              <div className="relative flex-shrink-0 text-right">
+                <div className={`inline-flex items-center gap-1.5 ${colors.pill} backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-xs font-semibold`}>
+                  {colors.text}
+                </div>
+                <p className="text-white/60 text-xs mt-2">
+                  {daysLeft > 0 ? `${Math.floor(daysLeft / 7)}w ${daysLeft % 7}d` : 'Exam day!'}
+                </p>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -22,9 +24,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#059669" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <ServiceWorkerRegistration />
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   )

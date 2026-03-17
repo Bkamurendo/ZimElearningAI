@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import TeacherSidebar from './TeacherSidebar'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -24,9 +25,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   return (
     <div className="min-h-screen bg-slate-50">
       <TeacherSidebar userName={userName} unreadMessages={unreadMessages} />
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 pb-16 lg:pb-0">
         <div className="pt-14 lg:pt-0">{children}</div>
       </div>
+      <MobileBottomNav role="teacher" />
     </div>
   )
 }
