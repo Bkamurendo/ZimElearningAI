@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
   Upload, FileText, Clock, CheckCircle2, XCircle, Eye,
-  AlertCircle, BookOpen, Globe,
+  AlertCircle, BookOpen, Globe, GraduationCap,
 } from 'lucide-react'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
@@ -152,6 +152,18 @@ export default async function TeacherResourcesPage() {
             </Link>
           </div>
 
+          {/* Generate materials CTA for teachers */}
+          {docs.length > 0 && (
+            <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap size={15} className="text-blue-600" />
+                <p className="text-xs text-blue-700 font-medium">
+                  Generate AI teaching materials (lesson plans, snap notes, glossaries) for any document.
+                </p>
+              </div>
+            </div>
+          )}
+
           {docs.length === 0 ? (
             <div className="text-center py-14 px-6">
               <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -188,9 +200,20 @@ export default async function TeacherResourcesPage() {
                         <span>· {new Date(doc.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border flex-shrink-0 ${status.bg} ${status.color}`}>
-                      {status.icon}
-                      {status.label}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {doc.moderation_status === 'published' && (
+                        <Link
+                          href={`/teacher/resources/generate/${doc.id}`}
+                          className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg transition"
+                        >
+                          <GraduationCap size={11} />
+                          Generate
+                        </Link>
+                      )}
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${status.bg} ${status.color}`}>
+                        {status.icon}
+                        {status.label}
+                      </div>
                     </div>
                   </div>
                 )
@@ -224,10 +247,19 @@ export default async function TeacherResourcesPage() {
                       {doc.year && <span>· {doc.year}</span>}
                     </div>
                   </div>
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border bg-green-50 border-green-200 text-green-700 flex-shrink-0">
-                    <CheckCircle2 size={12} />
-                    Published
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Link
+                      href={`/teacher/resources/generate/${doc.id}`}
+                      className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg transition"
+                    >
+                      <GraduationCap size={11} />
+                      Generate
+                    </Link>
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border bg-green-50 border-green-200 text-green-700">
+                      <CheckCircle2 size={12} />
+                      Published
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

@@ -11,10 +11,12 @@ import {
   CheckCircle2,
   Zap,
   ChevronRight,
+  Trophy,
+  Bell,
 } from 'lucide-react'
 
 const SUBJECT_COLORS = [
-  'from-green-400 to-green-600',
+  'from-emerald-400 to-emerald-600',
   'from-blue-400 to-blue-600',
   'from-purple-400 to-purple-600',
   'from-orange-400 to-orange-600',
@@ -111,20 +113,25 @@ export default async function StudentDashboard() {
 
   const levelLabel =
     studentProfile?.zimsec_level === 'primary'
-      ? 'Primary Level'
+      ? 'Primary'
       : studentProfile?.zimsec_level === 'olevel'
         ? 'O-Level'
         : 'A-Level'
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'
 
+  // Time-based greeting
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
   const stats = [
     {
       label: 'Subjects',
       value: subjects.length,
       icon: BookOpen,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50',
+      border: 'border-t-emerald-500',
     },
     {
       label: 'Lessons done',
@@ -132,6 +139,7 @@ export default async function StudentDashboard() {
       icon: CheckCircle2,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
+      border: 'border-t-blue-500',
     },
     {
       label: 'Quizzes done',
@@ -139,6 +147,7 @@ export default async function StudentDashboard() {
       icon: Brain,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
+      border: 'border-t-purple-500',
     },
     {
       label: 'Topics mastered',
@@ -146,79 +155,97 @@ export default async function StudentDashboard() {
       icon: Star,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
+      border: 'border-t-amber-500',
     },
   ]
 
+  const notifCount = notifications?.length ?? 0
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
         {/* Welcome banner */}
-        <div className="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-800 text-white rounded-2xl p-6 sm:p-8 overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
-          <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full translate-y-1/2" />
+        <div
+          className="relative text-white rounded-2xl p-6 sm:p-8 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #059669, #10b981, #0d9488)' }}
+        >
+          {/* Glow orbs */}
+          <div className="absolute top-0 right-0 w-72 h-72 rounded-full -translate-y-1/3 translate-x-1/4"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)' }} />
+          <div className="absolute bottom-0 left-1/4 w-48 h-48 rounded-full translate-y-1/2"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)' }} />
+          <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full -translate-y-1/2"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)' }} />
 
           <div className="relative">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-green-200 text-sm font-medium mb-1">Good day,</p>
-                <h1 className="text-2xl sm:text-3xl font-bold">{firstName}!</h1>
-                <p className="mt-1 text-green-200 text-sm">
-                  {studentProfile?.grade} &bull; {levelLabel}
-                </p>
+                <p className="text-emerald-100 text-sm font-medium mb-1">{greeting},</p>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  🎓 {firstName}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 bg-white/15 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    {studentProfile?.grade}
+                  </span>
+                  <span className="inline-flex items-center gap-1 bg-white/15 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    {levelLabel}
+                  </span>
+                  {streak && streak.current_streak > 0 && (
+                    <span className="inline-flex items-center gap-1 bg-orange-400/30 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                      🔥 {streak.current_streak} day streak
+                    </span>
+                  )}
+                </div>
               </div>
+
               {streak && streak.total_xp > 0 && (
-                <div className="flex-shrink-0 bg-white/10 rounded-xl px-4 py-3 text-center hidden sm:block">
+                <div className="flex-shrink-0 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 text-center hidden sm:block border border-white/20">
                   <div className="flex items-center gap-1.5 justify-center">
                     <Zap size={16} className="text-yellow-300" />
-                    <p className="text-xl font-bold">{streak.total_xp}</p>
+                    <p className="text-2xl font-bold">{streak.total_xp.toLocaleString()}</p>
                   </div>
-                  <p className="text-green-200 text-xs mt-0.5">XP earned</p>
+                  <p className="text-emerald-100 text-xs mt-0.5 font-medium">XP earned</p>
                 </div>
               )}
             </div>
-
-            {streak && streak.current_streak > 0 && (
-              <div className="mt-4 inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm">
-                <span>🔥</span>
-                <span className="font-semibold">{streak.current_streak} day streak</span>
-                <span className="text-green-200">— keep it up!</span>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map(({ label, value, icon: Icon, color, bg }) => (
+          {stats.map(({ label, value, icon: Icon, color, bg, border }, idx) => (
             <div
               key={label}
-              className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100"
+              className={`bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 border-t-4 ${border} animate-fade-in-up stagger-${idx + 1}`}
             >
               <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
                 <Icon size={20} className={color} />
               </div>
-              <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
+              <p className={`text-2xl sm:text-3xl font-bold ${color} animate-count-up`}>{value}</p>
+              <p className="text-xs text-gray-500 mt-1 font-medium">{label}</p>
             </div>
           ))}
         </div>
 
         {/* Recent badges */}
         {(recentBadges?.length ?? 0) > 0 && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+          <div className="relative overflow-hidden rounded-2xl p-5"
+            style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a, #fef3c7)' }}>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">🏅</span>
-              <h2 className="text-sm font-semibold text-amber-800">Recent Achievements</h2>
+              <div className="w-8 h-8 bg-amber-400 rounded-xl flex items-center justify-center shadow-sm">
+                <Trophy size={15} className="text-white" />
+              </div>
+              <h2 className="text-sm font-bold text-amber-900">Recent Achievements</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {recentBadges!.map((b, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-white border border-amber-200 text-amber-800 px-3 py-1.5 rounded-full font-medium shadow-sm"
+                  className="text-xs bg-white/80 backdrop-blur-sm border border-amber-200 text-amber-800 px-3 py-1.5 rounded-full font-semibold shadow-sm"
                 >
-                  {b.badge_name}
+                  🏅 {b.badge_name}
                 </span>
               ))}
             </div>
@@ -227,9 +254,9 @@ export default async function StudentDashboard() {
 
         {/* Quick Actions */}
         <div>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-0.5">
-            Quick Actions
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Quick Actions</h2>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
@@ -237,68 +264,73 @@ export default async function StudentDashboard() {
                 label: 'My Progress',
                 desc: 'Knowledge profile',
                 icon: BarChart3,
-                iconBg: 'bg-green-100',
-                iconColor: 'text-green-600',
-                border: 'hover:border-green-300 hover:bg-green-50',
+                gradient: 'from-emerald-500 to-teal-600',
+                shadow: 'shadow-emerald-200',
               },
               {
                 href: '/student/study-planner',
                 label: 'Study Planner',
                 desc: 'AI revision schedule',
                 icon: CalendarDays,
-                iconBg: 'bg-blue-100',
-                iconColor: 'text-blue-600',
-                border: 'hover:border-blue-300 hover:bg-blue-50',
+                gradient: 'from-blue-500 to-indigo-600',
+                shadow: 'shadow-blue-200',
               },
               {
                 href: subjects[0] ? `/student/quiz/${subjects[0].code}` : '#',
                 label: 'Quick Quiz',
                 desc: 'AI-generated MCQ',
                 icon: Brain,
-                iconBg: 'bg-purple-100',
-                iconColor: 'text-purple-600',
-                border: 'hover:border-purple-300 hover:bg-purple-50',
+                gradient: 'from-purple-500 to-violet-600',
+                shadow: 'shadow-purple-200',
               },
               {
                 href: subjects[0] ? `/student/past-papers/${subjects[0].code}` : '#',
                 label: 'Past Papers',
                 desc: 'AI-marked practice',
                 icon: FileText,
-                iconBg: 'bg-indigo-100',
-                iconColor: 'text-indigo-600',
-                border: 'hover:border-indigo-300 hover:bg-indigo-50',
+                gradient: 'from-orange-500 to-rose-500',
+                shadow: 'shadow-orange-200',
               },
-            ].map(({ href, label, desc, icon: Icon, iconBg, iconColor, border }) => (
+            ].map(({ href, label, desc, icon: Icon, gradient, shadow }) => (
               <Link
                 key={label}
                 href={href}
-                className={`bg-white rounded-2xl border border-gray-100 p-4 transition-all duration-150 shadow-sm group ${border}`}
+                className="group bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shadow-sm"
               >
                 <div
-                  className={`w-10 h-10 ${iconBg} rounded-xl flex items-center justify-center mb-3 transition-all`}
+                  className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center mb-3 shadow-md ${shadow} group-hover:scale-110 transition-transform duration-200`}
                 >
-                  <Icon size={20} className={iconColor} />
+                  <Icon size={20} className="text-white" />
                 </div>
                 <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
               </Link>
             ))}
           </div>
         </div>
 
         {/* Notifications */}
-        {(notifications?.length ?? 0) > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">
-              Notifications ({notifications!.length})
-            </h2>
-            <div className="space-y-2">
+        {notifCount > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <Bell size={13} className="text-white" />
+                </div>
+                <h2 className="text-sm font-semibold text-gray-800">Notifications</h2>
+                <span className="text-xs bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full">{notifCount}</span>
+              </div>
+              <Link href="/student/notifications" className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 transition flex items-center gap-1">
+                View all <ChevronRight size={12} />
+              </Link>
+            </div>
+            <div className="divide-y divide-gray-50">
               {notifications!.map((n) => (
-                <div key={n.id} className="flex gap-3 p-3 bg-blue-50 rounded-xl">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+                <div key={n.id} className="flex gap-3 px-5 py-3.5 hover:bg-gray-50 transition">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{n.message}</p>
                   </div>
                 </div>
               ))}
@@ -307,49 +339,59 @@ export default async function StudentDashboard() {
         )}
 
         {/* My Subjects */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-50">
             <h2 className="text-base font-semibold text-gray-900">My Subjects</h2>
-            <span className="text-xs text-gray-400 font-medium">{subjects.length} enrolled</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400 font-medium">{subjects.length} enrolled</span>
+              <Link href="/student/subjects" className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 transition flex items-center gap-1">
+                View all <ChevronRight size={12} />
+              </Link>
+            </div>
           </div>
 
           {subjects.length === 0 ? (
-            <div className="text-center py-10">
+            <div className="text-center py-12 px-6">
               <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <BookOpen size={24} className="text-gray-400" />
               </div>
-              <p className="font-medium text-gray-600 text-sm">No subjects enrolled yet</p>
+              <p className="font-semibold text-gray-600 text-sm">No subjects enrolled yet</p>
               <p className="text-xs text-gray-400 mt-1">Complete onboarding to pick your subjects</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {subjects.map((s, idx) => (
-                <Link
-                  key={s.code}
-                  href={`/student/subjects/${s.code}`}
-                  className="group flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all duration-150"
-                >
-                  <div
-                    className={`w-11 h-11 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}
+            <div className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {subjects.slice(0, 6).map((s, idx) => (
+                  <Link
+                    key={s.code}
+                    href={`/student/subjects/${s.code}`}
+                    className="group flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-sm transition-all duration-150"
                   >
-                    <span className="text-white text-xs font-bold">
-                      {s.code.split('-')[1]?.slice(0, 2)}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{s.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{s.code}</p>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition">
-                    <ChevronRight size={16} className="text-gray-400" />
-                  </div>
+                    <div
+                      className={`w-11 h-11 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform`}
+                    >
+                      <span className="text-white text-xs font-bold">
+                        {s.code.split('-')[1]?.slice(0, 2).toUpperCase() ?? s.name.slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{s.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{s.code}</p>
+                    </div>
+                    <ChevronRight size={15} className="text-gray-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+              {subjects.length > 6 && (
+                <Link href="/student/subjects" className="mt-3 flex items-center justify-center gap-1 text-sm text-emerald-600 font-semibold hover:text-emerald-700 transition py-2">
+                  +{subjects.length - 6} more subjects <ChevronRight size={14} />
                 </Link>
-              ))}
+              )}
             </div>
           )}
         </div>
+
       </div>
     </div>
   )
 }
-

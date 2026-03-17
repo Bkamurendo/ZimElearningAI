@@ -1,13 +1,25 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// 10 quiz generations per user per minute
+const RATE_LIMIT = { limit: 10, windowSecs: 60 }
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`quiz-generate:${user.id}`, RATE_LIMIT)
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
+      { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
+    )
+  }
 
   const { subjectCode, subjectName, level, topic, difficulty = 'medium', count = 5 } = await req.json()
 
@@ -36,7 +48,7 @@ Rules:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     })

@@ -1,8 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// 20 AI-tutor requests per user per minute
+const RATE_LIMIT = { limit: 20, windowSecs: 60 }
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -11,6 +15,14 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user) return new Response('Unauthorized', { status: 401 })
+
+  const rl = checkRateLimit(`ai-tutor:${user.id}`, RATE_LIMIT)
+  if (!rl.success) {
+    return new Response('Too Many Requests', {
+      status: 429,
+      headers: rateLimitHeaders(rl, RATE_LIMIT.limit),
+    })
+  }
 
   const {
     messages,
@@ -104,7 +116,7 @@ Warm, patient, encouraging. Many students have been told they are not clever eno
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-opus-4-6',
+          model: 'claude-sonnet-4-5',
           max_tokens: 8192,
           thinking: { type: 'adaptive' },
           system,

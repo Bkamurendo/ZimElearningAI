@@ -1,13 +1,25 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// 3 study plan generations per user per minute (large output)
+const RATE_LIMIT = { limit: 3, windowSecs: 60 }
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`study-planner:${user.id}`, RATE_LIMIT)
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
+      { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
+    )
+  }
 
   const { examDate, subjects, weakTopics, level } = await req.json()
 
@@ -56,7 +68,7 @@ Rules:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -73,15 +85,25 @@ Rules:
       .single()
 
     if (student) {
-      await supabase.from('study_plans').upsert(
-        { student_id: student.id, exam_date: examDate || null, plan_data: plan, updated_at: new Date().toISOString() },
-        { onConflict: 'student_id' }
-      )
+      // Delete existing plan first, then insert (avoids UNIQUE constraint requirement)
+      await supabase.from('study_plans').delete().eq('student_id', student.id)
+      await supabase.from('study_plans').insert({
+        student_id: student.id,
+        exam_date: examDate || null,
+        plan_data: plan,
+        updated_at: new Date().toISOString(),
+      })
     }
 
     return NextResponse.json({ plan })
   } catch (err) {
     console.error('Study planner error:', err)
-    return NextResponse.json({ error: 'Failed to generate plan' }, { status: 500 })
+    const raw = err instanceof Error ? err.message : String(err)
+    const friendly = raw.includes('credit balance') || raw.includes('credit')
+      ? 'AI credits exhausted — please top up at console.anthropic.com → Plans & Billing, then try again.'
+      : raw.includes('overloaded')
+      ? 'AI service is busy. Please try again in a moment.'
+      : 'Failed to generate plan. Please try again.'
+    return NextResponse.json({ error: friendly }, { status: 500 })
   }
 }

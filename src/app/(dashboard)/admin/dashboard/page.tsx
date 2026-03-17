@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2 } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -24,24 +24,37 @@ export default async function AdminDashboard() {
     { count: totalUsers },
     { count: totalStudents },
     { count: totalSubjects },
-    { count: totalCourses },
-    { count: totalLessons },
+    { count: totalDocuments },
+    { count: pendingModeration },
+    { count: publishedDocuments },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
     supabase.from('subjects').select('*', { count: 'exact', head: true }),
-    supabase.from('courses').select('*', { count: 'exact', head: true }),
-    supabase.from('lessons').select('*', { count: 'exact', head: true }),
+    supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }),
+    supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'ai_reviewed'),
+    supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'published'),
   ])
+
+  // Fetch announcement count separately (table may not exist yet)
+  let activeAnnouncements = 0
+  try {
+    const { count } = await supabase
+      .from('announcements')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+    activeAnnouncements = count ?? 0
+  } catch { /* announcements table not yet created */ }
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin'
 
   const stats = [
-    { label: 'Total users', value: totalUsers ?? 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Students', value: totalStudents ?? 0, icon: GraduationCap, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Subjects', value: totalSubjects ?? 0, icon: LayoutList, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Courses', value: totalCourses ?? 0, icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Lessons', value: totalLessons ?? 0, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Total users',    value: totalUsers ?? 0,        icon: Users,         color: 'text-blue-600',   bg: 'bg-blue-50',   href: '/admin/users' },
+    { label: 'Students',       value: totalStudents ?? 0,     icon: GraduationCap, color: 'text-green-600',  bg: 'bg-green-50',  href: '/admin/users' },
+    { label: 'Subjects',       value: totalSubjects ?? 0,     icon: LayoutList,    color: 'text-purple-600', bg: 'bg-purple-50', href: null as string | null },
+    { label: 'Documents',      value: totalDocuments ?? 0,    icon: Library,       color: 'text-indigo-600', bg: 'bg-indigo-50', href: '/admin/documents' },
+    { label: 'Published',      value: publishedDocuments ?? 0, icon: FileText,     color: 'text-teal-600',   bg: 'bg-teal-50',   href: '/admin/documents' },
+    { label: 'Need review',    value: pendingModeration ?? 0, icon: BarChart2,     color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/documents' },
   ]
 
   return (
@@ -74,21 +87,49 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-          {stats.map(({ label, value, icon: Icon, color, bg }) => (
-            <div key={label} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
-              <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
-                <Icon size={20} className={color} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          {stats.map(({ label, value, icon: Icon, color, bg, href }) => (
+            href ? (
+              <Link key={label} href={href} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition group">
+                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
+                  <Icon size={20} className={color} />
+                </div>
+                <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
+              </Link>
+            ) : (
+              <div key={label} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
+                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
+                  <Icon size={20} className={color} />
+                </div>
+                <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
               </div>
-              <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
-            </div>
+            )
           ))}
         </div>
 
+        {/* Moderation alert */}
+        {(pendingModeration ?? 0) > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <BarChart2 size={18} className="text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900 text-sm">
+                {pendingModeration} document{pendingModeration !== 1 ? 's' : ''} awaiting moderation review
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5">Review AI-processed submissions before they go live</p>
+            </div>
+            <Link href="/admin/documents" className="text-sm font-semibold text-amber-700 hover:text-amber-900 transition flex-shrink-0">
+              Review →
+            </Link>
+          </div>
+        )}
+
         {/* Content Management */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Content management</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Content Management</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link
               href="/admin/seed-content"
@@ -99,14 +140,7 @@ export default async function AdminDashboard() {
               </div>
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Seed ZIMSEC Content</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Upload 10 courses &amp; 50 lessons
-                  {(totalCourses ?? 0) > 0 && (
-                    <span className="ml-1 text-green-600 font-medium">
-                      ({totalCourses} uploaded)
-                    </span>
-                  )}
-                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Upload courses &amp; lessons</p>
               </div>
             </Link>
             <Link
@@ -119,16 +153,59 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Document Library</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Review, approve &amp; manage ZIMSEC documents
+                  {totalDocuments ?? 0} docs · {publishedDocuments ?? 0} published
                 </p>
               </div>
             </Link>
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 opacity-50 cursor-not-allowed">
-              <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Users size={20} className="text-blue-600" />
+            <Link
+              href="/admin/documents/fetch-web"
+              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-purple-50 rounded-2xl border border-gray-100 hover:border-purple-200 transition group"
+            >
+              <div className="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 transition">
+                <Globe size={20} className="text-purple-700" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">User management</p>
+                <p className="font-semibold text-gray-900 text-sm">Fetch from Web</p>
+                <p className="text-xs text-gray-500 mt-0.5">Import content from URLs</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Platform Management */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Platform Management</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link
+              href="/admin/users"
+              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-blue-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition group"
+            >
+              <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
+                <Users size={20} className="text-blue-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">User Management</p>
+                <p className="text-xs text-gray-500 mt-0.5">{totalUsers ?? 0} registered users</p>
+              </div>
+            </Link>
+            <Link
+              href="/admin/announcements"
+              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-amber-50 rounded-2xl border border-gray-100 hover:border-amber-200 transition group"
+            >
+              <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-200 transition">
+                <Megaphone size={20} className="text-amber-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Announcements</p>
+                <p className="text-xs text-gray-500 mt-0.5">{activeAnnouncements} active</p>
+              </div>
+            </Link>
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 opacity-40 cursor-not-allowed">
+              <div className="w-11 h-11 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <BarChart2 size={20} className="text-gray-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Analytics</p>
                 <p className="text-xs text-gray-500 mt-0.5">Coming soon</p>
               </div>
             </div>

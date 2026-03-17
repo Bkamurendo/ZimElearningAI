@@ -22,11 +22,43 @@ export async function login(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login?error=Authentication+failed')
 
-  const { data: profile } = await supabase
+  // Fetch profile — first try with mfa_method, fall back if column doesn't exist yet
+  type ProfileShape = { role: string; onboarding_completed: boolean; mfa_method?: string }
+  let profile: ProfileShape | null = null
+  const { data: fullProfile, error: fullProfileError } = await supabase
     .from('profiles')
-    .select('role, onboarding_completed')
+    .select('role, onboarding_completed, mfa_method')
     .eq('id', user.id)
     .single()
+
+  if (fullProfileError) {
+    // Column may not exist yet (migration pending) — fetch without it
+    const { data: basicProfile } = await supabase
+      .from('profiles')
+      .select('role, onboarding_completed')
+      .eq('id', user.id)
+      .single()
+    profile = basicProfile as ProfileShape | null
+  } else {
+    profile = fullProfile as ProfileShape | null
+  }
+
+  // 1. Check Supabase TOTP (AAL2) — for authenticator app users
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (
+    aalData &&
+    aalData.nextLevel === 'aal2' &&
+    aalData.currentLevel !== 'aal2'
+  ) {
+    revalidatePath('/', 'layout')
+    redirect('/mfa-verify')
+  }
+
+  // 2. Check custom email / phone OTP MFA
+  if (profile?.mfa_method === 'email' || profile?.mfa_method === 'phone') {
+    revalidatePath('/', 'layout')
+    redirect(`/mfa-verify?method=${profile.mfa_method}`)
+  }
 
   revalidatePath('/', 'layout')
 

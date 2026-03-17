@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   await supabase.from('topic_mastery').upsert(
     { student_id: student.id, subject_id: subject.id, topic, mastery_level: mastery, updated_at: new Date().toISOString() },
-    { onConflict: 'student_id,subject_id,topic' }
+    { onConflict: 'student_id,topic' }
   )
 
   // Update streak and XP

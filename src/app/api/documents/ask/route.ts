@@ -78,7 +78,7 @@ Guidelines:
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-opus-4-6',
+          model: 'claude-3-haiku-20240307',
           max_tokens: 4096,
           system,
           messages,

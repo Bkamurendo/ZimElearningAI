@@ -30,8 +30,11 @@ export default function StudyPlannerClient({
   const [loading, setLoading] = useState(false)
   const [activeWeek, setActiveWeek] = useState(0)
 
+  const [genError, setGenError] = useState('')
+
   async function generatePlan() {
     setLoading(true)
+    setGenError('')
     try {
       const res = await fetch('/api/study-planner/generate', {
         method: 'POST',
@@ -44,10 +47,14 @@ export default function StudyPlannerClient({
         }),
       })
       const data = await res.json()
+      if (!res.ok || data.error) {
+        setGenError(data.error ?? 'Failed to generate plan. Please try again.')
+        return
+      }
       setPlan(data.plan)
       setActiveWeek(0)
     } catch {
-      alert('Failed to generate plan. Please try again.')
+      setGenError('Network error — please check your connection and try again.')
     } finally {
       setLoading(false)
     }
@@ -118,6 +125,12 @@ export default function StudyPlannerClient({
               </span>
             ) : plan ? 'Regenerate Plan' : 'Generate Study Plan'}
           </button>
+
+          {genError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-sm text-red-700">{genError}</p>
+            </div>
+          )}
         </div>
 
         {/* Plan display */}

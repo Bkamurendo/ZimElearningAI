@@ -48,7 +48,7 @@ export async function POST(
 
     // ── Step 1: Extract content + generate summary + identify topics ──
     const extractionResponse = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 4096,
       messages: [
         {
@@ -101,7 +101,7 @@ Respond ONLY with valid JSON, no markdown fences.`,
 
     // ── Step 2: AI Moderation ──
     const moderationResponse = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 512,
       messages: [
         {

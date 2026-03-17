@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -8,10 +9,21 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const CALC_SUBJECTS = ['mathematics', 'physics', 'chemistry', 'accounting', 'additional mathematics', 'statistics']
 const isCalcSubject = (name: string) => CALC_SUBJECTS.some(s => name.toLowerCase().includes(s))
 
+// 15 solver requests per user per minute
+const RATE_LIMIT = { limit: 15, windowSecs: 60 }
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
+
+  const rl = checkRateLimit(`solver:${user.id}`, RATE_LIMIT)
+  if (!rl.success) {
+    return new Response('Too Many Requests', {
+      status: 429,
+      headers: rateLimitHeaders(rl, RATE_LIMIT.limit),
+    })
+  }
 
   const {
     question,
@@ -139,7 +151,7 @@ Always:
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-opus-4-6',
+          model: 'claude-sonnet-4-5',
           max_tokens: 4096,
           thinking: { type: 'adaptive' },
           system,

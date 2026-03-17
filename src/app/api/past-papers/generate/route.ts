@@ -1,13 +1,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// 3 paper generations per user per minute (very large output)
+const RATE_LIMIT = { limit: 3, windowSecs: 60 }
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`past-papers:${user.id}`, RATE_LIMIT)
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
+      { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
+    )
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { subjectCode, subjectName, level, year, paperNumber } = await req.json()
@@ -55,7 +67,7 @@ Requirements:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     })

@@ -1,13 +1,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// 5 grade predictions per user per minute (data-heavy)
+const RATE_LIMIT = { limit: 5, windowSecs: 60 }
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`grade-predictor:${user.id}`, RATE_LIMIT)
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
+      { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
+    )
+  }
 
   const { studentId, subjectId, subjectName, level } = await req.json()
 
@@ -115,7 +127,7 @@ Based on this data, provide a grade prediction. Return ONLY valid JSON (no markd
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
     })
