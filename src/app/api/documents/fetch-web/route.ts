@@ -244,8 +244,16 @@ async function fetchAndProcess(
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'ZimLearnBot/1.0 (Educational Platform; +https://zimlearn.app)',
-        Accept: 'text/html,application/pdf,application/xhtml+xml,*/*',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Upgrade-Insecure-Requests': '1',
       },
       redirect: 'follow',
     })
@@ -369,7 +377,20 @@ Return ONLY valid JSON.`,
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    const errorMsg = message.includes('aborted') ? 'Request timed out (30s limit)' : message
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cause = (err as any)?.cause?.message ?? ''
+    let errorMsg: string
+    if (message.includes('aborted') || message.includes('timeout')) {
+      errorMsg = 'Request timed out (30s limit) — site may be slow or blocking automated requests'
+    } else if (message === 'fetch failed' || message.includes('ECONNREFUSED') || message.includes('ENOTFOUND')) {
+      errorMsg = cause
+        ? `Network error: ${cause} — the site may be blocking server requests or the URL may be invalid`
+        : 'Network error — site may be blocking server requests, try a direct PDF URL instead'
+    } else if (message.includes('certificate') || message.includes('SSL') || message.includes('TLS')) {
+      errorMsg = `SSL/TLS error — the site has a certificate issue: ${message}`
+    } else {
+      errorMsg = message
+    }
     results.push({ url, status: 'error', error: errorMsg })
   }
 
