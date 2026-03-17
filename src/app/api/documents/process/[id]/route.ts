@@ -25,6 +25,19 @@ export async function POST(
     return NextResponse.json({ error: 'Document not found' }, { status: 404 })
   }
 
+  // Security: only the document owner, admins, or teachers may trigger AI processing.
+  // Prevents students from burning API credits on arbitrary documents & resetting moderation decisions.
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isOwner = doc.uploaded_by === user.id
+  const isPrivileged = callerProfile?.role && ['admin', 'teacher'].includes(callerProfile.role)
+  if (!isOwner && !isPrivileged) {
+    return NextResponse.json({ error: 'Forbidden — you do not have permission to process this document' }, { status: 403 })
+  }
+
   // Mark as processing
   await supabase
     .from('uploaded_documents')

@@ -31,7 +31,18 @@ export async function POST(req: NextRequest) {
     }, { status: 429 })
   }
 
-  const { studentId, subjectId, subjectName, level } = await req.json()
+  const { subjectId, subjectName, level } = await req.json()
+
+  // Security: always use the authenticated user's own student profile — never trust a client-supplied studentId
+  const { data: ownStudentProfile } = await supabase
+    .from('student_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+  const studentId = ownStudentProfile?.id ?? null
+  if (!studentId) {
+    return NextResponse.json({ error: 'Student profile not found for this account' }, { status: 404 })
+  }
 
   // Cache key: hash of student + subject + level
   const cacheKey = crypto.createHash('md5').update(`grade-predictor:${user.id}:${subjectId}:${level}`).digest('hex')

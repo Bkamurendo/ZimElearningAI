@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const {
-    messages,
+    messages: rawMessages,
     subjectName,
     subjectCode,
     level,
@@ -45,8 +45,20 @@ export async function POST(req: NextRequest) {
     level: string
   } = await req.json()
 
+  // Security: sanitize subject fields injected into system prompt (prompt injection prevention)
+  const safeSubjectName = String(subjectName ?? '').slice(0, 100).replace(/[\r\n]/g, ' ')
+  const safeSubjectCode = String(subjectCode ?? '').slice(0, 20).replace(/[^A-Z0-9\s]/gi, '')
+  const safeLevel = ['primary', 'olevel', 'alevel'].includes(level) ? level : 'olevel'
+
+  // Security: cap conversation history — prevents token abuse and fake-assistant message injection.
+  // Only accept 'user'/'assistant' roles; cap each message at 4000 chars; max 20 turns.
+  const messages = (Array.isArray(rawMessages) ? rawMessages : [])
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(-20)
+    .map((m) => ({ role: m.role as 'user' | 'assistant', content: String(m.content ?? '').slice(0, 4000) }))
+
   const levelLabel =
-    level === 'primary' ? 'Primary' : level === 'olevel' ? 'O-Level' : 'A-Level'
+    safeLevel === 'primary' ? 'Primary' : safeLevel === 'olevel' ? 'O-Level' : 'A-Level'
 
   // Fetch published documents for this subject to inject as context
   const subjectId = await getSubjectId(supabase, subjectCode)
@@ -91,13 +103,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const system = `You are EduZim AI — an expert ZIMSEC ${levelLabel} tutor specialising in ${subjectName} (subject code: ${subjectCode}), built specifically for Zimbabwean students.
+  const system = `You are EduZim AI — an expert ZIMSEC ${levelLabel} tutor specialising in ${safeSubjectName} (subject code: ${safeSubjectCode}), built specifically for Zimbabwean students.
 
 ## Your Purpose
 Help every Zimbabwean student pass their ZIMSEC examinations. Zimbabwe's O-Level pass rate is 35% — your job is to change that, one student at a time.
 
 ## How You Teach
-- Always align explanations to the official ZIMSEC ${levelLabel} syllabus for ${subjectName}
+- Always align explanations to the official ZIMSEC ${levelLabel} syllabus for ${safeSubjectName}
 - Teach exactly how ZIMSEC examiners expect topics to be answered — reference command words (describe, explain, discuss, calculate, state), mark allocation, and marking scheme logic
 - Use Zimbabwean examples, contexts, and references wherever possible (local places, names, currencies in USD, local businesses, events)
 - Break every topic into: (1) Core concept, (2) Worked example, (3) Common exam mistakes to avoid

@@ -11,21 +11,33 @@ export async function POST(req: NextRequest) {
 
   const { subjectName, level, question, markingPoints, modelAnswer, studentAnswer, marks } = await req.json()
 
-  const levelLabel = level === 'olevel' ? 'O-Level' : level === 'alevel' ? 'A-Level' : 'Primary'
+  // Security: sanitize all fields injected into the Claude prompt to prevent prompt injection
+  const safeSubjectName = String(subjectName ?? '').slice(0, 100).replace(/[\r\n]/g, ' ')
+  const safeLevel = ['olevel', 'alevel', 'primary'].includes(level) ? level : 'olevel'
+  const safeQuestion = String(question ?? '').slice(0, 2000)
+  const safeMarks = typeof marks === 'number' ? Math.max(1, Math.min(Math.floor(marks), 50)) : 5
+  const safeModelAnswer = String(modelAnswer ?? '').slice(0, 2000)
+  const safeStudentAnswer = String(studentAnswer ?? '').slice(0, 3000)
+  // Cap marking points: max 20 items, each max 200 chars, strip newlines (prompt injection prevention)
+  const safeMarkingPoints: string[] = Array.isArray(markingPoints)
+    ? markingPoints.slice(0, 20).map((p: unknown) => String(p ?? '').slice(0, 200).replace(/[\r\n]/g, ' '))
+    : []
 
-  const prompt = `You are a ZIMSEC ${levelLabel} ${subjectName} examiner marking a student's response.
+  const levelLabel = safeLevel === 'olevel' ? 'O-Level' : safeLevel === 'alevel' ? 'A-Level' : 'Primary'
 
-QUESTION (${marks} marks):
-${question}
+  const prompt = `You are a ZIMSEC ${levelLabel} ${safeSubjectName} examiner marking a student's response.
 
-MARKING SCHEME (${marks} points — 1 mark each unless stated):
-${markingPoints.map((p: string, i: number) => `${i + 1}. ${p}`).join('\n')}
+QUESTION (${safeMarks} marks):
+${safeQuestion}
+
+MARKING SCHEME (${safeMarks} points — 1 mark each unless stated):
+${safeMarkingPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 MODEL ANSWER (examiner reference):
-${modelAnswer}
+${safeModelAnswer}
 
 STUDENT'S ANSWER:
-${studentAnswer || '(No answer provided — 0 marks)'}
+${safeStudentAnswer || '(No answer provided — 0 marks)'}
 
 Apply ZIMSEC marking principles:
 - Award marks for each valid marking point the student addresses
@@ -40,7 +52,8 @@ Return ONLY valid JSON (no markdown) in this format:
   "pointsAwarded": ["point 1 that was addressed", "point 2 that was addressed"],
   "pointsMissed": ["point that was missed or wrong"],
   "feedback": "2-3 sentence examiner feedback explaining the mark awarded and what to improve",
-  "grade": "<A|B|C|D|E|U based on percentage: A=75%+, B=60%+, C=50%+, D=40%+, E=30%+, U=below 30%>"
+  "grade": "<A|B|C|D|E|U based on percentage: A=75%+, B=60%+, C=50%+, D=40%+, E=30%+, U=below 30%>",
+  "marksAvailable": ${safeMarks}
 }`
 
   try {

@@ -7,11 +7,21 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Fetch user role to filter announcements by audience (security: no cross-role data leakage)
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const userRole = callerProfile?.role ?? 'student'
+
   const { data, error } = await supabase
     .from('announcements')
     .select('id, title, body, audience, priority, created_at, posted_by, profiles:profiles(full_name, role)')
     .eq('is_active', true)
     .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+    // Only return announcements targeted at this user's role or broadcast to 'all'
+    .or(`audience.eq.all,audience.eq.${userRole}`)
     .order('created_at', { ascending: false })
     .limit(20)
 

@@ -72,7 +72,12 @@ export async function register(formData: FormData): Promise<void> {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const fullName = formData.get('full_name') as string
-  const role = formData.get('role') as UserRole
+  // Security: only allow public-facing roles; 'admin' must be assigned manually via DB
+  const rawRole = formData.get('role') as string
+  const ALLOWED_REGISTRATION_ROLES: UserRole[] = ['student', 'teacher', 'parent']
+  const role: UserRole = ALLOWED_REGISTRATION_ROLES.includes(rawRole as UserRole)
+    ? (rawRole as UserRole)
+    : 'student'
 
   const { error } = await supabase.auth.signUp({
     email,

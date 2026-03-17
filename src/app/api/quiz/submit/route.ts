@@ -8,6 +8,13 @@ export async function POST(req: NextRequest) {
 
   const { subjectCode, topic, score, total, questions } = await req.json()
 
+  // Security: validate numeric inputs to prevent gamification score corruption
+  const safeScore = typeof score === 'number' ? Math.max(0, Math.floor(score)) : 0
+  const safeTotal = typeof total === 'number' ? Math.max(1, Math.min(Math.floor(total), 200)) : 1
+  if (safeScore > safeTotal) {
+    return NextResponse.json({ error: 'Invalid score: score cannot exceed total' }, { status: 400 })
+  }
+
   // Get student profile
   const { data: student } = await supabase
     .from('student_profiles')
@@ -28,14 +35,14 @@ export async function POST(req: NextRequest) {
   await supabase.from('quiz_attempts').insert({
     student_id: student.id,
     subject_id: subject.id,
-    topic,
-    score,
-    total,
-    questions,
+    topic: String(topic ?? '').slice(0, 200),
+    score: safeScore,
+    total: safeTotal,
+    questions: Array.isArray(questions) ? questions.slice(0, 100) : [],
   })
 
   // Update topic mastery
-  const pct = total > 0 ? score / total : 0
+  const pct = safeTotal > 0 ? safeScore / safeTotal : 0
   const mastery =
     pct >= 0.85 ? 'mastered' : pct >= 0.65 ? 'competent' : pct >= 0.35 ? 'learning' : 'not_started'
 
@@ -46,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   // Update streak and XP
   const today = new Date().toISOString().slice(0, 10)
-  const xpEarned = Math.round((score / total) * 50)
+  const xpEarned = Math.round((safeScore / safeTotal) * 50)
 
   const { data: streak } = await supabase
     .from('student_streaks')

@@ -4,6 +4,46 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── Security: SSRF protection ─────────────────────────────────────────────────
+// Block requests to private/internal IP ranges and dangerous protocols.
+// Prevents server-side request forgery (localhost, internal services, cloud metadata).
+
+function isSafeUrl(rawUrl: string): { safe: boolean; reason?: string } {
+  let parsed: URL
+  try {
+    parsed = new URL(rawUrl)
+  } catch {
+    return { safe: false, reason: 'Invalid URL format' }
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    return { safe: false, reason: `Disallowed protocol: ${parsed.protocol}` }
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+    return { safe: false, reason: 'Access to localhost is not allowed' }
+  }
+
+  // Block private IPv4 ranges
+  const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4) {
+    const [, a, b] = ipv4.map(Number)
+    if (a === 10) return { safe: false, reason: 'Private IP range not allowed' }
+    if (a === 172 && b >= 16 && b <= 31) return { safe: false, reason: 'Private IP range not allowed' }
+    if (a === 192 && b === 168) return { safe: false, reason: 'Private IP range not allowed' }
+    if (a === 169 && b === 254) return { safe: false, reason: 'Link-local IP range not allowed' }
+  }
+
+  // Block AWS/GCP/Azure metadata endpoints
+  if (['169.254.169.254', 'metadata.google.internal', '168.63.129.16'].includes(hostname)) {
+    return { safe: false, reason: 'Cloud metadata endpoint access not allowed' }
+  }
+
+  return { safe: true }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function stripHtml(html: string): string {
@@ -236,6 +276,12 @@ async function fetchAndProcess(
   depth = 0
 ): Promise<FetchResult[]> {
   const results: FetchResult[] = []
+
+  // SSRF guard — validate before making any network request
+  const urlSafety = isSafeUrl(url)
+  if (!urlSafety.safe) {
+    return [{ url, status: 'error', error: `Blocked: ${urlSafety.reason}` }]
+  }
 
   try {
     const controller = new AbortController()

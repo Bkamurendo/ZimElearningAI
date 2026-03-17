@@ -52,8 +52,18 @@ export async function POST(req: NextRequest) {
     studentAnswer?: string
   } = await req.json()
 
-  const levelLabel = level === 'primary' ? 'Primary' : level === 'olevel' ? 'O-Level' : 'A-Level'
-  const isCalc = isCalcSubject(subjectName)
+  // Security: sanitize all user-supplied fields injected into system prompt
+  const safeSubjectName = String(subjectName ?? '').slice(0, 100).replace(/[\r\n]/g, ' ')
+  const safeSubjectCode = String(subjectCode ?? '').slice(0, 20).replace(/[^A-Z0-9\s]/gi, '')
+  const safeLevel = ['primary', 'olevel', 'alevel'].includes(level) ? level : 'olevel'
+  const safeMode = ['step_by_step', 'essay', 'explain', 'mark_answer'].includes(mode) ? mode : 'explain'
+  // documentContext comes from the client — strip any injection attempts, cap at 3000 chars
+  const safeDocumentContext = documentContext
+    ? String(documentContext).slice(0, 3000).replace(/\[INST\]|\[\/INST\]|<\|system\|>|<\|user\|>/gi, '')
+    : undefined
+
+  const levelLabel = safeLevel === 'primary' ? 'Primary' : safeLevel === 'olevel' ? 'O-Level' : 'A-Level'
+  const isCalc = isCalcSubject(safeSubjectName)
 
   // Mode-specific system prompts
   const modePrompts: Record<string, string> = {
@@ -132,16 +142,16 @@ You are a ZIMSEC examiner. Assess the student's answer against the question.
 [List the points that a top student would include]`,
   }
 
-  // Build document context if provided
-  const docSection = documentContext
-    ? `\n\nRELEVANT DOCUMENT CONTEXT:\n${documentContext}\n`
+  // Build document context if provided (using sanitized value)
+  const docSection = safeDocumentContext
+    ? `\n\nRELEVANT DOCUMENT CONTEXT:\n${safeDocumentContext}\n`
     : ''
 
-  const system = `You are EduZim AI — Zimbabwe's expert ZIMSEC ${levelLabel} tutor specialising in ${subjectName} (${subjectCode}).
+  const system = `You are EduZim AI — Zimbabwe's expert ZIMSEC ${levelLabel} tutor specialising in ${safeSubjectName} (${safeSubjectCode}).
 
 Your mission: Help every Zimbabwean student pass their ZIMSEC exams by solving problems with full, ZIMSEC-aligned working.
 ${docSection}
-${modePrompts[mode] || modePrompts.explain}
+${modePrompts[safeMode] || modePrompts.explain}
 
 Always:
 - Use Zimbabwean examples and contexts where relevant

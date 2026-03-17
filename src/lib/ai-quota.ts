@@ -46,8 +46,8 @@ export async function checkAIQuota(
     .single()
 
   if (error || !profile) {
-    // Can't read profile — fail open so we don't block legitimate users
-    return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: new Date().toISOString() }
+    // Can't read profile — fail CLOSED to prevent unlimited AI access during DB outages
+    return { allowed: false, plan: 'free', used: 0, limit: 0, remaining: 0, resetsAt: new Date().toISOString() }
   }
 
   const plan: 'free' | 'pro' = profile.plan ?? 'free'
