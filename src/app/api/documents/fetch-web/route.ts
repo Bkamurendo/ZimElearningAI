@@ -116,7 +116,7 @@ async function processPdf(
 
     // ── Claude Step 1: Extract ──
     const extractionResponse = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5',
       max_tokens: 4096,
       messages: [{
         role: 'user',
@@ -172,7 +172,7 @@ Respond ONLY with valid JSON, no markdown fences.`,
 
     // ── Claude Step 2: Moderate ──
     const moderationResponse = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5',
       max_tokens: 512,
       messages: [{
         role: 'user',
@@ -328,7 +328,7 @@ async function fetchAndProcess(
 
       // Ask Claude about the HTML content
       const claudeResponse = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-haiku-4-5',
         max_tokens: 512,
         messages: [{
           role: 'user',

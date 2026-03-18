@@ -170,7 +170,7 @@ Always:
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-sonnet-4-5',
           max_tokens: 4096,
           system,
           messages: [{ role: 'user', content: userContent }],

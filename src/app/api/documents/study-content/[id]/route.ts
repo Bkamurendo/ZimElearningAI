@@ -273,7 +273,7 @@ ${doc.extracted_text.slice(0, 15000)}
     const fullPrompt = `${prompt}\n\n---\nDOCUMENT CONTENT:\n${docContext}`
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5',
       max_tokens: 8000,
       messages: [{ role: 'user', content: fullPrompt }],
     })
@@ -294,7 +294,7 @@ ${doc.extracted_text.slice(0, 15000)}
     const prompt = PROMPTS[content_type](doc.title, doc.document_type)
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5',
       max_tokens: 8000,
       messages: [{
         role: 'user',
