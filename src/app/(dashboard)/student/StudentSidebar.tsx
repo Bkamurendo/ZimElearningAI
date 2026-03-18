@@ -120,7 +120,7 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
-              <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $2/mo</div>
+              <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
             </div>
           </Link>
 
