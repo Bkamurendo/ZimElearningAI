@@ -170,9 +170,8 @@ Always:
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-sonnet-4-5',
+          model: 'claude-3-5-sonnet-20241022',
           max_tokens: 4096,
-          thinking: { type: 'adaptive' },
           system,
           messages: [{ role: 'user', content: userContent }],
         })
@@ -192,8 +191,16 @@ Always:
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Stream error'
+        console.error('[solver] Anthropic stream error:', msg)
+        const friendly = msg.includes('credit balance') || msg.includes('billing')
+          ? 'AI credits exhausted. Please check your Anthropic billing at console.anthropic.com.'
+          : msg.includes('API key') || msg.includes('auth') || msg.includes('401')
+          ? 'AI service authentication failed. Please check ANTHROPIC_API_KEY in your Vercel environment variables.'
+          : msg.includes('overloaded') || msg.includes('529')
+          ? 'AI service is temporarily busy. Please try again in a moment.'
+          : msg
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`)
+          encoder.encode(`data: ${JSON.stringify({ type: 'error', message: friendly })}\n\n`)
         )
       } finally {
         controller.close()

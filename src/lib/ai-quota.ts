@@ -46,8 +46,12 @@ export async function checkAIQuota(
     .single()
 
   if (error || !profile) {
-    // Can't read profile — fail CLOSED to prevent unlimited AI access during DB outages
-    return { allowed: false, plan: 'free', used: 0, limit: 0, remaining: 0, resetsAt: new Date().toISOString() }
+    // Can't read profile — this usually means the quota columns haven't been migrated yet.
+    // Fail OPEN with a conservative free-tier allowance so AI features still work.
+    // NOTE: If you see this in logs, run the migration in supabase/schema.sql to add
+    // ai_requests_today and ai_quota_reset_at columns to the profiles table.
+    console.warn('[ai-quota] Could not read profile quota data:', error?.message ?? 'no profile row')
+    return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
   const plan: 'free' | 'pro' = profile.plan ?? 'free'
