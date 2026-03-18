@@ -18,7 +18,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
 
-export const FREE_DAILY_LIMIT = 10   // free users get 10 AI calls per day
+export const FREE_DAILY_LIMIT = 25   // free users get 25 AI calls per day
 export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
 
 export interface QuotaResult {

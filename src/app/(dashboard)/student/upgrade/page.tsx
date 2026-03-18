@@ -12,8 +12,8 @@ import { PLANS, type PlanId } from '@/lib/paynow'
 // ── Feature comparison ────────────────────────────────────────────────────────
 
 const FREE_FEATURES = [
-  '10 AI requests per day',
-  'AI Tutor (limited)',
+  '25 AI requests per day',
+  'AI Tutor (limited sessions)',
   'Past papers access',
   'Basic study notes',
 ]
@@ -216,16 +216,22 @@ export default function UpgradePage() {
   if (paymentStatus === 'paid') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center">
+        <div className="bg-white rounded-3xl shadow-xl p-8 sm:p-10 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="text-green-500" size={40} />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">You&rsquo;re now Pro! 🎉</h1>
-          <p className="text-slate-500 mb-8">
-            Payment confirmed. Unlimited AI access is now unlocked on your account.
+          <p className="text-slate-500 mb-3">
+            Payment confirmed. Unlimited AI access is now active on your account.
+          </p>
+          <p className="text-sm text-slate-400 mb-8">
+            Your dashboard will update automatically when you go back.
           </p>
           <button
-            onClick={() => router.push('/student/dashboard')}
+            onClick={() => {
+              // Full page reload so server re-fetches the updated plan from DB
+              window.location.href = '/student/dashboard'
+            }}
             className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition"
           >
             Go to Dashboard

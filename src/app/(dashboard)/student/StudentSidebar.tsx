@@ -7,7 +7,7 @@ import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, TrendingUp, Target, CalendarDays, LogOut,
   Flame, Menu, X, GraduationCap, Calculator,
-  Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings,
+  Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -156,29 +156,32 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
       </aside>
 
       {/* Mobile top bar */}
-      <header className="lg:hidden fixed top-0 inset-x-0 h-14 bg-slate-900 border-b border-slate-800 z-20 flex items-center justify-between px-4 shadow-xl">
+      <header className="lg:hidden fixed top-0 inset-x-0 h-14 bg-slate-900 border-b border-slate-700/60 z-20 flex items-center justify-between px-4 shadow-xl">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center shadow-md shadow-emerald-500/30">
             <GraduationCap size={13} className="text-white" />
           </div>
           <span className="font-bold text-white text-sm tracking-wide">ZimLearn</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {streak > 0 && (
             <span className="text-xs text-orange-400 font-semibold bg-orange-500/10 px-2 py-0.5 rounded-full">🔥 {streak}</span>
           )}
           {(unreadNotifications + unreadMessages) > 0 && (
-            <Link href="/student/notifications" className="relative p-1.5 rounded-lg hover:bg-slate-800 transition">
+            <Link href="/student/notifications" className="relative p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition">
               <Bell size={18} className="text-slate-300" />
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
                 {Math.min(unreadNotifications + unreadMessages, 9)}
               </span>
             </Link>
           )}
-          <Link href="/student/search" className="p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <Link href="/student/search" className="p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition">
             <Search size={18} className="text-slate-300" />
           </Link>
-          <button onClick={() => setOpen(true)} className="p-2 rounded-xl hover:bg-slate-800 transition" aria-label="Open menu">
+          <Link href="/student/settings" className="p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition" aria-label="Profile & Settings">
+            <User size={18} className="text-slate-300" />
+          </Link>
+          <button onClick={() => setOpen(true)} className="p-2 rounded-xl hover:bg-slate-800 active:bg-slate-700 transition" aria-label="Open menu">
             <Menu size={20} className="text-slate-300" />
           </button>
         </div>
