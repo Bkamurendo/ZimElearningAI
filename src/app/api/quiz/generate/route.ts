@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 import { checkAIQuota } from '@/lib/ai-quota'
 
+export const maxDuration = 60
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // 10 quiz generations per user per minute

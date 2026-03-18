@@ -4,6 +4,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 import { checkAIQuota } from '@/lib/ai-quota'
 
+export const maxDuration = 60
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // 3 paper generations per user per minute (very large output)

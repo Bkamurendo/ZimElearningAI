@@ -4,6 +4,8 @@ import { NextRequest } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 import { checkAIQuota } from '@/lib/ai-quota'
 
+export const maxDuration = 90
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // 20 AI-tutor requests per user per minute
