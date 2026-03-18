@@ -9,124 +9,14 @@ import {
 } from 'lucide-react'
 import { PLANS, type PlanId } from '@/lib/paynow'
 
-// ─── SVG Payment Provider Logos ──────────────────────────────────────────────
+// ─── Real provider logo components ───────────────────────────────────────────
 
-function EcoCashLogo() {
+function Logo({ src, alt, className = 'h-8 w-auto object-contain' }: {
+  src: string; alt: string; className?: string
+}) {
   return (
-    <svg viewBox="0 0 72 28" className="h-7 w-auto" aria-label="EcoCash">
-      <rect width="72" height="28" rx="5" fill="#00A651" />
-      <text x="36" y="19" textAnchor="middle" fill="white" fontSize="10.5"
-        fontWeight="800" fontFamily="Arial, sans-serif" letterSpacing="0.5">EcoCash</text>
-    </svg>
-  )
-}
-
-function OneMoneyLogo() {
-  return (
-    <svg viewBox="0 0 76 28" className="h-7 w-auto" aria-label="OneMoney">
-      <rect width="76" height="28" rx="5" fill="#0050A0" />
-      <circle cx="14" cy="14" r="8" fill="#FFD700" opacity="0.9" />
-      <text x="8" y="18" textAnchor="middle" fill="#0050A0" fontSize="8"
-        fontWeight="900" fontFamily="Arial">1</text>
-      <text x="46" y="19" textAnchor="middle" fill="white" fontSize="10"
-        fontWeight="700" fontFamily="Arial">OneMoney</text>
-    </svg>
-  )
-}
-
-function InnBucksLogo() {
-  return (
-    <svg viewBox="0 0 74 28" className="h-7 w-auto" aria-label="InnBucks">
-      <defs>
-        <linearGradient id="ib" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FF6B00" />
-          <stop offset="100%" stopColor="#FF9500" />
-        </linearGradient>
-      </defs>
-      <rect width="74" height="28" rx="5" fill="url(#ib)" />
-      <text x="37" y="19" textAnchor="middle" fill="white" fontSize="10"
-        fontWeight="800" fontFamily="Arial, sans-serif">InnBucks</text>
-    </svg>
-  )
-}
-
-function ZimSwitchLogo() {
-  return (
-    <svg viewBox="0 0 82 28" className="h-7 w-auto" aria-label="ZimSwitch">
-      <rect width="82" height="28" rx="5" fill="#003087" />
-      <rect x="4" y="4" width="20" height="20" rx="3" fill="#FFD700" />
-      <text x="7" y="18" fill="#003087" fontSize="9" fontWeight="900" fontFamily="Arial">ZS</text>
-      <text x="52" y="19" textAnchor="middle" fill="white" fontSize="9.5"
-        fontWeight="700" fontFamily="Arial">ZimSwitch</text>
-    </svg>
-  )
-}
-
-function VisaLogo() {
-  return (
-    <svg viewBox="0 0 60 28" className="h-7 w-auto" aria-label="Visa">
-      <rect width="60" height="28" rx="5" fill="#1A1F71" />
-      <text x="30" y="20" textAnchor="middle" fill="white" fontSize="16"
-        fontWeight="800" fontFamily="Arial" fontStyle="italic" letterSpacing="1">VISA</text>
-    </svg>
-  )
-}
-
-function MastercardLogo() {
-  return (
-    <svg viewBox="0 0 52 28" className="h-7 w-auto" aria-label="Mastercard">
-      <rect width="52" height="28" rx="5" fill="#252525" />
-      <circle cx="20" cy="14" r="9" fill="#EB001B" />
-      <circle cx="32" cy="14" r="9" fill="#F79E1B" />
-      <path d="M26 7.2a9 9 0 0 1 0 13.6A9 9 0 0 1 26 7.2z" fill="#FF5F00" />
-    </svg>
-  )
-}
-
-function GooglePayLogo() {
-  return (
-    <svg viewBox="0 0 68 28" className="h-7 w-auto" aria-label="Google Pay">
-      <rect width="68" height="28" rx="5" fill="white" stroke="#E8E8E8" strokeWidth="1.2" />
-      <text x="34" y="20" textAnchor="middle" fontSize="12" fontFamily="Arial" fontWeight="500">
-        <tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#FBBC04">o</tspan><tspan fill="#4285F4">g</tspan><tspan fill="#34A853">l</tspan><tspan fill="#EA4335">e </tspan><tspan fill="#5F6368">Pay</tspan>
-      </text>
-    </svg>
-  )
-}
-
-function ApplePayLogo() {
-  return (
-    <svg viewBox="0 0 62 28" className="h-7 w-auto" aria-label="Apple Pay">
-      <rect width="62" height="28" rx="5" fill="#000" />
-      <text x="31" y="20" textAnchor="middle" fill="white" fontSize="12"
-        fontFamily="-apple-system, Helvetica, Arial" fontWeight="500"> Pay</text>
-    </svg>
-  )
-}
-
-function FlutterwaveLogo() {
-  return (
-    <svg viewBox="0 0 92 28" className="h-7 w-auto" aria-label="Flutterwave">
-      <defs>
-        <linearGradient id="flw" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#F5A623" />
-          <stop offset="100%" stopColor="#FF6B35" />
-        </linearGradient>
-      </defs>
-      <rect width="92" height="28" rx="5" fill="url(#flw)" />
-      <text x="46" y="19" textAnchor="middle" fill="white" fontSize="9.5"
-        fontWeight="800" fontFamily="Arial, sans-serif" letterSpacing="0.3">Flutterwave</text>
-    </svg>
-  )
-}
-
-function PaynowLogo() {
-  return (
-    <svg viewBox="0 0 70 28" className="h-7 w-auto" aria-label="Paynow">
-      <rect width="70" height="28" rx="5" fill="#1B4F91" />
-      <text x="35" y="19" textAnchor="middle" fill="white" fontSize="10.5"
-        fontWeight="700" fontFamily="Arial, sans-serif">Paynow</text>
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className={className} />
   )
 }
 
@@ -143,9 +33,9 @@ const PRO_FEATURES = [
 ]
 
 const PLAN_META: Record<PlanId, { perMonth: string; period: string; popular?: boolean }> = {
-  pro_monthly:   { perMonth: '$5.00',  period: 'per month' },
-  pro_quarterly: { perMonth: '$4.00',  period: 'per month, billed quarterly', popular: true },
-  pro_yearly:    { perMonth: '$2.92',  period: 'per month, billed annually' },
+  pro_monthly:   { perMonth: '$5.00', period: 'per month' },
+  pro_quarterly: { perMonth: '$4.00', period: 'per month, billed quarterly', popular: true },
+  pro_yearly:    { perMonth: '$2.92', period: 'per month, billed annually' },
 }
 
 const PLAN_ORDER: { id: PlanId; badge?: string }[] = [
@@ -158,37 +48,52 @@ type PaymentMethod = 'ecocash' | 'onemoney' | 'innbucks' | 'web'
 type Gateway = 'local' | 'international'
 
 const LOCAL_METHODS: {
-  id: PaymentMethod; label: string; sublabel: string;
-  color: string; borderColor: string; bgColor: string; Logo: () => JSX.Element
+  id: PaymentMethod
+  label: string
+  sublabel: string
+  logoSrc: string
+  borderSelected: string
+  bgSelected: string
 }[] = [
   {
     id: 'ecocash',
     label: 'EcoCash',
     sublabel: 'EcoNet · USSD push',
-    color: '#00A651', borderColor: 'border-green-400', bgColor: 'bg-green-50',
-    Logo: EcoCashLogo,
+    logoSrc: '/logos/ecocash.png',
+    borderSelected: 'border-green-500',
+    bgSelected: 'bg-green-50',
   },
   {
     id: 'onemoney',
     label: 'OneMoney',
     sublabel: 'NetOne · USSD push',
-    color: '#0050A0', borderColor: 'border-blue-400', bgColor: 'bg-blue-50',
-    Logo: OneMoneyLogo,
+    logoSrc: '/logos/onemoney.png',
+    borderSelected: 'border-blue-500',
+    bgSelected: 'bg-blue-50',
   },
   {
     id: 'innbucks',
     label: 'InnBucks',
     sublabel: 'InnBucks wallet',
-    color: '#FF6B00', borderColor: 'border-orange-400', bgColor: 'bg-orange-50',
-    Logo: InnBucksLogo,
+    logoSrc: '/logos/innbucks.jpg',
+    borderSelected: 'border-orange-500',
+    bgSelected: 'bg-orange-50',
   },
   {
     id: 'web',
     label: 'ZimSwitch / Bank',
     sublabel: 'Card · Internet Banking',
-    color: '#003087', borderColor: 'border-blue-700', bgColor: 'bg-indigo-50',
-    Logo: ZimSwitchLogo,
+    logoSrc: '/logos/zimswitch.svg',
+    borderSelected: 'border-indigo-600',
+    bgSelected: 'bg-indigo-50',
   },
+]
+
+const CARD_METHODS = [
+  { src: '/logos/visa.svg',       alt: 'Visa' },
+  { src: '/logos/mastercard.svg', alt: 'Mastercard' },
+  { src: '/logos/googlepay.svg',  alt: 'Google Pay' },
+  { src: '/logos/applepay.svg',   alt: 'Apple Pay' },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -287,9 +192,10 @@ export default function UpgradePage() {
     } finally { setLoading(false) }
   }
 
-  const plan = PLANS[selectedPlan]
+  const plan           = PLANS[selectedPlan]
+  const selectedLocal  = LOCAL_METHODS.find(m => m.id === selectedMethod)
 
-  // ── Paid screen ────────────────────────────────────────────────────────────
+  // ── Paid ────────────────────────────────────────────────────────────────────
   if (paymentStatus === 'paid') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center p-4">
@@ -314,21 +220,24 @@ export default function UpgradePage() {
     )
   }
 
-  // ── Waiting screen ─────────────────────────────────────────────────────────
+  // ── Waiting ─────────────────────────────────────────────────────────────────
   if (paymentStatus === 'waiting') {
-    const methodInfo = LOCAL_METHODS.find(m => m.id === selectedMethod)
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10 max-w-md w-full text-center border border-indigo-100">
-          <div className="w-24 h-24 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-200 animate-pulse">
-            <Smartphone className="text-white" size={40} />
+          {selectedLocal && (
+            <div className="flex justify-center mb-5">
+              <Logo src={selectedLocal.logoSrc} alt={selectedLocal.label} className="h-10 w-auto object-contain" />
+            </div>
+          )}
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-200 animate-pulse">
+            <Smartphone className="text-white" size={36} />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Check Your Phone</h1>
           <p className="text-slate-500 mb-6">
-            A <strong>{methodInfo?.label ?? 'mobile money'}</strong> payment request has been sent to{' '}
+            A <strong>{selectedLocal?.label ?? 'mobile money'}</strong> payment request was sent to{' '}
             <strong className="text-slate-700">{phone || 'your number'}</strong>.
           </p>
-
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 text-left space-y-3">
             {[
               ['📳', 'Your phone will vibrate with a payment prompt'],
@@ -341,12 +250,10 @@ export default function UpgradePage() {
               </div>
             ))}
           </div>
-
           <div className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-6">
             <Loader2 className="animate-spin" size={16} />
             <span>Waiting for confirmation{pollCount > 0 ? ` · ${pollCount * 5}s` : ''}…</span>
           </div>
-
           <button
             onClick={() => { setPaymentStatus('idle'); setPaymentId(null); setPollCount(0) }}
             className="text-slate-400 hover:text-slate-600 text-sm underline underline-offset-2 transition"
@@ -358,7 +265,7 @@ export default function UpgradePage() {
     )
   }
 
-  // ── Failed screen ──────────────────────────────────────────────────────────
+  // ── Failed ──────────────────────────────────────────────────────────────────
   if (paymentStatus === 'failed') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 flex items-center justify-center p-4">
@@ -384,11 +291,11 @@ export default function UpgradePage() {
     )
   }
 
-  // ── Main upgrade page ──────────────────────────────────────────────────────
+  // ── Main page ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900">
 
-      {/* ── Hero header ── */}
+      {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-600/30 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-3xl mx-auto px-4 pt-6 pb-10">
@@ -415,7 +322,7 @@ export default function UpgradePage() {
 
       <div className="max-w-3xl mx-auto px-4 pb-12 space-y-5">
 
-        {/* ── Pro features grid ── */}
+        {/* Pro features */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
           <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">Everything in Pro</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -430,7 +337,7 @@ export default function UpgradePage() {
           </div>
         </div>
 
-        {/* ── Plan selector ── */}
+        {/* Plan selector */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">Choose Your Plan</h2>
@@ -438,8 +345,8 @@ export default function UpgradePage() {
           </div>
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {PLAN_ORDER.map(({ id, badge }) => {
-              const p       = PLANS[id]
-              const meta    = PLAN_META[id]
+              const p          = PLANS[id]
+              const meta       = PLAN_META[id]
               const isSelected = selectedPlan === id
               return (
                 <button
@@ -447,13 +354,10 @@ export default function UpgradePage() {
                   onClick={() => setSelectedPlan(id)}
                   className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-150 ${
                     isSelected
-                      ? meta.popular
-                        ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
-                        : 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
+                      ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
                       : 'border-slate-200 hover:border-indigo-300 bg-white'
                   }`}
                 >
-                  {/* Popular badge */}
                   {meta.popular && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full whitespace-nowrap shadow-sm">
                       ⭐ Most Popular
@@ -464,7 +368,6 @@ export default function UpgradePage() {
                       {badge}
                     </span>
                   )}
-
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-slate-500">{p.label}</span>
                     {isSelected && (
@@ -473,18 +376,12 @@ export default function UpgradePage() {
                       </div>
                     )}
                   </div>
-
                   <div className="text-2xl font-black text-slate-900">
-                    {meta.perMonth}
-                    <span className="text-sm font-normal text-slate-400">/mo</span>
+                    {meta.perMonth}<span className="text-sm font-normal text-slate-400">/mo</span>
                   </div>
-
                   <div className="text-[10px] text-slate-400 mt-1 leading-tight">{meta.period}</div>
-
                   <div className="mt-3 pt-3 border-t border-slate-100">
-                    <div className="text-sm font-bold text-indigo-600">
-                      ${p.amountUsd.toFixed(2)} USD total
-                    </div>
+                    <div className="text-sm font-bold text-indigo-600">${p.amountUsd.toFixed(2)} USD total</div>
                   </div>
                 </button>
               )
@@ -492,7 +389,7 @@ export default function UpgradePage() {
           </div>
         </div>
 
-        {/* ── Payment method ── */}
+        {/* Payment method */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">Payment Method</h2>
@@ -505,29 +402,23 @@ export default function UpgradePage() {
               <button
                 onClick={() => setGateway('local')}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  gateway === 'local'
-                    ? 'bg-white text-slate-800 shadow-md'
-                    : 'text-slate-500 hover:text-slate-700'
+                  gateway === 'local' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <span className="text-base">🇿🇼</span>
-                Zimbabwe
+                🇿🇼 Zimbabwe
               </button>
               <button
                 onClick={() => setGateway('international')}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  gateway === 'international'
-                    ? 'bg-white text-slate-800 shadow-md'
-                    : 'text-slate-500 hover:text-slate-700'
+                  gateway === 'international' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <span className="text-base">🌍</span>
-                International
+                🌍 International
               </button>
             </div>
           </div>
 
-          {/* Local — Zimbabwe payment methods */}
+          {/* Zimbabwe methods */}
           {gateway === 'local' && (
             <div className="p-4 space-y-4">
               <p className="text-xs text-slate-400 font-medium">Select your mobile money provider</p>
@@ -538,18 +429,18 @@ export default function UpgradePage() {
                     <button
                       key={m.id}
                       onClick={() => setSelectedMethod(m.id)}
-                      className={`relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all duration-150 ${
+                      className={`relative flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-150 min-h-[100px] ${
                         isSelected
-                          ? `${m.borderColor} ${m.bgColor} shadow-md`
-                          : 'border-slate-200 bg-white hover:border-slate-300'
+                          ? `${m.borderSelected} ${m.bgSelected} shadow-md`
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
                       }`}
                     >
                       {isSelected && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                        <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm">
                           <Check size={10} className="text-white" strokeWidth={3} />
                         </div>
                       )}
-                      <m.Logo />
+                      <Logo src={m.logoSrc} alt={m.label} className="h-8 w-auto max-w-[100px] object-contain" />
                       <div className="text-center">
                         <div className="text-xs font-bold text-slate-700">{m.label}</div>
                         <div className="text-[10px] text-slate-400 mt-0.5">{m.sublabel}</div>
@@ -559,11 +450,11 @@ export default function UpgradePage() {
                 })}
               </div>
 
-              {/* Also powered by Paynow */}
+              {/* Powered by Paynow */}
               <div className="flex items-center gap-2 pt-1">
                 <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-[10px] text-slate-400 font-medium">Secured by</span>
-                <PaynowLogo />
+                <span className="text-[10px] text-slate-400">Secured by</span>
+                <Logo src="/logos/paynow.svg" alt="Paynow" className="h-5 w-auto object-contain opacity-70" />
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
 
@@ -575,9 +466,9 @@ export default function UpgradePage() {
                      selectedMethod === 'onemoney' ? 'OneMoney' : 'InnBucks'} Phone Number
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                      <span className="text-slate-400 text-sm">🇿🇼 +263</span>
-                    </div>
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 text-sm pointer-events-none">
+                      🇿🇼 +263
+                    </span>
                     <input
                       type="tel"
                       value={phone}
@@ -593,38 +484,30 @@ export default function UpgradePage() {
               )}
 
               {selectedMethod === 'web' && (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex gap-1.5 flex-shrink-0 mt-0.5">
-                      <ZimSwitchLogo />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-700">ZimSwitch / Internet Banking</p>
-                      <p className="text-xs text-slate-500 mt-0.5">You&apos;ll be redirected to Paynow&apos;s secure checkout page. Supports all major Zimbabwean bank cards.</p>
-                    </div>
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">
+                  <Logo src="/logos/zimswitch.svg" alt="ZimSwitch" className="h-7 w-auto object-contain flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">ZimSwitch / Internet Banking</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      You&apos;ll be redirected to Paynow&apos;s secure checkout. Supports all major Zimbabwean bank cards.
+                    </p>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* International — Flutterwave */}
+          {/* International methods */}
           {gateway === 'international' && (
             <div className="p-4 space-y-4">
               <p className="text-xs text-slate-400 font-medium">Pay with card or digital wallet</p>
 
-              {/* Supported cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { Logo: VisaLogo,      label: 'Visa' },
-                  { Logo: MastercardLogo, label: 'Mastercard' },
-                  { Logo: GooglePayLogo,  label: 'Google Pay' },
-                  { Logo: ApplePayLogo,   label: 'Apple Pay' },
-                ].map(({ Logo, label }) => (
-                  <div key={label}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50">
-                    <Logo />
-                    <span className="text-[10px] font-medium text-slate-500">{label}</span>
+                {CARD_METHODS.map(({ src, alt }) => (
+                  <div key={alt}
+                    className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition min-h-[80px]">
+                    <Logo src={src} alt={alt} className="h-7 w-auto object-contain" />
+                    <span className="text-[10px] font-medium text-slate-500">{alt}</span>
                   </div>
                 ))}
               </div>
@@ -632,8 +515,8 @@ export default function UpgradePage() {
               {/* Powered by Flutterwave */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-[10px] text-slate-400 font-medium">Powered by</span>
-                <FlutterwaveLogo />
+                <span className="text-[10px] text-slate-400">Powered by</span>
+                <Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain opacity-80" />
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
 
@@ -641,14 +524,16 @@ export default function UpgradePage() {
                 <Shield size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-slate-700">256-bit SSL Encrypted Checkout</p>
-                  <p className="text-xs text-slate-400 mt-0.5">You&apos;ll be redirected to Flutterwave&apos;s secure hosted payment page. No card data is stored on ZimLearn.</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    You&apos;ll be redirected to Flutterwave&apos;s secure hosted page. No card data is stored on ZimLearn.
+                  </p>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* ── Order summary + pay button ── */}
+        {/* Order summary + pay button */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-4 border-b border-slate-100">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Order Summary</p>
@@ -676,59 +561,57 @@ export default function UpgradePage() {
               <button
                 onClick={handleFlutterwavePay}
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-orange-200 flex items-center justify-center gap-2.5"
+                className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-orange-100 flex items-center justify-center gap-3"
               >
-                {loading ? (
-                  <><Loader2 size={20} className="animate-spin" /> Redirecting to checkout…</>
-                ) : (
-                  <><FlutterwaveLogo /> Pay ${plan.amountUsd.toFixed(2)} USD</>
-                )}
+                {loading
+                  ? <><Loader2 size={20} className="animate-spin" /> Redirecting to checkout…</>
+                  : <><Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain brightness-0 invert" /> Pay ${plan.amountUsd.toFixed(2)} USD</>
+                }
               </button>
             ) : selectedMethod === 'web' ? (
               <button
                 onClick={handlePay}
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2.5"
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3"
               >
-                {loading ? (
-                  <><Loader2 size={20} className="animate-spin" /> Redirecting…</>
-                ) : (
-                  <>Pay ${plan.amountUsd.toFixed(2)} via Paynow</>
-                )}
+                {loading
+                  ? <><Loader2 size={20} className="animate-spin" /> Redirecting…</>
+                  : <>Pay ${plan.amountUsd.toFixed(2)} via Paynow</>
+                }
               </button>
             ) : (
               <button
                 onClick={handlePay}
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2.5"
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3"
               >
                 {loading ? (
                   <><Loader2 size={20} className="animate-spin" /> Sending request…</>
-                ) : selectedMethod === 'ecocash' ? (
-                  <><EcoCashLogo /> Send ${plan.amountUsd.toFixed(2)} Request</>
-                ) : selectedMethod === 'onemoney' ? (
-                  <><OneMoneyLogo /> Send ${plan.amountUsd.toFixed(2)} Request</>
                 ) : (
-                  <><InnBucksLogo /> Send ${plan.amountUsd.toFixed(2)} Request</>
+                  <>
+                    <Logo
+                      src={selectedLocal?.logoSrc ?? '/logos/ecocash.png'}
+                      alt={selectedLocal?.label ?? 'Pay'}
+                      className="h-6 w-auto object-contain brightness-0 invert"
+                    />
+                    Send ${plan.amountUsd.toFixed(2)} Payment Request
+                  </>
                 )}
               </button>
             )}
 
             {/* Trust badges */}
-            <div className="flex items-center justify-center gap-4 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
               <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Lock size={11} className="text-green-500" />
-                Secure payment
+                <Lock size={11} className="text-green-500" /> Secure payment
               </div>
-              <div className="w-px h-3 bg-slate-200" />
+              <div className="w-px h-3 bg-slate-200 hidden sm:block" />
               <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Shield size={11} className="text-green-500" />
-                No card data stored
+                <Shield size={11} className="text-green-500" /> No card data stored
               </div>
-              <div className="w-px h-3 bg-slate-200" />
+              <div className="w-px h-3 bg-slate-200 hidden sm:block" />
               <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <CheckCircle2 size={11} className="text-green-500" />
-                Cancel anytime
+                <CheckCircle2 size={11} className="text-green-500" /> Cancel anytime
               </div>
             </div>
           </div>
