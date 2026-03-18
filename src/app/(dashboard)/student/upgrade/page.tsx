@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Zap, CheckCircle2, XCircle, Loader2, ChevronLeft,
@@ -51,7 +51,6 @@ type Gateway = 'local' | 'international'
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function UpgradePage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('pro_monthly')
