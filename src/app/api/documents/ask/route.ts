@@ -7,8 +7,9 @@ export const maxDuration = 60
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // pdf-parse extracts text natively from PDFs — works on any page count
+// Use the lib path directly to avoid pdf-parse@1.1.1's test-runner firing during Next.js build
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse')
+const pdfParse = require('pdf-parse/lib/pdf-parse.js')
 
 // Max pages the Anthropic document-block API accepts
 const ANTHROPIC_PDF_PAGE_LIMIT = 100

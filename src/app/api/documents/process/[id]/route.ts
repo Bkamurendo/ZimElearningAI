@@ -7,8 +7,9 @@ export const maxDuration = 120
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // pdf-parse extracts text natively — no Claude page limits apply
+// Use the lib path directly to avoid pdf-parse@1.1.1's test-runner firing during Next.js build
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse')
+const pdfParse = require('pdf-parse/lib/pdf-parse.js')
 
 export async function POST(
   req: NextRequest,
