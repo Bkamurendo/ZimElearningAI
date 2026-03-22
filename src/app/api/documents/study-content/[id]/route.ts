@@ -6,6 +6,10 @@ import { checkAIQuota } from '@/lib/ai-quota'
 // Allow up to 120s — Claude needs time on large documents
 export const maxDuration = 120
 
+// Use lib path to avoid pdf-parse@1.1.1's test-runner firing during Next.js build
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse/lib/pdf-parse.js')
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   timeout: 110_000, // 110s — slightly under maxDuration
@@ -280,7 +284,7 @@ ${doc.extracted_text.slice(0, 15000)}
 
     generatedContent = response.content[0].type === 'text' ? response.content[0].text : ''
   } else {
-    // Download PDF from storage and use document blocks
+    // Download PDF from storage
     const { data: fileData } = await supabase.storage
       .from('platform-documents')
       .download(doc.file_path)
@@ -290,25 +294,76 @@ ${doc.extracted_text.slice(0, 15000)}
     }
 
     const arrayBuffer = await fileData.arrayBuffer()
-    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const buffer = Buffer.from(arrayBuffer)
     const prompt = PROMPTS[content_type](doc.title, doc.document_type)
 
-    const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 8000,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'document',
-            source: { type: 'base64', media_type: 'application/pdf', data: base64 },
-          } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
-          { type: 'text', text: prompt },
-        ],
-      }],
-    })
+    // ── Try pdf-parse first (works for any page count, no Claude page limit) ──
+    let rawText = ''
+    let pageCount = 0
+    try {
+      const parsed = await pdfParse(buffer)
+      rawText = parsed.text?.trim() ?? ''
+      pageCount = parsed.numpages ?? 0
+    } catch { /* image-based or corrupt — fall through */ }
 
-    generatedContent = response.content[0].type === 'text' ? response.content[0].text : ''
+    const isImageBased = rawText.length < Math.max(pageCount * 20, 50)
+
+    if (!isImageBased && rawText.length > 100) {
+      // Text-based PDF — use extracted text (no Anthropic page limit)
+      const truncated = rawText.length > 15000 ? rawText.slice(0, 15000) + '\n\n[Content truncated]' : rawText
+      const docContext = `
+DOCUMENT: "${doc.title}"
+TYPE: ${doc.document_type}${doc.year ? ` | Year: ${doc.year}` : ''}${doc.paper_number ? ` | Paper ${doc.paper_number}` : ''}${doc.zimsec_level ? ` | Level: ${doc.zimsec_level}` : ''}
+AI SUMMARY: ${doc.ai_summary || 'N/A'}
+KEY TOPICS: ${doc.topics?.join(', ') || 'N/A'}
+
+FULL DOCUMENT TEXT:
+${truncated}
+`.trim()
+
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: `${prompt}\n\n---\nDOCUMENT CONTENT:\n${docContext}` }],
+      })
+      generatedContent = response.content[0].type === 'text' ? response.content[0].text : ''
+
+    } else if (pageCount > 0 && pageCount <= 100) {
+      // Image/scanned PDF small enough for Claude's vision document block API
+      const base64 = buffer.toString('base64')
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 8000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+            } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      })
+      generatedContent = response.content[0].type === 'text' ? response.content[0].text : ''
+
+    } else {
+      // Scanned + >100 pages — use metadata as context
+      const metaContext = `
+DOCUMENT: "${doc.title}"
+TYPE: ${doc.document_type}${doc.year ? ` | Year: ${doc.year}` : ''}${doc.paper_number ? ` | Paper ${doc.paper_number}` : ''}${doc.zimsec_level ? ` | Level: ${doc.zimsec_level}` : ''}
+AI SUMMARY: ${doc.ai_summary || 'N/A'}
+KEY TOPICS: ${doc.topics?.join(', ') || 'N/A'}
+NOTE: This is a scanned/image-based document. Generate content based on the metadata and your ZIMSEC curriculum knowledge.
+`.trim()
+
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: `${prompt}\n\n---\nDOCUMENT CONTEXT:\n${metaContext}` }],
+      })
+      generatedContent = response.content[0].type === 'text' ? response.content[0].text : ''
+    }
   }
 
   if (!generatedContent) {
