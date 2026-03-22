@@ -87,7 +87,9 @@ async function sendSmsOtp(to: string, code: string): Promise<void> {
   })
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Africa's Talking error: ${body}`)
+    // Log the raw error for debugging, but return a user-friendly message
+    console.error('[mfa/send] SMS delivery failed:', body)
+    throw new Error('SMS delivery failed. Please try email verification instead, or contact support.')
   }
 }
 

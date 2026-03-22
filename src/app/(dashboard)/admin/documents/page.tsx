@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import type { ElementType } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import {
   FileText, Upload, CheckCircle, Clock, XCircle, AlertCircle,
   Plus, BookOpen, Globe, Zap, Pencil, AlertTriangle,
 } from 'lucide-react'
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: ElementType }> = {
   pending:     { label: 'Pending',      color: 'bg-gray-100 text-gray-600',   icon: Clock },
   processing:  { label: 'Processing',  color: 'bg-blue-100 text-blue-700',   icon: Clock },
   ai_reviewed: { label: 'Needs Review',color: 'bg-amber-100 text-amber-700', icon: AlertCircle },
@@ -43,7 +44,7 @@ export default async function AdminDocumentsPage() {
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') redirect('/admin/dashboard')
+  if (profile?.role !== 'admin') redirect('/login')
 
   const { data: docs } = await supabase
     .from('uploaded_documents')

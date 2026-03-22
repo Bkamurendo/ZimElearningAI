@@ -52,12 +52,18 @@ export default function EditDocumentForm({
 }) {
   const router = useRouter()
 
+  // If the doc already has a subject, initialise level from that subject's level
+  // so the form is consistent from the start (fixes "O-Level · matches subject" on mislabeled docs)
+  const initialLevel = doc.subject_id
+    ? (subjects.find(s => s.id === doc.subject_id)?.zimsec_level ?? doc.zimsec_level ?? '')
+    : (doc.zimsec_level ?? '')
+
   const [form, setForm] = useState({
     title:             doc.title,
     description:       doc.description ?? '',
     document_type:     doc.document_type,
     subject_id:        doc.subject_id ?? '',
-    zimsec_level:      doc.zimsec_level ?? '',
+    zimsec_level:      initialLevel,
     year:              doc.year ? String(doc.year) : '',
     paper_number:      doc.paper_number ? String(doc.paper_number) : '',
     moderation_status: doc.moderation_status,
@@ -298,22 +304,20 @@ export default function EditDocumentForm({
           </div>
 
           {['past_paper', 'marking_scheme'].includes(form.document_type) && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Paper Number
-                </label>
-                <select
-                  value={form.paper_number}
-                  onChange={e => setForm(p => ({ ...p, paper_number: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">—</option>
-                  {[1, 2, 3, 4].map(n => (
-                    <option key={n} value={n}>Paper {n}</option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                Paper Number
+              </label>
+              <select
+                value={form.paper_number}
+                onChange={e => setForm(p => ({ ...p, paper_number: e.target.value }))}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                <option value="">—</option>
+                {[1, 2, 3, 4].map(n => (
+                  <option key={n} value={n}>Paper {n}</option>
+                ))}
+              </select>
             </div>
           )}
 

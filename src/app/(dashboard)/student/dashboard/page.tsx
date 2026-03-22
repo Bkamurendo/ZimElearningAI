@@ -323,7 +323,7 @@ export default async function StudentDashboard() {
                 shadow: 'shadow-purple-200',
               },
               {
-                href: subjects[0] ? `/student/past-papers/${subjects[0].code}` : '#',
+                href: subjects[0] ? `/student/past-papers/${subjects[0].code}` : '/student/past-papers',
                 label: 'Past Papers',
                 desc: 'AI-marked practice',
                 icon: FileText,

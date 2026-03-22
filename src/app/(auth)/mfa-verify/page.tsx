@@ -172,8 +172,15 @@ function OtpVerify({ method }: { method: 'email' | 'phone' }) {
         />
 
         {error && (
-          <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
-            <XCircle size={16} className="shrink-0" />{error}
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
+            <div className="flex items-center gap-2 text-red-700">
+              <XCircle size={16} className="shrink-0" />{error}
+            </div>
+            {!isEmail && !sent && (
+              <p className="text-red-600 text-xs mt-2">
+                Your SMS could not be delivered. Try signing out and switching to email verification in Security Settings.
+              </p>
+            )}
           </div>
         )}
 
