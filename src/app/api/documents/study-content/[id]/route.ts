@@ -47,23 +47,26 @@ Rules:
 You are EduZim AI writing comprehensive ZIMSEC study notes from: "${title}".
 ${docType === 'past_paper' ? 'This is a past exam paper — analyse the types of questions, mark allocations, and topics tested.' : ''}
 
-Write structured study notes in markdown that a student can use to learn the full content.
+CRITICAL: You must cover EVERY topic, chapter, and section present in the document — not just the introduction or first chapter. If the document has 10 chapters, write notes for all 10. Do not stop early.
+
+Write structured study notes in markdown covering the FULL document:
 
 Format:
-## [Main Topic]
+## [Chapter / Main Topic Name]
 ### [Subtopic]
 **Key term**: definition
-- bullet point
-> 💡 Exam tip: ...
+- bullet point explaining concept
+- formula or rule with example
+> 💡 Exam tip: what ZIMSEC tests on this
 
-Include:
-- All major concepts with clear explanations
-- Worked examples where relevant
-- Formulas/equations/dates/names with context
-- "Common Mistakes" section at the end
-- "Exam Technique" section at the end
+Rules:
+- Create one ## section per major topic/chapter found in the document
+- Each ## section must have at least 3–5 bullet points of substantive content
+- Include ALL formulas, laws, definitions, dates, and key facts from the document
+- Add worked examples for calculations or processes where relevant
+- End with a "## Common Mistakes" section and a "## Exam Technique" section
 
-Write minimum 600 words of rich educational content. Use clear, accessible language for Zimbabwean students.
+Write minimum 1500 words covering all topics comprehensively. Use clear language for Zimbabwean students.
 `.trim(),
 
   model_answers: (title) => `
@@ -258,11 +261,37 @@ export async function POST(
 
   if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
 
+  // Text limits per content type — detailed_notes needs much more context to cover all topics
+  const TEXT_LIMITS: Record<string, number> = {
+    detailed_notes:     70000,  // large docs need full coverage
+    glossary:           40000,
+    practice_questions: 35000,
+    model_answers:      35000,
+    snap_notes:         25000,
+    teaching_guide:     30000,
+  }
+  const textLimit = TEXT_LIMITS[content_type] ?? 30000
+
+  // For long docs, sample beginning + middle + end so all chapters are represented
+  function sampleDocument(text: string, limit: number): string {
+    if (text.length <= limit) return text
+    const third = Math.floor(limit / 3)
+    const mid = Math.floor(text.length / 2)
+    return (
+      text.slice(0, third) +
+      '\n\n[... middle section ...]\n\n' +
+      text.slice(mid - Math.floor(third / 2), mid + Math.floor(third / 2)) +
+      '\n\n[... final section ...]\n\n' +
+      text.slice(-third)
+    )
+  }
+
   // Build document context — use extracted_text if available, otherwise fall back to PDF
   let generatedContent: string
 
   if (doc.extracted_text && doc.extracted_text.length > 200) {
     // Use extracted text (faster, cheaper)
+    const sampledText = sampleDocument(doc.extracted_text, textLimit)
     const docContext = `
 DOCUMENT: "${doc.title}"
 TYPE: ${doc.document_type}${doc.year ? ` | Year: ${doc.year}` : ''}${doc.paper_number ? ` | Paper ${doc.paper_number}` : ''}${doc.zimsec_level ? ` | Level: ${doc.zimsec_level}` : ''}
@@ -270,7 +299,7 @@ AI SUMMARY: ${doc.ai_summary || 'N/A'}
 KEY TOPICS: ${doc.topics?.join(', ') || 'N/A'}
 
 FULL DOCUMENT TEXT:
-${doc.extracted_text.slice(0, 15000)}
+${sampledText}
 `.trim()
 
     const prompt = PROMPTS[content_type](doc.title, doc.document_type)
@@ -310,7 +339,7 @@ ${doc.extracted_text.slice(0, 15000)}
 
     if (!isImageBased && rawText.length > 100) {
       // Text-based PDF — use extracted text (no Anthropic page limit)
-      const truncated = rawText.length > 15000 ? rawText.slice(0, 15000) + '\n\n[Content truncated]' : rawText
+      const sampledText = sampleDocument(rawText, textLimit)
       const docContext = `
 DOCUMENT: "${doc.title}"
 TYPE: ${doc.document_type}${doc.year ? ` | Year: ${doc.year}` : ''}${doc.paper_number ? ` | Paper ${doc.paper_number}` : ''}${doc.zimsec_level ? ` | Level: ${doc.zimsec_level}` : ''}
@@ -318,7 +347,7 @@ AI SUMMARY: ${doc.ai_summary || 'N/A'}
 KEY TOPICS: ${doc.topics?.join(', ') || 'N/A'}
 
 FULL DOCUMENT TEXT:
-${truncated}
+${sampledText}
 `.trim()
 
       const response = await anthropic.messages.create({
