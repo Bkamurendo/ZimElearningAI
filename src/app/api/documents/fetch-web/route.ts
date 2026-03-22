@@ -2,7 +2,13 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const maxDuration = 120
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// Use lib path to avoid pdf-parse@1.1.1's test-runner firing during Next.js build
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse/lib/pdf-parse.js')
 
 // ── Security: SSRF protection ─────────────────────────────────────────────────
 // Block requests to private/internal IP ranges and dangerous protocols.
@@ -111,23 +117,20 @@ async function processPdf(
   params: FetchParams
 ): Promise<FetchResult> {
   try {
-    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const buffer = Buffer.from(arrayBuffer)
     const filename = url.split('/').pop()?.split('?')[0]?.replace(/[^a-zA-Z0-9._-]/g, '_') ?? 'document.pdf'
 
-    // ── Claude Step 1: Extract ──
-    const extractionResponse = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'document',
-            source: { type: 'base64', media_type: 'application/pdf', data: base64 },
-          } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
-          {
-            type: 'text',
-            text: `You are an educational content analyst for ZimLearn, a ZIMSEC e-learning platform for Zimbabwe.
+    // ── Try pdf-parse first (works for any page count, no Anthropic page limit) ──
+    let rawText = ''
+    let pageCount = 0
+    try {
+      const parsed = await pdfParse(buffer)
+      rawText = parsed.text?.trim() ?? ''
+      pageCount = parsed.numpages ?? 0
+    } catch { /* image-based or corrupt — fall through */ }
+
+    const isImageBased = rawText.length < Math.max(pageCount * 20, 50)
+    const extractionPrompt = `You are an educational content analyst for ZimLearn, a ZIMSEC e-learning platform for Zimbabwe.
 
 Analyse this document fetched from the web and respond with JSON:
 {
@@ -140,11 +143,43 @@ Analyse this document fetched from the web and respond with JSON:
   "detected_paper_number": null or integer paper number
 }
 
-Respond ONLY with valid JSON, no markdown fences.`,
-          },
-        ],
-      }],
-    })
+Respond ONLY with valid JSON, no markdown fences.`
+
+    // ── Claude Step 1: Extract ──
+    let extractionResponse
+    if (!isImageBased && rawText.length > 100) {
+      // Text-based PDF — send extracted text (no page limit)
+      const truncated = rawText.length > 12000 ? rawText.slice(0, 12000) + '\n\n[Truncated]' : rawText
+      extractionResponse = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: `${extractionPrompt}\n\nDOCUMENT TEXT:\n${truncated}` }],
+      })
+    } else if (pageCount <= 100) {
+      // Image-based PDF small enough for Claude vision
+      const base64 = buffer.toString('base64')
+      extractionResponse = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+            } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
+            { type: 'text', text: extractionPrompt },
+          ],
+        }],
+      })
+    } else {
+      // Scanned + >100 pages — metadata-only extraction
+      extractionResponse = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: `${extractionPrompt}\n\nNOTE: Document is image-based with ${pageCount} pages. Infer from the URL: ${url}` }],
+      })
+    }
 
     let extraction: {
       title: string
