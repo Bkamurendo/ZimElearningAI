@@ -76,11 +76,13 @@ export default async function StudentResourcesPage({
 
   if (!subject) redirect('/student/resources')
 
-  // Build query
+  // Build query — enforce zimsec_level match to prevent cross-level contamination
+  // (e.g. Primary resources leaking into O-Level folders, or wrong-subject docs showing here)
   let query = supabase
     .from('uploaded_documents')
     .select('id, title, document_type, zimsec_level, year, paper_number, ai_summary, topics, file_size, uploaded_by, uploader_role, created_at')
     .eq('subject_id', subject.id)
+    .eq('zimsec_level', subject.zimsec_level)   // ← level guard: blocks mislabeled cross-level docs
     .order('year', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -96,11 +98,12 @@ export default async function StudentResourcesPage({
   // RLS handles visibility — no extra filter needed
   const docs = allDocs ?? []
 
-  // Counts per type (always from full unfiltered for tab badges)
+  // Counts per type (always from full unfiltered for tab badges — same level guard)
   const { data: allDocsForCount } = await supabase
     .from('uploaded_documents')
     .select('document_type')
-    .eq('subject_id', subject.id) as { data: { document_type: string }[] | null; error: unknown }
+    .eq('subject_id', subject.id)
+    .eq('zimsec_level', subject.zimsec_level) as { data: { document_type: string }[] | null; error: unknown }
 
   const countByType: Record<string, number> = {}
   for (const d of allDocsForCount ?? []) {
