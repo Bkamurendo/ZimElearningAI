@@ -69,6 +69,19 @@ const MODE_OPTIONS = [
 
 // ── Helper: Markdown renderer ─────────────────────────────────────────────────
 
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={i} className="bg-gray-100 text-purple-700 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>
+    }
+    return part
+  })
+}
+
 function renderMarkdown(text: string) {
   const lines = text.split('\n')
   const elements: React.ReactNode[] = []
@@ -77,10 +90,55 @@ function renderMarkdown(text: string) {
   while (i < lines.length) {
     const line = lines[i]
 
+    // ── TABLE: collect consecutive lines starting with | ────────────────────
+    if (line.trimStart().startsWith('|')) {
+      const tableLines: string[] = []
+      while (i < lines.length && lines[i].trimStart().startsWith('|')) {
+        tableLines.push(lines[i])
+        i++
+      }
+      const isSeparator = (row: string) => /^\|[\s\-:|]+\|$/.test(row.trim())
+      const parseRow = (row: string) =>
+        row.split('|').slice(1, -1).map((cell) => cell.trim())
+      const nonSep = tableLines.filter((row) => !isSeparator(row))
+      const [headerRow, ...dataRows] = nonSep
+      if (headerRow) {
+        const headers = parseRow(headerRow)
+        elements.push(
+          <div key={`tbl-${i}`} className="overflow-x-auto my-3 rounded-xl border border-gray-200 shadow-sm">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-indigo-50 border-b-2 border-indigo-200">
+                  {headers.map((h, j) => (
+                    <th key={j} className="px-3 py-2.5 text-left font-semibold text-indigo-900 whitespace-nowrap">
+                      {renderInline(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dataRows.map((row, ri) => (
+                  <tr key={ri} className={`border-b border-gray-100 ${ri % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
+                    {parseRow(row).map((cell, ci) => (
+                      <td key={ci} className="px-3 py-2 text-gray-700 leading-relaxed align-top">
+                        {renderInline(cell)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+      continue  // i already advanced past all table lines
+    }
+
+    // ── All other single-line patterns ───────────────────────────────────────
     if (line.startsWith('## ')) {
-      elements.push(<h2 key={i} className="text-base font-bold text-gray-900 mt-5 mb-2 pb-1 border-b border-gray-100">{line.slice(3)}</h2>)
+      elements.push(<h2 key={i} className="text-base font-bold text-gray-900 mt-5 mb-2 pb-1 border-b border-gray-100">{renderInline(line.slice(3))}</h2>)
     } else if (line.startsWith('### ')) {
-      elements.push(<h3 key={i} className="text-sm font-bold text-gray-800 mt-4 mb-1.5">{line.slice(4)}</h3>)
+      elements.push(<h3 key={i} className="text-sm font-bold text-gray-800 mt-4 mb-1.5">{renderInline(line.slice(4))}</h3>)
     } else if (line.startsWith('> ')) {
       elements.push(
         <div key={i} className="my-2 pl-3 border-l-4 border-amber-400 bg-amber-50 py-2 pr-3 rounded-r-lg">
@@ -102,19 +160,6 @@ function renderMarkdown(text: string) {
     i++
   }
   return <div className="space-y-0.5">{elements}</div>
-}
-
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-gray-100 text-purple-700 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>
-    }
-    return part
-  })
 }
 
 // ── Copy button ───────────────────────────────────────────────────────────────
@@ -559,20 +604,23 @@ export default function StudyPanel({
                     <Sparkles size={12} />
                   </div>
                 )}
-                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-indigo-600 text-white rounded-tr-sm shadow-sm'
-                    : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-tl-sm'
-                }`}>
-                  {msg.content}
-                  {msg.role === 'assistant' && msg.content === '' && streaming && (
-                    <span className="inline-flex gap-1 ml-1">
-                      <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:0ms]" />
-                      <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:150ms]" />
-                      <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:300ms]" />
-                    </span>
-                  )}
-                </div>
+                {msg.role === 'user' ? (
+                  <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed bg-indigo-600 text-white shadow-sm">
+                    {msg.content}
+                  </div>
+                ) : (
+                  <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-tl-sm bg-gray-50 border border-gray-200 text-gray-800">
+                    {msg.content === '' && streaming ? (
+                      <span className="inline-flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:0ms]" />
+                        <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:300ms]" />
+                      </span>
+                    ) : (
+                      renderMarkdown(msg.content)
+                    )}
+                  </div>
+                )}
               </div>
             ))
           )}
