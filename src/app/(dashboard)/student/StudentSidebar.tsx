@@ -7,13 +7,14 @@ import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, TrendingUp, Target, CalendarDays, LogOut,
   Flame, Menu, X, GraduationCap, Calculator,
-  Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User,
+  Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 const NAV = [
   { href: '/student/dashboard',         label: 'Dashboard',       icon: LayoutDashboard, badge: null },
   { href: '/student/subjects',          label: 'My Subjects',     icon: BookOpen,        badge: null },
+  { href: '/student/resources',         label: 'Resource Library',icon: Library,         badge: null },
   { href: '/student/search',            label: 'Search',          icon: Search,          badge: null },
   { href: '/student/progress',          label: 'My Progress',     icon: TrendingUp,      badge: null },
   { href: '/student/bookmarks',         label: 'Bookmarks',       icon: Bookmark,        badge: null },
