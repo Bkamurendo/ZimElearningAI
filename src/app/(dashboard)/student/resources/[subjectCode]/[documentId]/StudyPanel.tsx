@@ -290,8 +290,23 @@ export default function StudyPanel({
                 if (last?.role === 'assistant') n[n.length - 1] = { ...last, content: last.content + p.text }
                 return n
               })
+            } else if (p.type === 'error' && p.message) {
+              // Show API errors as a readable assistant message
+              const friendly = p.message.includes('100 PDF pages')
+                ? "This document has too many pages to read directly. I'll answer based on the document details and my ZIMSEC knowledge instead — try asking again."
+                : `Something went wrong: ${p.message}. Please try again.`
+              setMessages((prev) => {
+                const n = [...prev]
+                const last = n[n.length - 1]
+                if (last?.role === 'assistant' && last.content === '') {
+                  n[n.length - 1] = { ...last, content: friendly }
+                } else {
+                  n.push({ role: 'assistant', content: friendly })
+                }
+                return n
+              })
             }
-          } catch { /* skip */ }
+          } catch { /* skip malformed SSE lines */ }
         }
       }
     } catch {

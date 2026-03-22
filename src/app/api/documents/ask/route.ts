@@ -6,6 +6,9 @@ export const maxDuration = 60
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Max pages the Anthropic API accepts for PDF document blocks
+const ANTHROPIC_PDF_PAGE_LIMIT = 100
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -34,21 +37,18 @@ export async function POST(req: NextRequest) {
   if (!doc) return new Response('Document not found or access denied', { status: 404 })
 
   const modeInstructions: Record<string, string> = {
-    explain: 'Explain clearly, using examples from this document. Reference specific sections when possible.',
+    explain: 'Explain clearly, using examples from the document content. Reference specific sections when possible.',
     solve: 'Solve this step by step with complete working shown. For maths/science: number each step, show all calculations, box the final answer. For humanities: structure as Context → Analysis → Key Points → Conclusion.',
     summarise: 'Provide a structured summary. Use headings for each main section/topic. Include key definitions, formulas, dates or facts as appropriate.',
     examine: 'Analyse what ZIMSEC examiners are likely to test from this document. List high-frequency topics, typical question types, command words used, and mark allocations. Provide 3-5 practice questions a student should prepare.',
   }
 
-  const system = `You are EduZim AI — an expert ZIMSEC tutor built for Zimbabwean students.
-
-You are helping a student study from a specific uploaded document.
+  const baseSystem = `You are EduZim AI — an expert ZIMSEC tutor built for Zimbabwean students.
 
 Mode: ${modeInstructions[mode] || modeInstructions.explain}
 
 Guidelines:
-- Always ground your responses in the actual document content
-- Quote or reference specific parts of the document when relevant
+- Ground your responses in the document content where available
 - Apply ZIMSEC marking criteria: show how many marks each point would score
 - Use simple, clear language appropriate for Zimbabwean students
 - Format with markdown: bold key terms, use numbered steps for working, use bullet points for lists
@@ -56,16 +56,59 @@ Guidelines:
 
   const encoder = new TextEncoder()
 
+  // ── Helper: stream events to the client ────────────────────────────────────
+  async function* streamAnthropic(params: Parameters<typeof anthropic.messages.stream>[0]) {
+    const stream = anthropic.messages.stream(params)
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        yield event.delta.text
+      }
+    }
+  }
+
+  // ── Helper: build metadata-only context ───────────────────────────────────
+  function buildMetaMessages() {
+    const metaContext = `
+DOCUMENT: "${doc.title}"
+TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
+ZIMSEC LEVEL: ${doc.zimsec_level ?? 'Not specified'}
+KEY TOPICS: ${doc.topics?.join(', ') || 'Not specified'}
+AI SUMMARY: ${doc.ai_summary || 'No summary available'}
+NOTE: Full document text is not yet available. Answer based on the metadata above and your comprehensive ZIMSEC subject knowledge.
+`.trim()
+
+    return {
+      system: `${baseSystem}
+
+You are helping with a document for which full text extraction is pending. Use the metadata below along with your expert ZIMSEC knowledge to answer as helpfully as possible.
+
+---
+${metaContext}
+---`,
+      messages: [
+        ...conversationHistory,
+        { role: 'user' as const, content: question },
+      ],
+    }
+  }
+
   const readable = new ReadableStream({
     async start(controller) {
-      try {
-        // Decide whether to use extracted text or fall back to reading the PDF directly
-        const hasExtractedText = doc.extracted_text && doc.extracted_text.trim().length > 0
+      const send = (chunk: string) => controller.enqueue(encoder.encode(chunk))
+      const sendText = (text: string) =>
+        send(`data: ${JSON.stringify({ type: 'text', text })}\n\n`)
+      const sendError = (message: string) =>
+        send(`data: ${JSON.stringify({ type: 'error', message })}\n\n`)
+      const sendDone = () => send('data: [DONE]\n\n')
 
-        let messages: Anthropic.Messages.MessageParam[]
+      try {
+        const hasExtractedText =
+          doc.extracted_text &&
+          doc.extracted_text.trim().length > 0 &&
+          !doc.extracted_text.includes('Text extraction failed')
 
         if (hasExtractedText) {
-          // ── Normal path: use pre-extracted text ──
+          // ── Path A: use pre-extracted text (fast, reliable) ──────────────
           const docContext = `
 DOCUMENT: "${doc.title}"
 TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
@@ -76,15 +119,31 @@ FULL CONTENT:
 ${doc.extracted_text}
 `.trim()
 
-          messages = [
-            ...conversationHistory,
-            { role: 'user', content: `[Context: ${docContext}]\n\n${question}` },
-          ]
-        } else {
-          // ── Fallback: download PDF from storage and send to Claude directly ──
-          let pdfBlock: Anthropic.Messages.ContentBlockParam | null = null
+          const system = `${baseSystem}
 
-          if (doc.file_path) {
+You are helping a student study from a specific uploaded document. Here is the document content:
+
+---
+${docContext}
+---`
+
+          for await (const text of streamAnthropic({
+            model: 'claude-haiku-4-5',
+            max_tokens: 4096,
+            system,
+            messages: [
+              ...conversationHistory,
+              { role: 'user', content: question },
+            ],
+          })) {
+            sendText(text)
+          }
+
+        } else if (doc.file_path) {
+          // ── Path B: try PDF document block (only works for ≤100 pages) ──
+          let pdfSucceeded = false
+
+          try {
             const { data: fileData, error: dlError } = await supabase.storage
               .from('platform-documents')
               .download(doc.file_path)
@@ -92,84 +151,95 @@ ${doc.extracted_text}
             if (!dlError && fileData) {
               const arrayBuffer = await fileData.arrayBuffer()
               const base64 = Buffer.from(arrayBuffer).toString('base64')
-              pdfBlock = {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: base64,
-                },
-              } as Anthropic.Messages.ContentBlockParam
+
+              // Rough page-count estimate: ~4KB per page on average
+              // Real check: the Anthropic API enforces the 100-page limit
+              const estimatedPages = Math.ceil(arrayBuffer.byteLength / 4096)
+
+              if (estimatedPages <= ANTHROPIC_PDF_PAGE_LIMIT * 2) {
+                // Attempt to send PDF to Claude — may still fail if >100 pages
+                const docIntroTurn = {
+                  role: 'user' as const,
+                  content: [
+                    {
+                      type: 'document' as const,
+                      source: {
+                        type: 'base64' as const,
+                        media_type: 'application/pdf' as const,
+                        data: base64,
+                      },
+                    } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
+                    {
+                      type: 'text' as const,
+                      text: `This is "${doc.title}" (${doc.document_type}). Use its content to answer the student.`,
+                    },
+                  ],
+                }
+                const docAckTurn = {
+                  role: 'assistant' as const,
+                  content: `I've read "${doc.title}". I'm ready to help — ask away!`,
+                }
+
+                for await (const text of streamAnthropic({
+                  model: 'claude-haiku-4-5',
+                  max_tokens: 4096,
+                  system: baseSystem,
+                  messages: [
+                    docIntroTurn,
+                    docAckTurn,
+                    ...conversationHistory,
+                    { role: 'user', content: question },
+                  ],
+                })) {
+                  sendText(text)
+                  pdfSucceeded = true
+                }
+              }
+            }
+          } catch (pdfErr) {
+            // PDF approach failed (too many pages, download error, etc.) — fall through
+            const errMsg = pdfErr instanceof Error ? pdfErr.message : ''
+            const isTooManyPages =
+              errMsg.includes('100 PDF pages') ||
+              errMsg.includes('too many pages') ||
+              errMsg.includes('maximum')
+            if (!isTooManyPages) {
+              // Unexpected error — log it but still fall through to metadata path
+              console.error('[documents/ask] PDF path error:', errMsg)
             }
           }
 
-          if (pdfBlock) {
-            // Inject PDF as the first turn so Claude can see the document
-            // even if there is existing conversation history
-            const docIntroTurn: Anthropic.Messages.MessageParam = {
-              role: 'user',
-              content: [
-                pdfBlock,
-                {
-                  type: 'text',
-                  text: `This is the document "${doc.title}" (${doc.document_type}). Please use its content to answer the student's questions.`,
-                },
-              ],
+          if (!pdfSucceeded) {
+            // ── Path C: metadata + ZIMSEC knowledge (fallback) ─────────────
+            const { system, messages } = buildMetaMessages()
+            for await (const text of streamAnthropic({
+              model: 'claude-haiku-4-5',
+              max_tokens: 4096,
+              system,
+              messages,
+            })) {
+              sendText(text)
             }
-            const docAckTurn: Anthropic.Messages.MessageParam = {
-              role: 'assistant',
-              content: `I have read the document "${doc.title}". I'm ready to help you study it — please ask your questions.`,
-            }
+          }
 
-            messages = [
-              docIntroTurn,
-              docAckTurn,
-              ...conversationHistory,
-              { role: 'user', content: question },
-            ]
-          } else {
-            // Last resort: no PDF available either — tell Claude what we know from metadata
-            const metaContext = `
-DOCUMENT: "${doc.title}"
-TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
-KEY TOPICS: ${doc.topics?.join(', ') || 'Not specified'}
-SUMMARY: ${doc.ai_summary || 'No summary available'}
-NOTE: The full text of this document could not be loaded. Answer based on the metadata above and your general ZIMSEC knowledge.
-`.trim()
-
-            messages = [
-              ...conversationHistory,
-              { role: 'user', content: `[Document metadata: ${metaContext}]\n\n${question}` },
-            ]
+        } else {
+          // ── Path C: no file_path either — metadata only ──────────────────
+          const { system, messages } = buildMetaMessages()
+          for await (const text of streamAnthropic({
+            model: 'claude-haiku-4-5',
+            max_tokens: 4096,
+            system,
+            messages,
+          })) {
+            sendText(text)
           }
         }
 
-        const stream = anthropic.messages.stream({
-          model: 'claude-haiku-4-5',
-          max_tokens: 4096,
-          system,
-          messages,
-        })
-
-        for await (const event of stream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`
-              )
-            )
-          }
-        }
-
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+        sendDone()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Stream error'
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`)
-        )
+        sendError(msg)
+        sendDone()
       } finally {
         controller.close()
       }
