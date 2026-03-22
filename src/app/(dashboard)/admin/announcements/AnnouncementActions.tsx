@@ -12,7 +12,12 @@ export default function AnnouncementActions({ announcementId }: { announcementId
     if (!confirm('Archive this announcement? It will no longer be visible to users.')) return
     setDeleting(true)
     try {
-      await fetch(`/api/announcements/${announcementId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/announcements/${announcementId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error ?? 'Failed to archive announcement. Please try again.')
+        return
+      }
       router.refresh()
     } finally {
       setDeleting(false)

@@ -69,7 +69,7 @@ export default function SeedContentPage() {
               { level: 'Primary', courses: ['Primary Mathematics (5 lessons)', 'Primary English Language (5 lessons)'] },
               { level: 'O-Level', courses: [
                 'O-Level Mathematics — Algebra (5 lessons)',
-                'O-Level Mathematics — Geometry &amp; Statistics (5 lessons)',
+                'O-Level Mathematics — Geometry & Statistics (5 lessons)',
                 'O-Level Physics (5 lessons)',
                 'O-Level Chemistry (5 lessons)',
                 'O-Level Biology (5 lessons)',
@@ -84,7 +84,7 @@ export default function SeedContentPage() {
                   {courses.map((c) => (
                     <li key={c} className="flex items-center gap-2 text-sm text-gray-700">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                      <span dangerouslySetInnerHTML={{ __html: c }} />
+                      <span>{c}</span>
                     </li>
                   ))}
                 </ul>

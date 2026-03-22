@@ -50,7 +50,7 @@ export default async function AdminDocumentsPage() {
     .from('uploaded_documents')
     .select('id, title, document_type, zimsec_level, moderation_status, visibility, uploader_role, created_at, ai_summary, topics, subject:subjects(name, code, zimsec_level)')
     .order('created_at', { ascending: false })
-    .limit(200) as { data: DocRow[] | null; error: unknown }
+    .limit(2000) as { data: DocRow[] | null; error: unknown }
 
   const allDocs = docs ?? []
 
@@ -230,7 +230,7 @@ export default async function AdminDocumentsPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900">All Documents</h2>
-            <span className="text-xs text-gray-400">{allDocs.length} total (showing up to 200)</span>
+            <span className="text-xs text-gray-400">{allDocs.length} documents</span>
           </div>
 
           {allDocs.length === 0 ? (
