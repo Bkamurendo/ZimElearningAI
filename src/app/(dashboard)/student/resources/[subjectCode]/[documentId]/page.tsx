@@ -5,6 +5,14 @@ import { ChevronRight } from 'lucide-react'
 import StudyPanel from './StudyPanel'
 import BookmarkToggle from '@/app/(dashboard)/student/bookmarks/BookmarkToggle'
 
+// Helper: resolve the real subject code. When the user arrives via a bookmark or search
+// link that used the "unknown" fallback, we substitute the subject code from the document
+// record itself so that breadcrumb links and back-navigation work correctly.
+function resolveSubjectCode(paramCode: string, docSubjectCode: string | null | undefined): string {
+  if (paramCode && paramCode !== 'unknown') return paramCode
+  return docSubjectCode ?? paramCode
+}
+
 type DocumentData = {
   id: string
   title: string
@@ -62,6 +70,9 @@ export default async function StudentDocumentDetailPage({
   if (!isOwner && doc.moderation_status !== 'published') {
     redirect(`/student/resources/${params.subjectCode}`)
   }
+
+  // Resolve the correct subject code (fixes "unknown" from bookmark/search links)
+  const subjectCode = resolveSubjectCode(params.subjectCode, doc.subject?.code)
 
   // Check bookmark status
   const { data: bookmarkData } = await supabase
@@ -141,11 +152,11 @@ export default async function StudentDocumentDetailPage({
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <Link href="/student/dashboard" className="text-gray-400 hover:text-gray-600 transition">Dashboard</Link>
           <ChevronRight size={14} className="text-gray-300" />
-          <Link href={`/student/subjects/${params.subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
-            {doc.subject?.name ?? params.subjectCode}
+          <Link href={`/student/subjects/${subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
+            {doc.subject?.name ?? subjectCode}
           </Link>
           <ChevronRight size={14} className="text-gray-300" />
-          <Link href={`/student/resources/${params.subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
+          <Link href={`/student/resources/${subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
             Resources
           </Link>
           <ChevronRight size={14} className="text-gray-300" />
@@ -259,7 +270,7 @@ export default async function StudentDocumentDetailPage({
             documentId={doc.id}
             documentTitle={doc.title}
             documentType={doc.document_type}
-            subjectCode={params.subjectCode}
+            subjectCode={subjectCode}
             quickPrompts={quickPrompts}
             preloaded={preloaded}
           />

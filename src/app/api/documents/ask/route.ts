@@ -26,23 +26,12 @@ export async function POST(req: NextRequest) {
   // Fetch document (user must own it or it must be published)
   const { data: doc } = await supabase
     .from('uploaded_documents')
-    .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number')
+    .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number, file_path')
     .eq('id', documentId)
     .or(`uploaded_by.eq.${user.id},moderation_status.eq.published`)
     .single()
 
   if (!doc) return new Response('Document not found or access denied', { status: 404 })
-
-  // Build context from document
-  const docContext = `
-DOCUMENT: "${doc.title}"
-TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
-KEY TOPICS: ${doc.topics?.join(', ') || 'Not specified'}
-SUMMARY: ${doc.ai_summary || 'No summary available'}
-
-FULL CONTENT:
-${doc.extracted_text || 'Full text not yet extracted'}
-`.trim()
 
   const modeInstructions: Record<string, string> = {
     explain: 'Explain clearly, using examples from this document. Reference specific sections when possible.',
@@ -53,32 +42,108 @@ ${doc.extracted_text || 'Full text not yet extracted'}
 
   const system = `You are EduZim AI — an expert ZIMSEC tutor built for Zimbabwean students.
 
-You are helping a student study from a specific uploaded document. Here is the document content:
-
----
-${docContext}
----
+You are helping a student study from a specific uploaded document.
 
 Mode: ${modeInstructions[mode] || modeInstructions.explain}
 
 Guidelines:
-- Always ground your responses in the actual document content above
+- Always ground your responses in the actual document content
 - Quote or reference specific parts of the document when relevant
 - Apply ZIMSEC marking criteria: show how many marks each point would score
 - Use simple, clear language appropriate for Zimbabwean students
 - Format with markdown: bold key terms, use numbered steps for working, use bullet points for lists
 - If the document is a past paper, treat each question seriously as ZIMSEC-style exam practice`
 
-  const messages: { role: 'user' | 'assistant'; content: string }[] = [
-    ...conversationHistory,
-    { role: 'user', content: question },
-  ]
-
   const encoder = new TextEncoder()
 
   const readable = new ReadableStream({
     async start(controller) {
       try {
+        // Decide whether to use extracted text or fall back to reading the PDF directly
+        const hasExtractedText = doc.extracted_text && doc.extracted_text.trim().length > 0
+
+        let messages: Anthropic.Messages.MessageParam[]
+
+        if (hasExtractedText) {
+          // ── Normal path: use pre-extracted text ──
+          const docContext = `
+DOCUMENT: "${doc.title}"
+TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
+KEY TOPICS: ${doc.topics?.join(', ') || 'Not specified'}
+SUMMARY: ${doc.ai_summary || 'No summary available'}
+
+FULL CONTENT:
+${doc.extracted_text}
+`.trim()
+
+          messages = [
+            ...conversationHistory,
+            { role: 'user', content: `[Context: ${docContext}]\n\n${question}` },
+          ]
+        } else {
+          // ── Fallback: download PDF from storage and send to Claude directly ──
+          let pdfBlock: Anthropic.Messages.ContentBlockParam | null = null
+
+          if (doc.file_path) {
+            const { data: fileData, error: dlError } = await supabase.storage
+              .from('platform-documents')
+              .download(doc.file_path)
+
+            if (!dlError && fileData) {
+              const arrayBuffer = await fileData.arrayBuffer()
+              const base64 = Buffer.from(arrayBuffer).toString('base64')
+              pdfBlock = {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: base64,
+                },
+              } as Anthropic.Messages.ContentBlockParam
+            }
+          }
+
+          if (pdfBlock) {
+            // Inject PDF as the first turn so Claude can see the document
+            // even if there is existing conversation history
+            const docIntroTurn: Anthropic.Messages.MessageParam = {
+              role: 'user',
+              content: [
+                pdfBlock,
+                {
+                  type: 'text',
+                  text: `This is the document "${doc.title}" (${doc.document_type}). Please use its content to answer the student's questions.`,
+                },
+              ],
+            }
+            const docAckTurn: Anthropic.Messages.MessageParam = {
+              role: 'assistant',
+              content: `I have read the document "${doc.title}". I'm ready to help you study it — please ask your questions.`,
+            }
+
+            messages = [
+              docIntroTurn,
+              docAckTurn,
+              ...conversationHistory,
+              { role: 'user', content: question },
+            ]
+          } else {
+            // Last resort: no PDF available either — tell Claude what we know from metadata
+            const metaContext = `
+DOCUMENT: "${doc.title}"
+TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
+KEY TOPICS: ${doc.topics?.join(', ') || 'Not specified'}
+SUMMARY: ${doc.ai_summary || 'No summary available'}
+NOTE: The full text of this document could not be loaded. Answer based on the metadata above and your general ZIMSEC knowledge.
+`.trim()
+
+            messages = [
+              ...conversationHistory,
+              { role: 'user', content: `[Document metadata: ${metaContext}]\n\n${question}` },
+            ]
+          }
+        }
+
         const stream = anthropic.messages.stream({
           model: 'claude-haiku-4-5',
           max_tokens: 4096,
