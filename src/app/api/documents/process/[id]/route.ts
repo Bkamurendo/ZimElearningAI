@@ -86,6 +86,11 @@ export async function POST(
       ai_summary: string
       topics: string[]
       document_structure: string
+    } = {
+      extracted_text: '',
+      ai_summary: `${doc.title} — This document has been uploaded for student reference.`,
+      topics: [],
+      document_structure: 'Unknown',
     }
 
     if (isImageBased && pageCount <= 100) {
