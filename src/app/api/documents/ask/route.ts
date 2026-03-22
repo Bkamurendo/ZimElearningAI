@@ -27,14 +27,18 @@ export async function POST(req: NextRequest) {
   } = await req.json()
 
   // Fetch document (user must own it or it must be published)
-  const { data: doc } = await supabase
+  const { data: docOrNull } = await supabase
     .from('uploaded_documents')
     .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number, file_path')
     .eq('id', documentId)
     .or(`uploaded_by.eq.${user.id},moderation_status.eq.published`)
     .single()
 
-  if (!doc) return new Response('Document not found or access denied', { status: 404 })
+  if (!docOrNull) return new Response('Document not found or access denied', { status: 404 })
+
+  // Re-bind to a definitely-non-null const so TypeScript's closure analysis
+  // keeps the narrowed type inside nested helper functions below.
+  const doc = docOrNull
 
   const modeInstructions: Record<string, string> = {
     explain: 'Explain clearly, using examples from the document content. Reference specific sections when possible.',
