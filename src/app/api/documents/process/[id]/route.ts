@@ -6,6 +6,10 @@ export const maxDuration = 120
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// pdf-parse extracts text natively — no Claude page limits apply
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse')
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -28,7 +32,6 @@ export async function POST(
   }
 
   // Security: only the document owner, admins, or teachers may trigger AI processing.
-  // Prevents students from burning API credits on arbitrary documents & resetting moderation decisions.
   const { data: callerProfile } = await supabase
     .from('profiles')
     .select('role')
@@ -47,7 +50,7 @@ export async function POST(
     .eq('id', docId)
 
   try {
-    // Download PDF from Supabase Storage
+    // ── Step 1: Download PDF from Supabase Storage ────────────────────────────
     const { data: fileData, error: downloadError } = await supabase
       .storage
       .from('platform-documents')
@@ -57,64 +60,144 @@ export async function POST(
       throw new Error(`Failed to download file: ${downloadError?.message}`)
     }
 
-    // Convert to base64 for Claude
     const arrayBuffer = await fileData.arrayBuffer()
-    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const buffer = Buffer.from(arrayBuffer)
 
-    // ── Step 1: Extract content + generate summary + identify topics ──
-    const extractionResponse = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 4096,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: base64,
-              },
-            } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
-            {
-              type: 'text',
-              text: `You are an educational content analyst for ZimLearn, a ZIMSEC e-learning platform.
+    // ── Step 2: Extract text with pdf-parse (no page limit) ───────────────────
+    let rawText = ''
+    let pageCount = 0
+    let isImageBased = false
 
-Analyse this uploaded document and respond with a JSON object containing:
-{
-  "extracted_text": "Full readable text content of the document (preserve structure, questions, answers)",
-  "ai_summary": "A concise summary of the document in 200-300 words, written for students. Mention: subject, level, year/type if applicable, key topics covered, and how students can benefit from this resource.",
-  "topics": ["topic1", "topic2", "topic3", ...],
-  "document_structure": "brief description of document structure (e.g. 'Past paper with 4 sections, 80 marks total')"
-}
+    try {
+      const parsed = await pdfParse(buffer)
+      rawText = parsed.text?.trim() ?? ''
+      pageCount = parsed.numpages ?? 0
+      // If parsed text is very short relative to page count, it's likely image-based
+      isImageBased = rawText.length < pageCount * 20
+    } catch (parseErr) {
+      console.warn('[process] pdf-parse failed:', parseErr)
+      isImageBased = true
+    }
 
-Respond ONLY with valid JSON, no markdown fences.`,
-            },
-          ],
-        },
-      ],
-    })
-
+    // ── Step 3: For image-based PDFs, try Anthropic document block (≤100 pages) ─
+    let extractedViaAI = false
     let extractionData: {
       extracted_text: string
       ai_summary: string
       topics: string[]
       document_structure: string
     }
-    try {
-      const raw = extractionResponse.content[0].type === 'text' ? extractionResponse.content[0].text : ''
-      extractionData = JSON.parse(raw.replace(/```json\n?|\n?```/g, '').trim())
-    } catch {
-      extractionData = {
-        extracted_text: 'Text extraction failed. PDF may be scanned or image-based.',
-        ai_summary: `Document: ${doc.title}. This document has been uploaded for student reference.`,
-        topics: [],
-        document_structure: 'Unknown',
+
+    if (isImageBased && pageCount <= 100) {
+      // Image/scanned PDF — use Claude's vision via document block API
+      try {
+        const base64 = buffer.toString('base64')
+        const extractionResponse = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 4096,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: base64,
+                  },
+                } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
+                {
+                  type: 'text',
+                  text: `You are an educational content analyst for ZimLearn, a ZIMSEC e-learning platform.
+
+Analyse this uploaded document and respond with a JSON object:
+{
+  "extracted_text": "Full readable text content (preserve structure, questions, answers)",
+  "ai_summary": "Concise summary in 200-300 words for students: subject, level, year/type if applicable, key topics, how students benefit.",
+  "topics": ["topic1", "topic2", "topic3"],
+  "document_structure": "Brief description (e.g. 'Past paper with 4 sections, 80 marks total')"
+}
+
+Respond ONLY with valid JSON, no markdown fences.`,
+                },
+              ],
+            },
+          ],
+        })
+
+        const raw = extractionResponse.content[0].type === 'text' ? extractionResponse.content[0].text : ''
+        extractionData = JSON.parse(raw.replace(/```json\n?|\n?```/g, '').trim())
+        extractedViaAI = true
+      } catch (aiErr) {
+        console.warn('[process] Anthropic document block failed:', aiErr)
+        // Fall through to text-based approach below
       }
     }
 
-    // ── Step 2: AI Moderation ──
+    if (!extractedViaAI) {
+      if (rawText.length > 100) {
+        // ── Step 3a: Text-based PDF — ask Claude to analyse the extracted text ──
+        // Truncate if extremely long (Claude handles up to 200K tokens, ~800K chars)
+        const truncated = rawText.length > 600_000 ? rawText.slice(0, 600_000) + '\n\n[Content truncated — document is very large]' : rawText
+
+        const analysisResponse = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 2048,
+          messages: [
+            {
+              role: 'user',
+              content: `You are an educational content analyst for ZimLearn, a ZIMSEC e-learning platform for Zimbabwean students.
+
+The following is the full text content extracted from a PDF document titled "${doc.title}" (type: ${doc.document_type}).
+
+TEXT CONTENT:
+${truncated}
+
+---
+
+Respond with a JSON object:
+{
+  "ai_summary": "Concise summary in 200-300 words for students: subject, level, year/type if applicable, key topics, how students benefit.",
+  "topics": ["topic1", "topic2", "topic3", "topic4", "topic5"],
+  "document_structure": "Brief description of the document structure"
+}
+
+Respond ONLY with valid JSON, no markdown fences.`,
+            },
+          ],
+        })
+
+        let analysisData: { ai_summary: string; topics: string[]; document_structure: string }
+        try {
+          const raw = analysisResponse.content[0].type === 'text' ? analysisResponse.content[0].text : ''
+          analysisData = JSON.parse(raw.replace(/```json\n?|\n?```/g, '').trim())
+        } catch {
+          analysisData = {
+            ai_summary: `Document: ${doc.title}. This is a ${doc.document_type} uploaded for student reference. It contains ${pageCount} pages of study material.`,
+            topics: [],
+            document_structure: `${pageCount}-page document`,
+          }
+        }
+
+        extractionData = {
+          extracted_text: rawText,
+          ai_summary: analysisData.ai_summary,
+          topics: analysisData.topics,
+          document_structure: analysisData.document_structure,
+        }
+      } else {
+        // ── Step 3b: Could not extract any text (scanned + >100 pages) ─────────
+        extractionData = {
+          extracted_text: '',
+          ai_summary: `${doc.title} — This is a ${doc.document_type} (${pageCount} pages). The document appears to be image-based or scanned. Text extraction requires manual processing.`,
+          topics: [],
+          document_structure: `Scanned document, ${pageCount} pages`,
+        }
+      }
+    }
+
+    // ── Step 4: AI Moderation ─────────────────────────────────────────────────
     const moderationResponse = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 512,
@@ -123,8 +206,7 @@ Respond ONLY with valid JSON, no markdown fences.`,
           role: 'user',
           content: `You are a content moderator for ZimLearn, a ZIMSEC educational platform for Zimbabwean students aged 10-20.
 
-Review this document summary and extracted text:
-
+Review this document:
 TITLE: ${doc.title}
 TYPE: ${doc.document_type}
 SUMMARY: ${extractionData.ai_summary}
@@ -139,7 +221,7 @@ Respond with JSON only:
 {
   "decision": "approved" | "flagged" | "rejected",
   "confidence": 0-100,
-  "notes": "Brief explanation of decision"
+  "notes": "Brief explanation"
 }`,
         },
       ],
@@ -153,29 +235,26 @@ Respond with JSON only:
       moderationData = { decision: 'flagged', confidence: 50, notes: 'Moderation parse error — needs human review' }
     }
 
-    // Determine moderation_status and visibility
+    // ── Step 5: Determine status and save ─────────────────────────────────────
     const isAdmin = doc.uploader_role === 'admin'
     const isApproved = moderationData.decision === 'approved'
     const isRejected = moderationData.decision === 'rejected'
 
     const moderationStatus = isRejected ? 'rejected' : 'ai_reviewed'
-    // Auto-publish if admin uploaded AND AI approved
     const finalStatus = (isAdmin && isApproved) ? 'published' : moderationStatus
-    // Admin → public, teacher → subject-level, student → private (until human review)
     const visibility =
       isApproved && isAdmin ? 'public'
         : isApproved && doc.uploader_role === 'teacher' ? 'subject'
           : 'private'
 
-    // Save all results
     await supabase
       .from('uploaded_documents')
       .update({
-        extracted_text: extractionData.extracted_text,
+        extracted_text: extractionData.extracted_text || null,
         ai_summary: extractionData.ai_summary,
         topics: extractionData.topics,
         moderation_status: finalStatus,
-        moderation_notes: `AI Moderation (${moderationData.confidence}% confidence): ${moderationData.notes}. Structure: ${extractionData.document_structure}`,
+        moderation_notes: `AI Moderation (${moderationData.confidence}% confidence): ${moderationData.notes}. Structure: ${extractionData.document_structure}. Pages: ${pageCount}. Method: ${extractedViaAI ? 'Claude vision' : rawText.length > 100 ? 'pdf-parse + Claude NLP' : 'metadata only'}.`,
         visibility,
         processed_at: new Date().toISOString(),
       })
@@ -187,6 +266,8 @@ Respond with JSON only:
       visibility,
       topics: extractionData.topics,
       summary: extractionData.ai_summary,
+      pages: pageCount,
+      extraction_method: extractedViaAI ? 'claude-vision' : rawText.length > 100 ? 'pdf-parse' : 'metadata-only',
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Processing failed'

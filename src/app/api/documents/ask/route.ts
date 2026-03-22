@@ -6,7 +6,11 @@ export const maxDuration = 60
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// Max pages the Anthropic API accepts for PDF document blocks
+// pdf-parse extracts text natively from PDFs — works on any page count
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse')
+
+// Max pages the Anthropic document-block API accepts
 const ANTHROPIC_PDF_PAGE_LIMIT = 100
 
 export async function POST(req: NextRequest) {
@@ -144,8 +148,9 @@ ${docContext}
           }
 
         } else if (doc.file_path) {
-          // ── Path B: try PDF document block (only works for ≤100 pages) ──
-          let pdfSucceeded = false
+          // ── Path B: download PDF and extract text with pdf-parse ──────────
+          // This works for ANY page count — no Anthropic page-limit applies.
+          let pathBSucceeded = false
 
           try {
             const { data: fileData, error: dlError } = await supabase.storage
@@ -154,67 +159,92 @@ ${docContext}
 
             if (!dlError && fileData) {
               const arrayBuffer = await fileData.arrayBuffer()
-              const base64 = Buffer.from(arrayBuffer).toString('base64')
+              const buffer = Buffer.from(arrayBuffer)
 
-              // Rough page-count estimate: ~4KB per page on average
-              // Real check: the Anthropic API enforces the 100-page limit
-              const estimatedPages = Math.ceil(arrayBuffer.byteLength / 4096)
+              // Try pdf-parse first (text-based PDFs, any page count)
+              let rawText = ''
+              let pageCount = 0
+              try {
+                const parsed = await pdfParse(buffer)
+                rawText = parsed.text?.trim() ?? ''
+                pageCount = parsed.numpages ?? 0
+              } catch { /* pdf-parse failed — fall through */ }
 
-              if (estimatedPages <= ANTHROPIC_PDF_PAGE_LIMIT * 2) {
-                // Attempt to send PDF to Claude — may still fail if >100 pages
-                const docIntroTurn = {
-                  role: 'user' as const,
-                  content: [
-                    {
-                      type: 'document' as const,
-                      source: {
-                        type: 'base64' as const,
-                        media_type: 'application/pdf' as const,
-                        data: base64,
-                      },
-                    } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
-                    {
-                      type: 'text' as const,
-                      text: `This is "${doc.title}" (${doc.document_type}). Use its content to answer the student.`,
-                    },
-                  ],
-                }
-                const docAckTurn = {
-                  role: 'assistant' as const,
-                  content: `I've read "${doc.title}". I'm ready to help — ask away!`,
-                }
+              const isImageBased = rawText.length < Math.max(pageCount * 20, 50)
+
+              if (!isImageBased && rawText.length > 50) {
+                // Text extracted successfully — send it to Claude
+                const truncated = rawText.length > 600_000
+                  ? rawText.slice(0, 600_000) + '\n\n[Content truncated — document is very large]'
+                  : rawText
+
+                const docContext = `
+DOCUMENT: "${doc.title}"
+TYPE: ${doc.document_type}${doc.year ? ` · Year: ${doc.year}` : ''}${doc.paper_number ? ` · Paper ${doc.paper_number}` : ''}
+KEY TOPICS: ${doc.topics?.join(', ') || 'Not specified'}
+PAGES: ${pageCount}
+
+FULL CONTENT:
+${truncated}
+`.trim()
+
+                const system = `${baseSystem}
+
+You are helping a student study from a specific uploaded document. Here is the full document content:
+
+---
+${docContext}
+---`
 
                 for await (const text of streamAnthropic({
                   model: 'claude-haiku-4-5',
                   max_tokens: 4096,
-                  system: baseSystem,
+                  system,
                   messages: [
-                    docIntroTurn,
-                    docAckTurn,
                     ...conversationHistory,
                     { role: 'user', content: question },
                   ],
                 })) {
                   sendText(text)
-                  pdfSucceeded = true
+                  pathBSucceeded = true
                 }
+
+              } else if (pageCount <= ANTHROPIC_PDF_PAGE_LIMIT) {
+                // Image/scanned PDF small enough for Claude's document block API
+                try {
+                  const base64 = buffer.toString('base64')
+                  const docIntroTurn = {
+                    role: 'user' as const,
+                    content: [
+                      {
+                        type: 'document' as const,
+                        source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: base64 },
+                      } as { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } },
+                      { type: 'text' as const, text: `This is "${doc.title}" (${doc.document_type}). Use its content to answer the student.` },
+                    ],
+                  }
+                  const docAckTurn = {
+                    role: 'assistant' as const,
+                    content: `I've read the document "${doc.title}". I'm ready to help — ask away!`,
+                  }
+                  for await (const text of streamAnthropic({
+                    model: 'claude-haiku-4-5',
+                    max_tokens: 4096,
+                    system: baseSystem,
+                    messages: [docIntroTurn, docAckTurn, ...conversationHistory, { role: 'user', content: question }],
+                  })) {
+                    sendText(text)
+                    pathBSucceeded = true
+                  }
+                } catch { /* Claude document block failed — fall through */ }
               }
             }
-          } catch (pdfErr) {
-            // PDF approach failed (too many pages, download error, etc.) — fall through
-            const errMsg = pdfErr instanceof Error ? pdfErr.message : ''
-            const isTooManyPages =
-              errMsg.includes('100 PDF pages') ||
-              errMsg.includes('too many pages') ||
-              errMsg.includes('maximum')
-            if (!isTooManyPages) {
-              // Unexpected error — log it but still fall through to metadata path
-              console.error('[documents/ask] PDF path error:', errMsg)
-            }
+          } catch (err) {
+            console.error('[documents/ask] Path B error:', err instanceof Error ? err.message : err)
           }
 
-          if (!pdfSucceeded) {
-            // ── Path C: metadata + ZIMSEC knowledge (fallback) ─────────────
+          if (!pathBSucceeded) {
+            // ── Path C: metadata + ZIMSEC knowledge (always works) ───────────
             const { system, messages } = buildMetaMessages()
             for await (const text of streamAnthropic({
               model: 'claude-haiku-4-5',
@@ -227,7 +257,7 @@ ${docContext}
           }
 
         } else {
-          // ── Path C: no file_path either — metadata only ──────────────────
+          // ── Path C: no file_path — metadata + ZIMSEC knowledge ───────────
           const { system, messages } = buildMetaMessages()
           for await (const text of streamAnthropic({
             model: 'claude-haiku-4-5',

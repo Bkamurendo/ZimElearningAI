@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ChevronRight } from 'lucide-react'
 import StudyPanel from './StudyPanel'
 import BookmarkToggle from '@/app/(dashboard)/student/bookmarks/BookmarkToggle'
+import ReprocessButton from './ReprocessButton'
 
 // Helper: resolve the real subject code. When the user arrives via a bookmark or search
 // link that used the "unknown" fallback, we substitute the subject code from the document
@@ -22,6 +23,7 @@ type DocumentData = {
   year: number | null
   paper_number: number | null
   ai_summary: string | null
+  extracted_text: string | null
   topics: string[] | null
   moderation_notes: string | null
   moderation_status: string
@@ -219,6 +221,11 @@ export default async function StudentDocumentDetailPage({
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Re-process button — shown when text hasn't been extracted yet */}
+              {(!doc.extracted_text || doc.extracted_text.trim().length === 0) && isOwner && (
+                <ReprocessButton documentId={doc.id} />
               )}
 
               {/* Study tools hint */}
