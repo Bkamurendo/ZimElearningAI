@@ -53,15 +53,9 @@ async function sendEmailOtp(to: string, code: string): Promise<void> {
 }
 
 async function sendSmsOtp(to: string, code: string): Promise<void> {
-  const username = process.env.AFRICASTALKING_USERNAME
-  const apiKey   = process.env.AFRICASTALKING_API_KEY
-  if (!username || !apiKey) throw new Error('Africa\'s Talking credentials not configured')
-
-  // Sandbox vs live endpoint
-  const isSandbox = username === 'sandbox'
-  const endpoint  = isSandbox
-    ? 'https://api.sandbox.africastalking.com/version1/messaging'
-    : 'https://api.africastalking.com/version1/messaging'
+  const apiKey  = process.env.INFOBIP_API_KEY
+  const baseUrl = process.env.INFOBIP_BASE_URL
+  if (!apiKey || !baseUrl) throw new Error('Infobip credentials not configured')
 
   // Ensure E.164 format for Zimbabwe (+263)
   let phone = to.replace(/\s/g, '')
@@ -71,24 +65,23 @@ async function sendSmsOtp(to: string, code: string): Promise<void> {
     phone = '+' + phone
   }
 
-  const res = await fetch(endpoint, {
+  const res = await fetch(`https://${baseUrl}/sms/3/messages`, {
     method: 'POST',
     headers: {
-      apiKey,
-      Accept: 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `App ${apiKey}`,
+      'Content-Type': 'application/json',
     },
-    body: new URLSearchParams({
-      username,
-      to: phone,
-      message: `Your ZimLearn verification code is: ${code}. Valid for 10 minutes.`,
-      ...(isSandbox ? {} : { from: 'ZimLearn' }),
-    }).toString(),
+    body: JSON.stringify({
+      messages: [{
+        sender: 'ZimLearn',
+        destinations: [{ to: phone }],
+        content: { text: `Your ZimLearn verification code is: ${code}. Valid for 10 minutes.` },
+      }],
+    }),
   })
   if (!res.ok) {
     const body = await res.text()
-    // Log the raw error for debugging, but return a user-friendly message
-    console.error('[mfa/send] SMS delivery failed:', body)
+    console.error('[mfa/send] Infobip SMS delivery failed:', body)
     throw new Error('SMS delivery failed. Please try email verification instead, or contact support.')
   }
 }

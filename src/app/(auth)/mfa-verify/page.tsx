@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  GraduationCap, ShieldCheck, Loader2, XCircle, Mail, RefreshCw,
+  GraduationCap, ShieldCheck, Loader2, XCircle, Mail, Phone, RefreshCw,
 } from 'lucide-react'
 
 /* ── TOTP sub-component ────────────────────────────────────────────────────── */
@@ -79,8 +79,8 @@ function TotpVerify() {
   )
 }
 
-/* ── Email OTP sub-component ─────────────────────────────────────────────── */
-function EmailOtpVerify() {
+/* ── Email / Phone OTP sub-component ─────────────────────────────────────── */
+function OtpVerify({ method }: { method: 'email' | 'phone' }) {
   const router = useRouter()
   const [code, setCode] = useState('')
   const [sending, setSending] = useState(false)
@@ -90,13 +90,17 @@ function EmailOtpVerify() {
   const [countdown, setCountdown] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const isEmail = method === 'email'
+  const Icon = isEmail ? Mail : Phone
+  const label = isEmail ? 'email address' : 'phone number'
+
   async function sendCode() {
     setSending(true); setError('')
     try {
       const res = await fetch('/api/auth/mfa/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method: 'email' }),
+        body: JSON.stringify({ method }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to send code'); return }
@@ -125,7 +129,7 @@ function EmailOtpVerify() {
       const res = await fetch('/api/auth/mfa/verify-custom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method: 'email', code }),
+        body: JSON.stringify({ method, code }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Incorrect code'); setCode(''); inputRef.current?.focus(); return }
@@ -135,16 +139,22 @@ function EmailOtpVerify() {
     finally { setVerifying(false) }
   }
 
+  const accentClass = isEmail
+    ? { ring: 'focus:ring-indigo-500', btn: 'bg-indigo-600 hover:bg-indigo-700', iconBg: 'bg-indigo-50', iconColor: 'text-indigo-600' }
+    : { ring: 'focus:ring-emerald-500', btn: 'bg-emerald-600 hover:bg-emerald-700', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' }
+
   return (
     <>
-      <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
-        <Mail size={32} className="text-indigo-600" />
+      <div className={`w-16 h-16 ${accentClass.iconBg} rounded-2xl flex items-center justify-center mb-4`}>
+        <Icon size={32} className={accentClass.iconColor} />
       </div>
-      <h1 className="text-xl font-bold text-gray-900">Email Verification</h1>
+      <h1 className="text-xl font-bold text-gray-900">
+        {isEmail ? 'Email' : 'SMS'} Verification
+      </h1>
       <p className="text-gray-400 text-sm mt-2">
         {sent
-          ? 'We sent a 6-digit code to your email address. It expires in 10 minutes.'
-          : 'Sending a verification code to your email address…'}
+          ? `We sent a 6-digit code to your ${label}. It expires in 10 minutes.`
+          : `Sending a verification code to your ${label}…`}
       </p>
 
       <form onSubmit={handleVerify} className="space-y-4 mt-8 w-full">
@@ -153,7 +163,7 @@ function EmailOtpVerify() {
           type="text" inputMode="numeric" pattern="\d{6}" maxLength={6}
           value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="000000" disabled={!sent}
-          className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-2xl font-mono tracking-[0.4em] text-center placeholder:text-gray-300 placeholder:tracking-normal disabled:opacity-40"
+          className={`w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 ${accentClass.ring} focus:border-transparent outline-none transition text-2xl font-mono tracking-[0.4em] text-center placeholder:text-gray-300 placeholder:tracking-normal disabled:opacity-40`}
           required
         />
 
@@ -165,7 +175,7 @@ function EmailOtpVerify() {
 
         <button
           type="submit" disabled={verifying || code.length !== 6 || !sent}
-          className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition flex items-center justify-center gap-2"
+          className={`w-full py-3.5 ${accentClass.btn} disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition flex items-center justify-center gap-2`}
         >
           {verifying ? <><Loader2 size={18} className="animate-spin" /> Verifying…</> : <><ShieldCheck size={18} /> Verify & Continue</>}
         </button>
@@ -189,7 +199,7 @@ function EmailOtpVerify() {
 function MfaVerifyInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const method = searchParams.get('method')
+  const method = searchParams.get('method') as 'email' | 'phone' | null
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -209,7 +219,8 @@ function MfaVerifyInner() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          {method === 'email' && <EmailOtpVerify />}
+          {method === 'email' && <OtpVerify method="email" />}
+          {method === 'phone' && <OtpVerify method="phone" />}
           {!method && <TotpVerify />}
         </div>
 

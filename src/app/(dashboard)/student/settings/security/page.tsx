@@ -6,11 +6,11 @@ import Link from 'next/link'
 import {
   ShieldCheck, ShieldOff, ArrowLeft, Loader2, XCircle,
   CheckCircle2, KeyRound, AlertTriangle, Copy, Check,
-  Mail, QrCode,
+  Mail, Phone, QrCode,
 } from 'lucide-react'
 
-type MfaMethod = 'none' | 'totp' | 'email'
-type SetupStep = 'choose' | 'totp-qr' | 'email-confirm'
+type MfaMethod = 'none' | 'totp' | 'email' | 'phone'
+type SetupStep = 'choose' | 'totp-qr' | 'email-confirm' | 'phone-enter' | 'phone-verify'
 
 export default function SecuritySettingsPage() {
   const supabase = createClient()
@@ -31,6 +31,11 @@ export default function SecuritySettingsPage() {
   // Email confirm
   const [userEmail, setUserEmail] = useState('')
 
+  // Phone enter + verify
+  const [phone, setPhone]           = useState('')
+  const [phoneCode, setPhoneCode]   = useState('')
+  const phoneCodeRef = useRef<HTMLInputElement>(null)
+
   // Shared UI
   const [busy, setBusy]       = useState(false)
   const [error, setError]     = useState('')
@@ -44,21 +49,11 @@ export default function SecuritySettingsPage() {
       setUserEmail(user.email ?? '')
       const { data: profile } = await supabase
         .from('profiles')
-        .select('mfa_method')
+        .select('mfa_method, mfa_phone')
         .eq('id', user.id)
         .single()
-
-      const rawMethod = profile?.mfa_method ?? 'none'
-
-      // Phone MFA is no longer supported — auto-reset affected accounts
-      if (rawMethod === 'phone') {
-        await supabase.from('profiles').update({ mfa_method: 'none' }).eq('id', user.id)
-        setCurrentMethod('none')
-        setSuccess('SMS verification is no longer available. Please choose a new 2FA method below.')
-      } else {
-        setCurrentMethod(rawMethod as MfaMethod)
-      }
-
+      setCurrentMethod((profile?.mfa_method as MfaMethod) ?? 'none')
+      if (profile?.mfa_phone) setPhone(profile.mfa_phone)
       setPageLoading(false)
     }
     load()
@@ -68,12 +63,15 @@ export default function SecuritySettingsPage() {
   function resetState() {
     setStep('choose'); setError(''); setSuccess('')
     setTotpCode(''); setQrUrl(''); setSecret(''); setEnrollId('')
+    setPhoneCode('')
   }
 
-  async function saveMethod(method: MfaMethod) {
+  async function saveMethod(method: MfaMethod, phoneNum?: string) {
+    const updates: Record<string, unknown> = { mfa_method: method }
+    if (phoneNum !== undefined) updates.mfa_phone = phoneNum
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    await supabase.from('profiles').update({ mfa_method: method }).eq('id', user.id)
+    await supabase.from('profiles').update(updates).eq('id', user.id)
     setCurrentMethod(method)
   }
 
@@ -117,6 +115,45 @@ export default function SecuritySettingsPage() {
       await unenrollTotp()
       await saveMethod('email')
       setSuccess('Email verification is now active!')
+      resetState()
+    } finally { setBusy(false) }
+  }
+
+  /* ── Phone/SMS OTP setup ── */
+  async function sendPhoneOtp() {
+    if (!phone.trim()) { setError('Enter a phone number first'); return }
+    setBusy(true); setError('')
+    // Temporarily set method to phone so the send route allows it
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('profiles').update({ mfa_method: 'phone', mfa_phone: phone.trim() }).eq('id', user.id)
+    }
+    try {
+      const res = await fetch('/api/auth/mfa/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: 'phone' }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setError(d.error ?? 'Failed to send code'); return }
+      setStep('phone-verify')
+      setTimeout(() => phoneCodeRef.current?.focus(), 100)
+    } finally { setBusy(false) }
+  }
+
+  async function confirmPhone(e: React.FormEvent) {
+    e.preventDefault()
+    if (phoneCode.length !== 6) return
+    setBusy(true); setError('')
+    try {
+      const res = await fetch('/api/auth/mfa/verify-custom', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: 'phone', code: phoneCode }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setError(d.error ?? 'Incorrect code'); setPhoneCode(''); phoneCodeRef.current?.focus(); return }
+      await unenrollTotp()
+      await saveMethod('phone', phone.trim())
+      setSuccess('SMS verification is now active!')
       resetState()
     } finally { setBusy(false) }
   }
@@ -186,7 +223,7 @@ export default function SecuritySettingsPage() {
                 <><div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center"><ShieldCheck size={20} className="text-green-600" /></div>
                 <div><p className="font-semibold text-gray-900 text-sm">2FA is <span className="text-green-600">active</span></p>
                   <p className="text-xs text-gray-400">
-                    Method: {currentMethod === 'totp' ? 'Authenticator App' : 'Email OTP'}
+                    Method: {currentMethod === 'totp' ? 'Authenticator App' : currentMethod === 'email' ? 'Email OTP' : 'Phone/SMS OTP'}
                   </p></div></>
               )}
             </div>
@@ -231,6 +268,27 @@ export default function SecuritySettingsPage() {
                     className="text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-40 transition"
                   >
                     {currentMethod === 'email' ? 'Active — switch method ↓' : 'Enable →'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Phone/SMS OTP */}
+            <div className={`bg-white rounded-2xl shadow-sm border p-5 ${currentMethod === 'phone' ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-100'}`}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"><Phone size={20} className="text-emerald-600" /></div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="font-semibold text-gray-900 text-sm">Phone / SMS OTP</p>
+                    {currentMethod === 'phone' && <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
+                  </div>
+                  <p className="text-xs text-gray-500 mb-1">A 6-digit code is sent via SMS to your mobile number.</p>
+                  <p className="text-xs text-gray-400 mb-3">Works with any Zimbabwe number (EcoNet, NetOne, Telecel).</p>
+                  <button
+                    onClick={() => setStep('phone-enter')} disabled={busy}
+                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 disabled:opacity-40 transition"
+                  >
+                    {currentMethod === 'phone' ? 'Change number →' : 'Enable →'}
                   </button>
                 </div>
               </div>
@@ -322,6 +380,60 @@ export default function SecuritySettingsPage() {
                   {busy ? <><Loader2 size={15} className="animate-spin" /> Enabling…</> : <><Mail size={15} /> Enable Email OTP</>}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP: Phone enter ── */}
+        {step === 'phone-enter' && (
+          <div className="space-y-5">
+            <button onClick={resetState} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"><ArrowLeft size={14} /> Back</button>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4"><Phone size={24} className="text-emerald-600" /></div>
+              <h3 className="font-bold text-gray-900 mb-2">Enable SMS OTP</h3>
+              <p className="text-sm text-gray-500 mb-4">Enter your Zimbabwe mobile number. We&apos;ll send a code to verify it.</p>
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Mobile Number</label>
+                <input
+                  type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                  placeholder="07X XXX XXXX"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm"
+                />
+              </div>
+              {error && <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm mb-4"><XCircle size={16} className="shrink-0" />{error}</div>}
+              <div className="flex gap-3">
+                <button onClick={resetState} className="flex-1 py-3 border border-gray-200 text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-50 transition">Cancel</button>
+                <button onClick={sendPhoneOtp} disabled={busy || !phone.trim()} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition flex items-center justify-center gap-2">
+                  {busy ? <><Loader2 size={15} className="animate-spin" /> Sending…</> : <><Phone size={15} /> Send Code</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP: Phone verify ── */}
+        {step === 'phone-verify' && (
+          <div className="space-y-5">
+            <button onClick={() => setStep('phone-enter')} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"><ArrowLeft size={14} /> Back</button>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4"><Phone size={24} className="text-emerald-600" /></div>
+              <h3 className="font-bold text-gray-900 mb-1">Verify your number</h3>
+              <p className="text-sm text-gray-500 mb-5">Enter the 6-digit code sent to <strong>{phone}</strong></p>
+              <form onSubmit={confirmPhone} className="space-y-4">
+                <input
+                  ref={phoneCodeRef} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6}
+                  value={phoneCode} onChange={e => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-2xl font-mono tracking-[0.4em] text-center placeholder:text-gray-300 placeholder:tracking-normal"
+                />
+                {error && <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm"><XCircle size={16} className="shrink-0" />{error}</div>}
+                <button type="submit" disabled={busy || phoneCode.length !== 6} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                  {busy ? <><Loader2 size={18} className="animate-spin" /> Activating…</> : <><ShieldCheck size={18} /> Activate SMS OTP</>}
+                </button>
+                <button type="button" onClick={sendPhoneOtp} disabled={busy} className="w-full text-sm text-gray-400 hover:text-gray-600 disabled:opacity-40 transition">
+                  Resend code
+                </button>
+              </form>
             </div>
           </div>
         )}
