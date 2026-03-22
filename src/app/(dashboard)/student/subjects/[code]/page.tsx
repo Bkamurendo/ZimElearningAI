@@ -29,7 +29,49 @@ export default async function StudentSubjectPage({
     .eq('user_id', user.id)
     .single() as { data: { id: string } | null; error: unknown }
 
-  // Courses with lesson counts + progress
+  // ── Batch queries for courses + lesson progress ───────────────────────────
+  // Fetch courses
+  const { data: coursesRaw } = await supabase
+    .from('courses')
+    .select('id, title, description, published')
+    .eq('subject_id', subject.id)
+    .eq('published', true) as {
+    data: { id: string; title: string; description: string | null; published: boolean }[] | null
+    error: unknown
+  }
+
+  const courses = coursesRaw ?? []
+  const courseIds = courses.map(c => c.id)
+
+  // Single query: all lessons for all courses in this subject
+  const { data: allLessons } = courseIds.length > 0
+    ? await supabase
+        .from('lessons')
+        .select('id, course_id')
+        .in('course_id', courseIds) as { data: { id: string; course_id: string }[] | null; error: unknown }
+    : { data: [] as { id: string; course_id: string }[] }
+
+  // Group lesson IDs by course
+  const lessonsByCourse: Record<string, string[]> = {}
+  for (const l of allLessons ?? []) {
+    if (!lessonsByCourse[l.course_id]) lessonsByCourse[l.course_id] = []
+    lessonsByCourse[l.course_id].push(l.id)
+  }
+
+  const allLessonIds = (allLessons ?? []).map(l => l.id)
+
+  // Single query: all completed lessons for this student across these courses
+  const { data: progressRaw } = allLessonIds.length > 0
+    ? await supabase
+        .from('lesson_progress')
+        .select('lesson_id')
+        .eq('student_id', studentProfile?.id ?? '')
+        .in('lesson_id', allLessonIds) as { data: { lesson_id: string }[] | null; error: unknown }
+    : { data: [] as { lesson_id: string }[] }
+
+  const completedIds = new Set((progressRaw ?? []).map(p => p.lesson_id))
+
+  // Build course rows — zero extra DB calls
   type CourseRow = {
     id: string
     title: string
@@ -38,34 +80,45 @@ export default async function StudentSubjectPage({
     lesson_count: number
     completed_count: number
   }
-
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('id, title, description, published')
-    .eq('subject_id', subject.id)
-    .eq('published', true) as { data: { id: string; title: string; description: string | null; published: boolean }[] | null; error: unknown }
-
-  const courseRows: CourseRow[] = []
-  for (const c of courses ?? []) {
-    const { count: lessonCount } = await supabase
-      .from('lessons')
-      .select('*', { count: 'exact', head: true })
-      .eq('course_id', c.id)
-
-    const { count: completedCount } = await supabase
-      .from('lesson_progress')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', studentProfile?.id ?? '')
-      .in('lesson_id', await getLessonIds(supabase, c.id))
-
-    courseRows.push({
+  const courseRows: CourseRow[] = courses.map(c => {
+    const lessonIds = lessonsByCourse[c.id] ?? []
+    return {
       ...c,
-      lesson_count: lessonCount ?? 0,
-      completed_count: completedCount ?? 0,
-    })
+      lesson_count: lessonIds.length,
+      completed_count: lessonIds.filter(id => completedIds.has(id)).length,
+    }
+  })
+
+  // ── Batch queries for assignments + submissions ────────────────────────────
+  const { data: assignmentsRaw } = await supabase
+    .from('assignments')
+    .select('id, title, description, due_date, max_score')
+    .eq('subject_id', subject.id)
+    .order('created_at', { ascending: false }) as {
+    data: { id: string; title: string; description: string; due_date: string | null; max_score: number }[] | null
+    error: unknown
   }
 
-  // Assignments
+  const assignments = assignmentsRaw ?? []
+  const assignmentIds = assignments.map(a => a.id)
+
+  // Single query: submissions for all assignments at once
+  const { data: submissionsRaw } = assignmentIds.length > 0
+    ? await supabase
+        .from('assignment_submissions')
+        .select('assignment_id, score')
+        .eq('student_id', studentProfile?.id ?? '')
+        .in('assignment_id', assignmentIds) as {
+        data: { assignment_id: string; score: number | null }[] | null; error: unknown
+      }
+    : { data: [] as { assignment_id: string; score: number | null }[] }
+
+  // Map submissions by assignment_id
+  const subsByAssignment: Record<string, number | null> = {}
+  for (const sub of submissionsRaw ?? []) {
+    subsByAssignment[sub.assignment_id] = sub.score ?? null
+  }
+
   type AssignmentRow = {
     id: string
     title: string
@@ -75,28 +128,13 @@ export default async function StudentSubjectPage({
     submitted: boolean
     score: number | null
   }
+  const assignmentRows: AssignmentRow[] = assignments.map(a => ({
+    ...a,
+    submitted: a.id in subsByAssignment,
+    score: subsByAssignment[a.id] ?? null,
+  }))
 
-  const { data: assignments } = await supabase
-    .from('assignments')
-    .select('id, title, description, due_date, max_score')
-    .eq('subject_id', subject.id)
-    .order('created_at', { ascending: false }) as {
-    data: { id: string; title: string; description: string; due_date: string | null; max_score: number }[] | null
-    error: unknown
-  }
-
-  const assignmentRows: AssignmentRow[] = []
-  for (const a of assignments ?? []) {
-    const { data: sub } = await supabase
-      .from('assignment_submissions')
-      .select('score')
-      .eq('assignment_id', a.id)
-      .eq('student_id', studentProfile?.id ?? '')
-      .single() as { data: { score: number | null } | null; error: unknown }
-
-    assignmentRows.push({ ...a, submitted: !!sub, score: sub?.score ?? null })
-  }
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   const levelLabel =
     subject.zimsec_level === 'primary'
       ? 'Primary'
@@ -141,32 +179,32 @@ export default async function StudentSubjectPage({
             🧠 Take Quiz
           </Link>
           <Link
-            href={`/student/past-papers/${subject.code}`}
+            href={`/student/resources/${subject.code}`}
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition shadow-sm"
           >
-            📝 Past Papers
+            📝 Past Papers & Resources
           </Link>
           <Link
-            href={`/student/ai-tutor/${subject.code}`}
+            href={`/student/solver?subject=${subject.code}`}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition shadow-sm"
           >
-            💬 AI Tutor
+            💬 Problem Solver
           </Link>
         </div>
 
-        {/* AI Tutor banner */}
+        {/* Problem Solver banner */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-5 sm:p-6 flex items-center justify-between shadow-sm">
           <div>
-            <h2 className="text-base font-bold">AI Tutor</h2>
+            <h2 className="text-base font-bold">AI Problem Solver</h2>
             <p className="text-sm opacity-90 mt-1">
-              Get instant help with {subject.name} from your AI tutor
+              Get instant help with {subject.name} problems and exam questions
             </p>
           </div>
           <Link
-            href={`/student/ai-tutor/${subject.code}`}
+            href={`/student/solver?subject=${subject.code}`}
             className="bg-white text-indigo-700 font-semibold text-sm px-4 py-2 rounded-xl hover:bg-indigo-50 transition flex-shrink-0 shadow-sm"
           >
-            Open tutor →
+            Open Solver →
           </Link>
         </div>
 
@@ -297,16 +335,4 @@ export default async function StudentSubjectPage({
       </div>
     </div>
   )
-}
-
-async function getLessonIds(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
-  courseId: string
-): Promise<string[]> {
-  const { data } = await supabase
-    .from('lessons')
-    .select('id')
-    .eq('course_id', courseId)
-  return (data ?? []).map((l: { id: string }) => l.id)
 }
