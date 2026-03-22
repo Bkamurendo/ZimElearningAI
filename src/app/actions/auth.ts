@@ -54,10 +54,10 @@ export async function login(formData: FormData): Promise<void> {
     redirect('/mfa-verify')
   }
 
-  // 2. Check custom email / phone OTP MFA
-  if (profile?.mfa_method === 'email' || profile?.mfa_method === 'phone') {
+  // 2. Check custom email OTP MFA (phone/SMS MFA is not supported in Zimbabwe)
+  if (profile?.mfa_method === 'email') {
     revalidatePath('/', 'layout')
-    redirect(`/mfa-verify?method=${profile.mfa_method}`)
+    redirect('/mfa-verify?method=email')
   }
 
   revalidatePath('/', 'layout')
