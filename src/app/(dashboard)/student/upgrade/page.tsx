@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Zap, CheckCircle2, XCircle, Loader2, ChevronLeft,
-  Smartphone, Shield, Lock, Star, Check,
+  Smartphone, Shield, Lock, Star, Check, X, Crown,
 } from 'lucide-react'
 import { PLANS, type PlanId } from '@/lib/paynow'
 
-// ─── Real provider logo components ───────────────────────────────────────────
+// ─── Logo helper ─────────────────────────────────────────────────────────────
 
 function Logo({ src, alt, className = 'h-8 w-auto object-contain' }: {
   src: string; alt: string; className?: string
@@ -20,29 +20,99 @@ function Logo({ src, alt, className = 'h-8 w-auto object-contain' }: {
   )
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Tier definitions ─────────────────────────────────────────────────────────
 
-const PRO_FEATURES = [
-  { icon: '🤖', text: 'Unlimited AI requests every day' },
-  { icon: '💬', text: 'Full AI Tutor sessions — no limits' },
-  { icon: '📝', text: 'Model answers for all past papers' },
-  { icon: '📚', text: 'Snap notes, glossary & practice sets' },
-  { icon: '⚡', text: 'Priority AI — faster responses' },
-  { icon: '🎯', text: 'Advanced grade predictor & analytics' },
-  { icon: '✨', text: 'Every new Pro feature, automatically' },
+type Tier = 'starter' | 'pro' | 'elite'
+
+const TIERS: {
+  id: Tier
+  name: string
+  tagline: string
+  color: string
+  headerBg: string
+  badge?: string
+  badgeBg?: string
+  icon: React.ReactNode
+  features: { text: string; included: boolean }[]
+  planOptions: PlanId[]
+}[] = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    tagline: 'Boost your studies',
+    color: 'text-blue-600',
+    headerBg: 'bg-blue-600',
+    icon: <Zap size={20} className="text-blue-500" />,
+    features: [
+      { text: '100 AI requests / day', included: true },
+      { text: 'Download study materials', included: true },
+      { text: 'Up to 15 subjects', included: true },
+      { text: 'Study planner & grade predictor', included: true },
+      { text: 'Notes & revision generation', included: true },
+      { text: 'Unlimited AI requests', included: false },
+      { text: 'Mock exam generator', included: false },
+      { text: 'Advanced AI model (smarter answers)', included: false },
+      { text: 'Parent progress dashboard', included: false },
+    ],
+    planOptions: ['starter_monthly', 'starter_quarterly'],
+  },
+  {
+    id: 'pro',
+    name: 'Pro Scholar',
+    tagline: 'Ace your ZIMSEC exams',
+    color: 'text-indigo-600',
+    headerBg: 'bg-gradient-to-r from-indigo-600 to-purple-600',
+    badge: '⭐ Most Popular',
+    badgeBg: 'bg-gradient-to-r from-indigo-600 to-purple-600',
+    icon: <Star size={20} className="text-indigo-500" fill="currentColor" />,
+    features: [
+      { text: 'Unlimited AI requests', included: true },
+      { text: 'Download study materials', included: true },
+      { text: 'All subjects (no limit)', included: true },
+      { text: 'Notes & revision generation', included: true },
+      { text: 'Full mock exam generator', included: true },
+      { text: 'AI flashcard creator', included: true },
+      { text: 'Faster AI responses', included: true },
+      { text: 'Advanced AI model (smarter answers)', included: false },
+      { text: 'Parent progress dashboard', included: false },
+    ],
+    planOptions: ['pro_monthly', 'pro_quarterly', 'pro_yearly'],
+  },
+  {
+    id: 'elite',
+    name: 'Elite',
+    tagline: 'The ultimate edge',
+    color: 'text-amber-600',
+    headerBg: 'bg-gradient-to-r from-amber-500 to-orange-500',
+    badge: '👑 Best Value',
+    badgeBg: 'bg-gradient-to-r from-amber-500 to-orange-500',
+    icon: <Crown size={20} className="text-amber-500" />,
+    features: [
+      { text: 'Unlimited AI requests', included: true },
+      { text: 'Download study materials', included: true },
+      { text: 'All subjects (no limit)', included: true },
+      { text: 'Full mock exam generator', included: true },
+      { text: 'AI flashcard creator', included: true },
+      { text: 'Advanced AI model (smarter answers)', included: true },
+      { text: 'Priority AI queue (fastest responses)', included: true },
+      { text: 'Parent progress dashboard', included: true },
+      { text: 'Early access to new features', included: true },
+    ],
+    planOptions: ['elite_monthly', 'elite_yearly'],
+  },
 ]
 
-const PLAN_META: Record<PlanId, { perMonth: string; period: string; popular?: boolean }> = {
-  pro_monthly:   { perMonth: '$5.00', period: 'per month' },
-  pro_quarterly: { perMonth: '$4.00', period: 'per month, billed quarterly', popular: true },
-  pro_yearly:    { perMonth: '$2.92', period: 'per month, billed annually' },
+// ─── Plan option metadata ─────────────────────────────────────────────────────
+
+const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: string }> = {
+  starter_monthly:   { perMonth: '$2.00', period: 'per month' },
+  starter_quarterly: { perMonth: '$1.67', period: 'per month, billed $5 quarterly', badge: 'Save 17%' },
+  pro_monthly:       { perMonth: '$5.00', period: 'per month' },
+  pro_quarterly:     { perMonth: '$4.00', period: 'per month, billed $12 quarterly', badge: 'Save 20%' },
+  pro_yearly:        { perMonth: '$2.92', period: 'per month, billed $35 yearly', badge: 'Best Value' },
+  elite_monthly:     { perMonth: '$8.00', period: 'per month' },
+  elite_yearly:      { perMonth: '$5.00', period: 'per month, billed $60 yearly', badge: 'Save 38%' },
 }
-
-const PLAN_ORDER: { id: PlanId; badge?: string }[] = [
-  { id: 'pro_monthly' },
-  { id: 'pro_quarterly', badge: 'Save 20%' },
-  { id: 'pro_yearly',    badge: 'Best Value' },
-]
 
 type PaymentMethod = 'ecocash' | 'onemoney' | 'innbucks' | 'web'
 type Gateway = 'local' | 'international'
@@ -55,38 +125,10 @@ const LOCAL_METHODS: {
   borderSelected: string
   bgSelected: string
 }[] = [
-  {
-    id: 'ecocash',
-    label: 'EcoCash',
-    sublabel: 'EcoNet · USSD push',
-    logoSrc: '/logos/ecocash.png',
-    borderSelected: 'border-green-500',
-    bgSelected: 'bg-green-50',
-  },
-  {
-    id: 'onemoney',
-    label: 'OneMoney',
-    sublabel: 'NetOne · USSD push',
-    logoSrc: '/logos/onemoney.png',
-    borderSelected: 'border-blue-500',
-    bgSelected: 'bg-blue-50',
-  },
-  {
-    id: 'innbucks',
-    label: 'InnBucks',
-    sublabel: 'InnBucks wallet',
-    logoSrc: '/logos/innbucks.jpg',
-    borderSelected: 'border-orange-500',
-    bgSelected: 'bg-orange-50',
-  },
-  {
-    id: 'web',
-    label: 'ZimSwitch / Bank',
-    sublabel: 'Card · Internet Banking',
-    logoSrc: '/logos/zimswitch.svg',
-    borderSelected: 'border-indigo-600',
-    bgSelected: 'bg-indigo-50',
-  },
+  { id: 'ecocash',  label: 'EcoCash',         sublabel: 'EcoNet · USSD push',         logoSrc: '/logos/ecocash.png',    borderSelected: 'border-green-500',  bgSelected: 'bg-green-50' },
+  { id: 'onemoney', label: 'OneMoney',         sublabel: 'NetOne · USSD push',          logoSrc: '/logos/onemoney.png',   borderSelected: 'border-blue-500',   bgSelected: 'bg-blue-50' },
+  { id: 'innbucks', label: 'InnBucks',         sublabel: 'InnBucks wallet',             logoSrc: '/logos/innbucks.jpg',   borderSelected: 'border-orange-500', bgSelected: 'bg-orange-50' },
+  { id: 'web',      label: 'ZimSwitch / Bank', sublabel: 'Card · Internet Banking',     logoSrc: '/logos/zimswitch.svg',  borderSelected: 'border-indigo-600', bgSelected: 'bg-indigo-50' },
 ]
 
 const CARD_METHODS = [
@@ -101,6 +143,7 @@ const CARD_METHODS = [
 export default function UpgradePage() {
   const searchParams = useSearchParams()
 
+  const [selectedTier,   setSelectedTier]   = useState<Tier>('pro')
   const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('pro_quarterly')
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('ecocash')
   const [gateway,        setGateway]        = useState<Gateway>('local')
@@ -113,18 +156,21 @@ export default function UpgradePage() {
   const [pollCount,     setPollCount]     = useState(0)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
+  // When tier changes, default to first plan option for that tier
+  function selectTier(tier: Tier) {
+    setSelectedTier(tier)
+    const tierDef = TIERS.find(t => t.id === tier)
+    if (tierDef) setSelectedPlan(tierDef.planOptions[0])
+  }
+
   useEffect(() => {
     const status = searchParams.get('status')
     const flw    = searchParams.get('flw')
-    if (status === 'return') {
-      setPaymentStatus('waiting')
-    } else if (flw === 'paid') {
-      setPaymentStatus('paid')
-    } else if (flw === 'failed' || flw === 'cancelled' || flw === 'error') {
+    if (status === 'return') setPaymentStatus('waiting')
+    else if (flw === 'paid') setPaymentStatus('paid')
+    else if (flw === 'failed' || flw === 'cancelled' || flw === 'error') {
       setPaymentStatus('failed')
-      setError(flw === 'cancelled'
-        ? 'Payment was cancelled. You can try again below.'
-        : 'Payment failed or could not be verified. Please try again.')
+      setError(flw === 'cancelled' ? 'Payment was cancelled. You can try again below.' : 'Payment failed or could not be verified. Please try again.')
     }
   }, [searchParams])
 
@@ -135,28 +181,20 @@ export default function UpgradePage() {
       try {
         const res  = await fetch(`/api/payments/poll?paymentId=${paymentId}`)
         const data = await res.json()
-        if (data.status === 'paid') {
-          setPaymentStatus('paid')
-          if (pollRef.current) clearInterval(pollRef.current)
-        } else if (data.status === 'failed' || data.status === 'cancelled') {
-          setPaymentStatus('failed')
-          if (pollRef.current) clearInterval(pollRef.current)
-        }
+        if (data.status === 'paid') { setPaymentStatus('paid'); if (pollRef.current) clearInterval(pollRef.current) }
+        else if (data.status === 'failed' || data.status === 'cancelled') { setPaymentStatus('failed'); if (pollRef.current) clearInterval(pollRef.current) }
       } catch { /* keep polling */ }
     }
     poll()
     pollRef.current = setInterval(poll, 5000)
-    const timeout = setTimeout(() => {
-      if (pollRef.current) clearInterval(pollRef.current)
-      setPaymentStatus('failed')
-    }, 10 * 60 * 1000)
+    const timeout = setTimeout(() => { if (pollRef.current) clearInterval(pollRef.current); setPaymentStatus('failed') }, 10 * 60 * 1000)
     return () => { if (pollRef.current) clearInterval(pollRef.current); clearTimeout(timeout) }
   }, [paymentStatus, paymentId])
 
   async function handleFlutterwavePay() {
     setError(''); setLoading(true)
     try {
-      const res  = await fetch('/api/payments/flutterwave/initiate', {
+      const res = await fetch('/api/payments/flutterwave/initiate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId: selectedPlan }),
       })
@@ -177,7 +215,7 @@ export default function UpgradePage() {
         if (!phone.trim()) { setError('Please enter your mobile money phone number'); setLoading(false); return }
         body.phone = phone.trim()
       }
-      const res  = await fetch('/api/payments/initiate', {
+      const res = await fetch('/api/payments/initiate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
@@ -192,8 +230,9 @@ export default function UpgradePage() {
     } finally { setLoading(false) }
   }
 
-  const plan           = PLANS[selectedPlan]
-  const selectedLocal  = LOCAL_METHODS.find(m => m.id === selectedMethod)
+  const plan          = PLANS[selectedPlan]
+  const tier          = TIERS.find(t => t.id === selectedTier)!
+  const selectedLocal = LOCAL_METHODS.find(m => m.id === selectedMethod)
 
   // ── Paid ────────────────────────────────────────────────────────────────────
   if (paymentStatus === 'paid') {
@@ -204,15 +243,13 @@ export default function UpgradePage() {
             <CheckCircle2 className="text-white" size={44} />
           </div>
           <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mb-4">
-            <Star size={12} fill="currentColor" /> PRO ACTIVATED
+            <Star size={12} fill="currentColor" /> {tier.name.toUpperCase()} ACTIVATED
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">Welcome to Pro! 🎉</h1>
-          <p className="text-slate-500 mb-2">Payment confirmed. Unlimited AI access is now active on your account.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">Welcome to {tier.name}! 🎉</h1>
+          <p className="text-slate-500 mb-2">Payment confirmed. Your upgraded access is now active.</p>
           <p className="text-sm text-slate-400 mb-8">Your dashboard will reflect the upgrade immediately.</p>
-          <button
-            onClick={() => { window.location.href = '/student/dashboard' }}
-            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-bold rounded-2xl transition shadow-md shadow-green-200"
-          >
+          <button onClick={() => { window.location.href = '/student/dashboard' }}
+            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-bold rounded-2xl transition shadow-md shadow-green-200">
             Go to Dashboard →
           </button>
         </div>
@@ -225,41 +262,26 @@ export default function UpgradePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10 max-w-md w-full text-center border border-indigo-100">
-          {selectedLocal && (
-            <div className="flex justify-center mb-5">
-              <Logo src={selectedLocal.logoSrc} alt={selectedLocal.label} className="h-10 w-auto object-contain" />
-            </div>
-          )}
+          {selectedLocal && <div className="flex justify-center mb-5"><Logo src={selectedLocal.logoSrc} alt={selectedLocal.label} className="h-10 w-auto object-contain" /></div>}
           <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-200 animate-pulse">
             <Smartphone className="text-white" size={36} />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Check Your Phone</h1>
           <p className="text-slate-500 mb-6">
-            A <strong>{selectedLocal?.label ?? 'mobile money'}</strong> payment request was sent to{' '}
+            A <strong>{selectedLocal?.label ?? 'mobile money'}</strong> request was sent to{' '}
             <strong className="text-slate-700">{phone || 'your number'}</strong>.
           </p>
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 text-left space-y-3">
-            {[
-              ['📳', 'Your phone will vibrate with a payment prompt'],
-              ['🔢', 'Enter your mobile money PIN when asked'],
-              ['✅', 'This page updates automatically when confirmed'],
-            ].map(([icon, text]) => (
-              <div key={text} className="flex items-center gap-3">
-                <span className="text-xl">{icon}</span>
-                <span className="text-sm text-slate-600">{text}</span>
-              </div>
+            {[['📳','Your phone will vibrate with a payment prompt'],['🔢','Enter your mobile money PIN when asked'],['✅','This page updates automatically when confirmed']].map(([icon,text]) => (
+              <div key={text} className="flex items-center gap-3"><span className="text-xl">{icon}</span><span className="text-sm text-slate-600">{text}</span></div>
             ))}
           </div>
           <div className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-6">
             <Loader2 className="animate-spin" size={16} />
             <span>Waiting for confirmation{pollCount > 0 ? ` · ${pollCount * 5}s` : ''}…</span>
           </div>
-          <button
-            onClick={() => { setPaymentStatus('idle'); setPaymentId(null); setPollCount(0) }}
-            className="text-slate-400 hover:text-slate-600 text-sm underline underline-offset-2 transition"
-          >
-            Cancel and try again
-          </button>
+          <button onClick={() => { setPaymentStatus('idle'); setPaymentId(null); setPollCount(0) }}
+            className="text-slate-400 hover:text-slate-600 text-sm underline underline-offset-2 transition">Cancel and try again</button>
         </div>
       </div>
     )
@@ -274,18 +296,10 @@ export default function UpgradePage() {
             <XCircle className="text-white" size={44} />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Payment Not Completed</h1>
-          <p className="text-slate-500 mb-8">
-            {error || 'The payment was cancelled or timed out. Your account has not been charged.'}
-          </p>
-          <button
-            onClick={() => { setPaymentStatus('idle'); setPaymentId(null); setPollCount(0); setError('') }}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl transition mb-3 shadow-md"
-          >
-            Try Again
-          </button>
-          <Link href="/student/dashboard" className="block text-slate-400 hover:text-slate-600 text-sm underline underline-offset-2">
-            Back to Dashboard
-          </Link>
+          <p className="text-slate-500 mb-8">{error || 'The payment was cancelled or timed out. Your account has not been charged.'}</p>
+          <button onClick={() => { setPaymentStatus('idle'); setPaymentId(null); setPollCount(0); setError('') }}
+            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl transition mb-3 shadow-md">Try Again</button>
+          <Link href="/student/dashboard" className="block text-slate-400 hover:text-slate-600 text-sm underline underline-offset-2">Back to Dashboard</Link>
         </div>
       </div>
     )
@@ -298,74 +312,113 @@ export default function UpgradePage() {
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-600/30 via-transparent to-transparent pointer-events-none" />
-        <div className="max-w-3xl mx-auto px-4 pt-6 pb-10">
+        <div className="max-w-5xl mx-auto px-4 pt-6 pb-10">
           <Link href="/student/dashboard"
             className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-sm transition mb-6">
             <ChevronLeft size={16} /> Back to Dashboard
           </Link>
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-xs font-bold px-3 py-1.5 rounded-full mb-4">
-              <Zap size={12} fill="currentColor" /> ZIMLEARN PRO
+              <Zap size={12} fill="currentColor" /> ZIMLEARN PREMIUM PLANS
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-white mb-3 leading-tight">
-              Unlock Unlimited AI<br />
+              Unlock Your Full<br />
               <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                for Your ZIMSEC Exams
+                ZIMSEC Potential
               </span>
             </h1>
-            <p className="text-slate-400 text-base max-w-md mx-auto">
-              Join students across Zimbabwe acing their exams with unlimited AI tutoring, past papers &amp; more.
+            <p className="text-slate-400 text-base max-w-xl mx-auto">
+              Choose the plan that fits your study goals. All plans include full AI tutoring access.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pb-12 space-y-5">
+      <div className="max-w-5xl mx-auto px-4 pb-12 space-y-6">
 
-        {/* Pro features */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-          <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">Everything in Pro</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {PRO_FEATURES.map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-2.5">
-                <div className="w-7 h-7 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-base">
-                  {icon}
+        {/* ── Tier comparison cards ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {TIERS.map(t => {
+            const isSelected = selectedTier === t.id
+            const firstPlanId = t.planOptions[0]
+            const firstPlan = PLANS[firstPlanId]
+            const firstMeta = PLAN_META[firstPlanId]
+
+            return (
+              <button
+                key={t.id}
+                onClick={() => selectTier(t.id)}
+                className={`relative rounded-2xl border-2 text-left transition-all duration-150 overflow-hidden ${
+                  isSelected ? 'border-white/60 shadow-2xl scale-[1.02]' : 'border-white/10 hover:border-white/30'
+                }`}
+              >
+                {/* Badge */}
+                {t.badge && (
+                  <div className={`absolute -top-px left-0 right-0 text-center py-1 text-[10px] font-bold text-white ${t.badgeBg}`}>
+                    {t.badge}
+                  </div>
+                )}
+
+                {/* Header */}
+                <div className={`${t.headerBg} px-4 pt-${t.badge ? '6' : '4'} pb-4 text-white`}>
+                  <div className={`flex items-center gap-2 mb-1 ${t.badge ? 'mt-3' : ''}`}>
+                    <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">{t.icon}</div>
+                    <span className="font-bold text-sm">{t.name}</span>
+                  </div>
+                  <p className="text-white/70 text-xs">{t.tagline}</p>
+                  <div className="mt-3">
+                    <span className="text-2xl font-black">{firstMeta.perMonth}</span>
+                    <span className="text-white/60 text-xs ml-1">/mo</span>
+                  </div>
+                  <p className="text-white/50 text-[10px] mt-0.5">from ${firstPlan.amountUsd.toFixed(2)} USD</p>
                 </div>
-                <span className="text-sm text-slate-300">{text}</span>
-              </div>
-            ))}
-          </div>
+
+                {/* Features */}
+                <div className="bg-white/5 backdrop-blur-sm px-4 py-3 space-y-2">
+                  {t.features.slice(0, 6).map(f => (
+                    <div key={f.text} className="flex items-start gap-2">
+                      {f.included
+                        ? <Check size={13} className="text-emerald-400 mt-0.5 flex-shrink-0" strokeWidth={3} />
+                        : <X size={13} className="text-slate-600 mt-0.5 flex-shrink-0" strokeWidth={2} />
+                      }
+                      <span className={`text-xs leading-tight ${f.included ? 'text-slate-200' : 'text-slate-500'}`}>{f.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Select indicator */}
+                {isSelected && (
+                  <div className="bg-white/10 px-4 py-2 flex items-center justify-center gap-1.5">
+                    <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                      <Check size={10} className="text-indigo-700" strokeWidth={3} />
+                    </div>
+                    <span className="text-xs text-white font-semibold">Selected</span>
+                  </div>
+                )}
+              </button>
+            )
+          })}
         </div>
 
-        {/* Plan selector */}
+        {/* ── Plan duration selector for selected tier ─────────────────────── */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800">Choose Your Plan</h2>
-            <p className="text-xs text-slate-400 mt-0.5">All plans include every Pro feature. Cancel anytime.</p>
+            <h2 className="font-bold text-slate-800">Choose Billing Period — <span className={tier.color}>{tier.name}</span></h2>
+            <p className="text-xs text-slate-400 mt-0.5">Longer plans save more. Cancel anytime.</p>
           </div>
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {PLAN_ORDER.map(({ id, badge }) => {
-              const p          = PLANS[id]
-              const meta       = PLAN_META[id]
-              const isSelected = selectedPlan === id
+            {tier.planOptions.map(planId => {
+              const p          = PLANS[planId]
+              const meta       = PLAN_META[planId]
+              const isSelected = selectedPlan === planId
               return (
-                <button
-                  key={id}
-                  onClick={() => setSelectedPlan(id)}
+                <button key={planId} onClick={() => setSelectedPlan(planId)}
                   className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-150 ${
-                    isSelected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
-                      : 'border-slate-200 hover:border-indigo-300 bg-white'
-                  }`}
-                >
-                  {meta.popular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                      ⭐ Most Popular
-                    </span>
-                  )}
-                  {badge && !meta.popular && (
+                    isSelected ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100' : 'border-slate-200 hover:border-indigo-300 bg-white'
+                  }`}>
+                  {meta.badge && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                      {badge}
+                      {meta.badge}
                     </span>
                   )}
                   <div className="flex items-center justify-between mb-2">
@@ -389,7 +442,22 @@ export default function UpgradePage() {
           </div>
         </div>
 
-        {/* Payment method */}
+        {/* ── Full feature list for selected tier ──────────────────────────── */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+          <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">Everything in {tier.name}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {tier.features.filter(f => f.included).map(({ text }) => (
+              <div key={text} className="flex items-center gap-2.5">
+                <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Check size={13} className="text-emerald-400" strokeWidth={3} />
+                </div>
+                <span className="text-sm text-slate-300">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Payment method ────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">Payment Method</h2>
@@ -399,20 +467,12 @@ export default function UpgradePage() {
           {/* Gateway tabs */}
           <div className="px-4 pt-4">
             <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-xl">
-              <button
-                onClick={() => setGateway('local')}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  gateway === 'local' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
+              <button onClick={() => setGateway('local')}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${gateway === 'local' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                 🇿🇼 Zimbabwe
               </button>
-              <button
-                onClick={() => setGateway('international')}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  gateway === 'international' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
+              <button onClick={() => setGateway('international')}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${gateway === 'international' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                 🌍 International
               </button>
             </div>
@@ -424,18 +484,11 @@ export default function UpgradePage() {
               <p className="text-xs text-slate-400 font-medium">Select your mobile money provider</p>
               <div className="grid grid-cols-2 gap-3">
                 {LOCAL_METHODS.map(m => {
-                  const isSelected = selectedMethod === m.id
+                  const isSel = selectedMethod === m.id
                   return (
-                    <button
-                      key={m.id}
-                      onClick={() => setSelectedMethod(m.id)}
-                      className={`relative flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-150 min-h-[100px] ${
-                        isSelected
-                          ? `${m.borderSelected} ${m.bgSelected} shadow-md`
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                      }`}
-                    >
-                      {isSelected && (
+                    <button key={m.id} onClick={() => setSelectedMethod(m.id)}
+                      className={`relative flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-150 min-h-[100px] ${isSel ? `${m.borderSelected} ${m.bgSelected} shadow-md` : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                      {isSel && (
                         <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm">
                           <Check size={10} className="text-white" strokeWidth={3} />
                         </div>
@@ -450,7 +503,6 @@ export default function UpgradePage() {
                 })}
               </div>
 
-              {/* Powered by Paynow */}
               <div className="flex items-center gap-2 pt-1">
                 <div className="flex-1 h-px bg-slate-100" />
                 <span className="text-[10px] text-slate-400">Secured by</span>
@@ -458,28 +510,17 @@ export default function UpgradePage() {
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
 
-              {/* Phone input */}
               {selectedMethod !== 'web' && (
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-slate-700">
-                    {selectedMethod === 'ecocash' ? 'EcoCash' :
-                     selectedMethod === 'onemoney' ? 'OneMoney' : 'InnBucks'} Phone Number
+                    {selectedMethod === 'ecocash' ? 'EcoCash' : selectedMethod === 'onemoney' ? 'OneMoney' : 'InnBucks'} Phone Number
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 text-sm pointer-events-none">
-                      🇿🇼 +263
-                    </span>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      placeholder="77 123 4567"
-                      className="w-full border-2 border-slate-200 rounded-xl pl-20 pr-4 py-3 text-slate-800 text-sm focus:ring-0 focus:border-indigo-500 outline-none transition"
-                    />
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 text-sm pointer-events-none">🇿🇼 +263</span>
+                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="77 123 4567"
+                      className="w-full border-2 border-slate-200 rounded-xl pl-20 pr-4 py-3 text-slate-800 text-sm focus:ring-0 focus:border-indigo-500 outline-none transition" />
                   </div>
-                  <p className="text-xs text-slate-400">
-                    You&apos;ll receive a USSD prompt on this number to approve the payment
-                  </p>
+                  <p className="text-xs text-slate-400">You&apos;ll receive a USSD prompt on this number to approve the payment</p>
                 </div>
               )}
 
@@ -488,9 +529,7 @@ export default function UpgradePage() {
                   <Logo src="/logos/zimswitch.svg" alt="ZimSwitch" className="h-7 w-auto object-contain flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-semibold text-slate-700">ZimSwitch / Internet Banking</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      You&apos;ll be redirected to Paynow&apos;s secure checkout. Supports all major Zimbabwean bank cards.
-                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">You&apos;ll be redirected to Paynow&apos;s secure checkout. Supports all major Zimbabwean bank cards.</p>
                   </div>
                 </div>
               )}
@@ -501,45 +540,38 @@ export default function UpgradePage() {
           {gateway === 'international' && (
             <div className="p-4 space-y-4">
               <p className="text-xs text-slate-400 font-medium">Pay with card or digital wallet</p>
-
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {CARD_METHODS.map(({ src, alt }) => (
-                  <div key={alt}
-                    className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition min-h-[80px]">
+                  <div key={alt} className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition min-h-[80px]">
                     <Logo src={src} alt={alt} className="h-7 w-auto object-contain" />
                     <span className="text-[10px] font-medium text-slate-500">{alt}</span>
                   </div>
                 ))}
               </div>
-
-              {/* Powered by Flutterwave */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-px bg-slate-100" />
                 <span className="text-[10px] text-slate-400">Powered by</span>
                 <Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain opacity-80" />
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
-
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
                 <Shield size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-slate-700">256-bit SSL Encrypted Checkout</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    You&apos;ll be redirected to Flutterwave&apos;s secure hosted page. No card data is stored on ZimLearn.
-                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">You&apos;ll be redirected to Flutterwave&apos;s secure hosted page. No card data is stored on ZimLearn.</p>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Order summary + pay button */}
+        {/* ── Order summary + pay button ─────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-4 border-b border-slate-100">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Order Summary</p>
             <div className="flex items-start justify-between">
               <div>
-                <div className="font-bold text-slate-900">{plan.label}</div>
+                <div className="font-bold text-slate-900">{tier.name} — {plan.label}</div>
                 <div className="text-xs text-slate-400 mt-0.5">{plan.description}</div>
               </div>
               <div className="text-right">
@@ -552,67 +584,40 @@ export default function UpgradePage() {
           <div className="p-5 space-y-3">
             {error && (
               <div className="flex items-start gap-2.5 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
-                <XCircle size={16} className="mt-0.5 shrink-0" />
-                {error}
+                <XCircle size={16} className="mt-0.5 shrink-0" />{error}
               </div>
             )}
 
             {gateway === 'international' ? (
-              <button
-                onClick={handleFlutterwavePay}
-                disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-orange-100 flex items-center justify-center gap-3"
-              >
+              <button onClick={handleFlutterwavePay} disabled={loading}
+                className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-orange-100 flex items-center justify-center gap-3">
                 {loading
                   ? <><Loader2 size={20} className="animate-spin" /> Redirecting to checkout…</>
                   : <><Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain brightness-0 invert" /> Pay ${plan.amountUsd.toFixed(2)} USD</>
                 }
               </button>
             ) : selectedMethod === 'web' ? (
-              <button
-                onClick={handlePay}
-                disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3"
-              >
-                {loading
-                  ? <><Loader2 size={20} className="animate-spin" /> Redirecting…</>
-                  : <>Pay ${plan.amountUsd.toFixed(2)} via Paynow</>
-                }
+              <button onClick={handlePay} disabled={loading}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
+                {loading ? <><Loader2 size={20} className="animate-spin" /> Redirecting…</> : <>Pay ${plan.amountUsd.toFixed(2)} via Paynow</>}
               </button>
             ) : (
-              <button
-                onClick={handlePay}
-                disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3"
-              >
+              <button onClick={handlePay} disabled={loading}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
                 {loading ? (
                   <><Loader2 size={20} className="animate-spin" /> Sending request…</>
                 ) : (
-                  <>
-                    <Logo
-                      src={selectedLocal?.logoSrc ?? '/logos/ecocash.png'}
-                      alt={selectedLocal?.label ?? 'Pay'}
-                      className="h-6 w-auto object-contain brightness-0 invert"
-                    />
-                    Send ${plan.amountUsd.toFixed(2)} Payment Request
-                  </>
+                  <><Logo src={selectedLocal?.logoSrc ?? '/logos/ecocash.png'} alt={selectedLocal?.label ?? 'Pay'} className="h-6 w-auto object-contain brightness-0 invert" /> Send ${plan.amountUsd.toFixed(2)} Payment Request</>
                 )}
               </button>
             )}
 
-            {/* Trust badges */}
             <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Lock size={11} className="text-green-500" /> Secure payment
-              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400"><Lock size={11} className="text-green-500" /> Secure payment</div>
               <div className="w-px h-3 bg-slate-200 hidden sm:block" />
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Shield size={11} className="text-green-500" /> No card data stored
-              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400"><Shield size={11} className="text-green-500" /> No card data stored</div>
               <div className="w-px h-3 bg-slate-200 hidden sm:block" />
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <CheckCircle2 size={11} className="text-green-500" /> Cancel anytime
-              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400"><CheckCircle2 size={11} className="text-green-500" /> Cancel anytime</div>
             </div>
           </div>
         </div>

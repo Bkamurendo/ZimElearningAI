@@ -81,16 +81,17 @@ export async function GET(req: NextRequest) {
     })
     .eq('id', paymentId)
 
-  // Upgrade user plan
+  // Upgrade user to the correct plan tier based on what they purchased
   const plan = PLANS[payment.plan_id as PlanId]
   const days = plan?.days ?? 30
+  const tierName = plan?.tier ?? 'pro'   // 'starter' | 'pro' | 'elite'
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + days)
 
   await supabase
     .from('profiles')
     .update({
-      plan: 'pro',
+      plan: tierName,
       pro_expires_at: expiresAt.toISOString(),
     })
     .eq('id', payment.user_id)

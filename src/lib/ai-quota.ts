@@ -1,29 +1,35 @@
 /**
  * Daily AI usage quota per user.
  *
- * FREE  users: FREE_DAILY_LIMIT AI requests per day (resets midnight UTC)
- * PRO   users: unlimited
+ * FREE    users: 25 AI requests/day  (resets midnight UTC)
+ * STARTER users: 100 AI requests/day
+ * PRO     users: unlimited
+ * ELITE   users: unlimited
  *
- * Quota is tracked in the `profiles` table via the `ai_requests_today` and
- * `ai_quota_reset_at` columns.  Run the migration below if those columns
- * don't exist yet:
- *
- *   ALTER TABLE public.profiles
- *     ADD COLUMN IF NOT EXISTS ai_requests_today  INTEGER   DEFAULT 0,
- *     ADD COLUMN IF NOT EXISTS ai_quota_reset_at  TIMESTAMPTZ DEFAULT now(),
- *     ADD COLUMN IF NOT EXISTS plan               TEXT      DEFAULT 'free'
- *       CHECK (plan IN ('free', 'pro'));
+ * Quota is tracked in the `profiles` table via:
+ *   ai_requests_today  INTEGER   DEFAULT 0
+ *   ai_quota_reset_at  TIMESTAMPTZ DEFAULT now()
+ *   plan               TEXT DEFAULT 'free' CHECK (plan IN ('free','starter','pro','elite'))
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
 
-export const FREE_DAILY_LIMIT = 25   // free users get 25 AI calls per day
-export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
+export type PlanTier = 'free' | 'starter' | 'pro' | 'elite'
+
+export const FREE_DAILY_LIMIT    = 25
+export const STARTER_DAILY_LIMIT = 100
+export const PRO_DAILY_LIMIT     = 9999   // effectively unlimited
+
+function getDailyLimit(plan: PlanTier): number {
+  if (plan === 'pro' || plan === 'elite') return PRO_DAILY_LIMIT
+  if (plan === 'starter') return STARTER_DAILY_LIMIT
+  return FREE_DAILY_LIMIT
+}
 
 export interface QuotaResult {
   allowed: boolean
-  plan: 'free' | 'pro'
+  plan: PlanTier
   used: number
   limit: number
   remaining: number
@@ -38,7 +44,6 @@ export async function checkAIQuota(
   supabase: SupabaseClient,
   userId: string
 ): Promise<QuotaResult> {
-  // Fetch current usage
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('plan, ai_requests_today, ai_quota_reset_at')
@@ -46,16 +51,13 @@ export async function checkAIQuota(
     .single()
 
   if (error || !profile) {
-    // Can't read profile — this usually means the quota columns haven't been migrated yet.
-    // Fail OPEN with a conservative free-tier allowance so AI features still work.
-    // NOTE: If you see this in logs, run the migration in supabase/schema.sql to add
-    // ai_requests_today and ai_quota_reset_at columns to the profiles table.
+    // Fail OPEN — quota columns not migrated yet
     console.warn('[ai-quota] Could not read profile quota data:', error?.message ?? 'no profile row')
     return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
-  const plan: 'free' | 'pro' = profile.plan ?? 'free'
-  const limit = plan === 'pro' ? PRO_DAILY_LIMIT : FREE_DAILY_LIMIT
+  const plan: PlanTier = profile.plan ?? 'free'
+  const limit = getDailyLimit(plan)
 
   // Reset counter if it's a new day (UTC)
   const now = new Date()
@@ -64,8 +66,8 @@ export async function checkAIQuota(
 
   const used: number = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
 
-  if (plan === 'pro') {
-    // Pro users — just increment, no blocking
+  if (plan === 'pro' || plan === 'elite') {
+    // Unlimited plans — increment for analytics, never block
     await supabase.from('profiles').update({
       ai_requests_today: used + 1,
       ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),
@@ -74,19 +76,11 @@ export async function checkAIQuota(
     return { allowed: true, plan, used, limit, remaining: limit - used, resetsAt: tomorrowMidnightUTC() }
   }
 
-  // Free user — enforce limit
+  // Starter / Free — enforce daily limit
   if (used >= limit) {
-    return {
-      allowed: false,
-      plan,
-      used,
-      limit,
-      remaining: 0,
-      resetsAt: tomorrowMidnightUTC(),
-    }
+    return { allowed: false, plan, used, limit, remaining: 0, resetsAt: tomorrowMidnightUTC() }
   }
 
-  // Increment counter
   await supabase.from('profiles').update({
     ai_requests_today: used + 1,
     ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),

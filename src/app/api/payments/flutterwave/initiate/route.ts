@@ -25,10 +25,6 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (profile?.plan === 'pro') {
-      return NextResponse.json({ error: 'You are already on the Pro plan' }, { status: 400 })
-    }
-
     let body: { planId: PlanId }
     try {
       body = await req.json()
@@ -40,6 +36,14 @@ export async function POST(req: NextRequest) {
     const plan = PLANS[planId]
     if (!plan) {
       return NextResponse.json({ error: `Invalid plan: "${planId}"` }, { status: 400 })
+    }
+
+    // Prevent buying a lower or equal tier (allow upgrades e.g. starter → pro/elite)
+    const currentPlan = profile?.plan ?? 'free'
+    const targetTier = plan.tier
+    const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, elite: 3 }
+    if (currentPlan !== 'free' && (tierRank[currentPlan] ?? 0) >= (tierRank[targetTier] ?? 0)) {
+      return NextResponse.json({ error: `You are already on the ${currentPlan} plan or higher` }, { status: 400 })
     }
 
     // Create pending payment record in DB

@@ -11,9 +11,11 @@ export default async function AdminRevenuePage() {
   if (profile?.role !== 'admin') redirect('/student/dashboard')
 
   // Total users
-  const { count: totalUsers } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
-  const { count: proUsers } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('plan', 'pro')
-  const { count: freeUsers } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('plan', 'free')
+  const { count: totalUsers }   = await supabase.from('profiles').select('id', { count: 'exact', head: true })
+  const { count: freeUsers }    = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('plan', 'free')
+  const { count: starterUsers } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('plan', 'starter')
+  const { count: proUsers }     = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('plan', 'pro')
+  const { count: eliteUsers }   = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('plan', 'elite')
 
   // Payments
   type PayRow = { id: string; amount: number; currency: string; status: string; created_at: string; user_id: string }
@@ -40,12 +42,13 @@ export default async function AdminRevenuePage() {
   const lastMonthRevenue = lastMonthPayments.reduce((s, p) => s + (p.amount ?? 0), 0)
   const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0
 
-  const proRevenue = (proUsers ?? 0) * 5 // $5/month estimated
+  const paidUsers  = (starterUsers ?? 0) + (proUsers ?? 0) + (eliteUsers ?? 0)
+  const estimatedMRR = (starterUsers ?? 0) * 2 + (proUsers ?? 0) * 5 + (eliteUsers ?? 0) * 8
 
   const stats = [
     { label: 'Total Revenue', value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-t-emerald-500' },
     { label: 'This Month', value: `$${thisMonthRevenue.toFixed(2)}`, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-t-blue-500', trend: revenueGrowth },
-    { label: 'Pro Subscribers', value: String(proUsers ?? 0), icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-t-purple-500' },
+    { label: 'Paid Subscribers', value: String(paidUsers), icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-t-purple-500' },
     { label: 'Total Users', value: String(totalUsers ?? 0), icon: Users, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-t-amber-500' },
   ]
 
@@ -86,26 +89,24 @@ export default async function AdminRevenuePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-base font-semibold text-gray-900 mb-4">User Plan Distribution</h2>
           <div className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between text-sm mb-1.5">
-                <span className="font-medium text-gray-700">Free Plan</span>
-                <span className="text-gray-500">{freeUsers ?? 0} users ({totalUsers ? Math.round((freeUsers ?? 0) / totalUsers * 100) : 0}%)</span>
+            {[
+              { label: 'Free',    count: freeUsers ?? 0,    barClass: 'bg-gray-400' },
+              { label: 'Starter', count: starterUsers ?? 0, barClass: 'bg-blue-500' },
+              { label: 'Pro',     count: proUsers ?? 0,     barClass: 'bg-gradient-to-r from-indigo-500 to-purple-500' },
+              { label: 'Elite',   count: eliteUsers ?? 0,   barClass: 'bg-gradient-to-r from-amber-500 to-orange-500' },
+            ].map(({ label, count, barClass }) => (
+              <div key={label}>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span className="font-medium text-gray-700">{label}</span>
+                  <span className="text-gray-500">{count} users ({totalUsers ? Math.round(count / totalUsers * 100) : 0}%)</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`h-full ${barClass} rounded-full transition-all`} style={{ width: `${totalUsers ? count / totalUsers * 100 : 0}%` }} />
+                </div>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gray-400 rounded-full transition-all" style={{ width: `${totalUsers ? (freeUsers ?? 0) / totalUsers * 100 : 0}%` }} />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between text-sm mb-1.5">
-                <span className="font-medium text-gray-700">Pro Plan</span>
-                <span className="text-gray-500">{proUsers ?? 0} users ({totalUsers ? Math.round((proUsers ?? 0) / totalUsers * 100) : 0}%)</span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all" style={{ width: `${totalUsers ? (proUsers ?? 0) / totalUsers * 100 : 0}%` }} />
-              </div>
-            </div>
+            ))}
           </div>
-          <p className="text-xs text-gray-400 mt-4">Estimated MRR: <span className="font-semibold text-gray-600">${proRevenue.toFixed(2)}/month</span></p>
+          <p className="text-xs text-gray-400 mt-4">Estimated MRR: <span className="font-semibold text-gray-600">${estimatedMRR.toFixed(2)}/month</span></p>
         </div>
 
         {/* Recent transactions */}

@@ -164,9 +164,28 @@ export function parsePaynowCallback(
 // ── Plan pricing ──────────────────────────────────────────────────────────────
 
 export const PLANS = {
+  // ── Starter ────────────────────────────────────────────────────────────────
+  starter_monthly: {
+    id: 'starter_monthly',
+    label: 'Starter Monthly',
+    tier: 'starter' as const,
+    amountUsd: 2.00,
+    days: 30,
+    description: 'ZimLearn Starter — 1 Month Access',
+  },
+  starter_quarterly: {
+    id: 'starter_quarterly',
+    label: 'Starter Quarterly',
+    tier: 'starter' as const,
+    amountUsd: 5.00,
+    days: 90,
+    description: 'ZimLearn Starter — 3 Months Access',
+  },
+  // ── Pro Scholar ────────────────────────────────────────────────────────────
   pro_monthly: {
     id: 'pro_monthly',
     label: 'Pro Monthly',
+    tier: 'pro' as const,
     amountUsd: 5.00,
     days: 30,
     description: 'ZimLearn Pro — 1 Month Access',
@@ -174,6 +193,7 @@ export const PLANS = {
   pro_quarterly: {
     id: 'pro_quarterly',
     label: 'Pro Quarterly',
+    tier: 'pro' as const,
     amountUsd: 12.00,
     days: 90,
     description: 'ZimLearn Pro — 3 Months Access',
@@ -181,9 +201,27 @@ export const PLANS = {
   pro_yearly: {
     id: 'pro_yearly',
     label: 'Pro Yearly',
+    tier: 'pro' as const,
     amountUsd: 35.00,
     days: 365,
     description: 'ZimLearn Pro — 1 Year Access',
+  },
+  // ── Elite ──────────────────────────────────────────────────────────────────
+  elite_monthly: {
+    id: 'elite_monthly',
+    label: 'Elite Monthly',
+    tier: 'elite' as const,
+    amountUsd: 8.00,
+    days: 30,
+    description: 'ZimLearn Elite — 1 Month Access',
+  },
+  elite_yearly: {
+    id: 'elite_yearly',
+    label: 'Elite Yearly',
+    tier: 'elite' as const,
+    amountUsd: 60.00,
+    days: 365,
+    description: 'ZimLearn Elite — 1 Year Access',
   },
 } as const
 
