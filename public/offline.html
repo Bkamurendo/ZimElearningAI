@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10b981" />
+  <title>ZimLearn — You're Offline</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0f172a;
+      --surface:     #1e293b;
+      --surface2:    #334155;
+      --emerald:     #10b981;
+      --emerald-dim: #059669;
+      --amber:       #f59e0b;
+      --text:        #f1f5f9;
+      --muted:       #94a3b8;
+      --border:      #334155;
+      --radius:      0.75rem;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-mark {
+      width: 2.25rem;
+      height: 2.25rem;
+      background: linear-gradient(135deg, var(--emerald) 0%, var(--emerald-dim) 100%);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .logo-text span { color: var(--emerald); }
+
+    .offline-badge {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--amber);
+      background: rgba(245,158,11,.12);
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(245,158,11,.3);
+    }
+
+    .offline-badge::before {
+      content: '';
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: var(--amber);
+      flex-shrink: 0;
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem;
+      max-width: 48rem;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-icon {
+      width: 5rem;
+      height: 5rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-icon svg {
+      width: 2.5rem;
+      height: 2.5rem;
+      stroke: var(--emerald);
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 em {
+      font-style: normal;
+      color: var(--emerald);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      text-align: center;
+      font-size: 1rem;
+      max-width: 30rem;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Retry button ── */
+    #retry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--emerald);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.75rem;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin-bottom: 2.5rem;
+    }
+
+    #retry-btn:hover  { background: var(--emerald-dim); }
+    #retry-btn:active { transform: scale(0.97); }
+
+    #retry-btn.checking {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    #retry-btn svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    #retry-btn.checking svg { animation: spin 0.8s linear infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Status message ── */
+    #status-msg {
+      height: 1.25rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -2rem;
+      margin-bottom: 1.75rem;
+      transition: color 0.2s;
+    }
+
+    #status-msg.error { color: #f87171; }
+    #status-msg.success { color: var(--emerald); }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 2rem;
+    }
+
+    /* ── Cached content section ── */
+    .section-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      align-self: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .cached-links {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      list-style: none;
+    }
+
+    .cached-links a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.925rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .cached-links a:hover {
+      border-color: var(--emerald);
+      background: var(--surface2);
+    }
+
+    .link-icon {
+      width: 2rem;
+      height: 2rem;
+      background: rgba(16,185,129,.15);
+      border-radius: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .link-icon svg { width: 1rem; height: 1rem; stroke: var(--emerald); }
+
+    /* ── Tip card ── */
+    .tip-card {
+      width: 100%;
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: rgba(245,158,11,.08);
+      border: 1px solid rgba(245,158,11,.25);
+      border-radius: var(--radius);
+    }
+
+    .tip-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+    .tip-card p { font-size: 0.9rem; color: var(--text); }
+    .tip-card strong { color: var(--amber); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-mark">ZL</div>
+    <span class="logo-text">Zim<span>Learn</span></span>
+    <span class="offline-badge">Offline</span>
+  </header>
+
+  <main>
+    <div class="hero-icon" aria-hidden="true">
+      <!-- wifi-off icon -->
+      <svg fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+        <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+        <circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+
+    <h1>You're offline — but <em>don't stop learning!</em></h1>
+    <p class="subtitle">
+      Your internet connection seems to be unavailable right now.
+      You can still access any pages and study materials you've already visited.
+    </p>
+
+    <button id="retry-btn" onclick="retryConnection()">
+      <!-- refresh icon -->
+      <svg fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+      Check Connection
+    </button>
+
+    <p id="status-msg"></p>
+
+    <div class="divider"></div>
+
+    <p class="section-title">Pages you can access offline</p>
+
+    <ul class="cached-links" id="cached-pages">
+      <!-- Populated by JS — fallback list shown if cache API is unavailable -->
+      <li>
+        <a href="/login">
+          <span class="link-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+          </span>
+          Login
+        </a>
+      </li>
+      <li>
+        <a href="/student/dashboard">
+          <span class="link-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </span>
+          Student Dashboard
+        </a>
+      </li>
+      <li>
+        <a href="/student/subjects">
+          <span class="link-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </span>
+          Subjects
+        </a>
+      </li>
+    </ul>
+
+    <div class="tip-card" role="note">
+      <span class="tip-icon">💡</span>
+      <p>
+        <strong>Tip:</strong> Downloaded resources and notes are available offline.
+        Quiz answers and notes you save while offline will be submitted automatically
+        when you reconnect. Visit any subject page while online to cache study materials.
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 ZimLearn — ZIMSEC E-Learning Platform
+  </footer>
+
+  <script>
+    // ── Retry connection ────────────────────────────────────────────────────
+    function retryConnection() {
+      const btn = document.getElementById('retry-btn')
+      const msg = document.getElementById('status-msg')
+
+      btn.classList.add('checking')
+      msg.textContent = 'Checking connection…'
+      msg.className = ''
+
+      // Ping a tiny resource that the SW will try to fetch.
+      fetch('/manifest.json', { cache: 'no-store' })
+        .then(() => {
+          msg.textContent = 'Connection restored! Redirecting…'
+          msg.className = 'success'
+          setTimeout(() => {
+            window.location.href = document.referrer && document.referrer !== window.location.href
+              ? document.referrer
+              : '/login'
+          }, 800)
+        })
+        .catch(() => {
+          msg.textContent = 'Still offline — please try again later.'
+          msg.className = 'error'
+          btn.classList.remove('checking')
+        })
+    }
+
+    // Auto-redirect when connectivity is restored.
+    window.addEventListener('online', () => {
+      const msg = document.getElementById('status-msg')
+      msg.textContent = 'You\'re back online! Redirecting…'
+      msg.className = 'success'
+      setTimeout(() => {
+        window.location.href = document.referrer && document.referrer !== window.location.href
+          ? document.referrer
+          : '/login'
+      }, 1000)
+    })
+
+    // ── List cached pages from the Cache API ────────────────────────────────
+    async function populateCachedPages() {
+      if (!('caches' in window)) return
+
+      try {
+        const cacheNames = await caches.keys()
+        const allRequests = []
+
+        for (const name of cacheNames) {
+          const cache = await caches.open(name)
+          const keys = await cache.keys()
+          allRequests.push(...keys.map(r => r.url))
+        }
+
+        // Filter to same-origin navigation pages only.
+        const origin = window.location.origin
+        const pages = [...new Set(
+          allRequests
+            .filter(url => url.startsWith(origin) && !url.includes('/_next/') && !url.includes('/api/'))
+            .map(url => url.replace(origin, ''))
+            .filter(p => p.length > 1 && !p.endsWith('.json') && !p.endsWith('.png') && !p.endsWith('.ico'))
+            .sort()
+        )].slice(0, 8) // show at most 8
+
+        if (pages.length === 0) return
+
+        const list = document.getElementById('cached-pages')
+        list.innerHTML = pages.map(page => {
+          const label = page
+            .replace(/\//g, ' / ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/^\/\s/, '')
+            || 'Home'
+
+          return `<li>
+            <a href="${page}">
+              <span class="link-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              </span>
+              ${label}
+            </a>
+          </li>`
+        }).join('')
+      } catch {
+        // Cache API unavailable — default list is already shown.
+      }
+    }
+
+    populateCachedPages()
+  </script>
+</body>
+</html>

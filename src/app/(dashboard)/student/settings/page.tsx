@@ -7,7 +7,9 @@ import { logout } from '@/app/actions/auth'
 import {
   Mail, GraduationCap, Zap, ShieldCheck, LogOut,
   ChevronRight, Loader2, Check, Edit2, Star, Clock, ArrowLeft,
+  Accessibility,
 } from 'lucide-react'
+import { AccessibilityControls } from '@/components/AccessibilityControls'
 
 interface ProfileData {
   full_name: string
@@ -235,6 +237,20 @@ export default function ProfileSettingsPage() {
             </div>
             <ChevronRight size={15} className="text-slate-300 flex-shrink-0" />
           </Link>
+        </div>
+
+        {/* ── Accessibility ────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Accessibility size={16} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Accessibility</p>
+              <p className="text-xs text-slate-500 mt-0.5">Font, contrast &amp; motion settings</p>
+            </div>
+          </div>
+          <AccessibilityControls />
         </div>
 
         {/* ── Sign out — large + prominent for mobile ─────────────── */}

@@ -9,11 +9,14 @@ import {
   Flame, Menu, X, GraduationCap, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
+  Accessibility,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
 
 const NAV = [
   { href: '/student/dashboard',         label: 'Dashboard',       icon: LayoutDashboard, badge: null },
+  { href: '/student/challenges',        label: 'Daily Challenge', icon: Zap,             badge: 'challenge' as const },
   { href: '/student/subjects',          label: 'My Subjects',     icon: BookOpen,        badge: null },
   { href: '/student/resources',         label: 'Resource Library',icon: Library,         badge: null },
   { href: '/student/search',            label: 'Search',          icon: Search,          badge: null },
@@ -45,6 +48,7 @@ interface Props {
   plan?: 'free' | 'starter' | 'pro' | 'elite'
   aiUsed?: number
   trialEndsAt?: string | null
+  hasChallenge?: boolean
 }
 
 const PLAN_LIMITS: Record<string, number> = { free: 25, starter: 100, pro: 9999, elite: 9999 }
@@ -56,20 +60,53 @@ const PLAN_COLORS: Record<string, string> = {
   elite: 'bg-amber-500 text-amber-100',
 }
 
-export default function StudentSidebar({ userName, streak, unreadNotifications = 0, unreadMessages = 0, plan = 'free', aiUsed = 0, trialEndsAt = null }: Props) {
-  const [open, setOpen] = useState(false)
+export default function StudentSidebar({ userName, streak, unreadNotifications = 0, unreadMessages = 0, plan = 'free', aiUsed = 0, trialEndsAt = null, hasChallenge = false }: Props) {
+  const [open, setOpen]       = useState(false)
+  const [a11yOpen, setA11yOpen] = useState(false)
   const pathname = usePathname()
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   const badgeCounts: Record<string, number> = {
     notifications: unreadNotifications,
     messages: unreadMessages,
+    challenge: hasChallenge ? 1 : 0,
   }
 
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'S'
 
   return (
-    <>
+    <A11yProvider>
+      {/* ── Accessibility overlay panel ──────────────────────────────── */}
+      {a11yOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          onClick={() => setA11yOpen(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          {/* Panel */}
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 m-4 mt-16 lg:mt-4 p-5 z-10"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Accessibility size={16} className="text-emerald-600" />
+                <h2 className="text-sm font-bold text-slate-800">Accessibility</h2>
+              </div>
+              <button
+                onClick={() => setA11yOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-400 hover:text-slate-600"
+                aria-label="Close accessibility panel"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <AccessibilityControls />
+          </div>
+        </div>
+      )}
+
       {/* Mobile backdrop */}
       {open && (
         <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30" onClick={() => setOpen(false)} />
@@ -115,8 +152,8 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
                   <Icon size={16} className={active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
                   <span className="flex-1 truncate">{label}</span>
                   {count > 0 && (
-                    <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm">
-                      {count > 99 ? '99+' : count}
+                    <span className={`h-[18px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1.5 shadow-sm ${badge === 'challenge' ? 'bg-amber-500 px-2' : 'min-w-[18px] bg-red-500'}`}>
+                      {badge === 'challenge' ? 'NEW' : count > 99 ? '99+' : count}
                     </span>
                   )}
                   {active && count === 0 && (
@@ -204,7 +241,7 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
             </div>
           )}
 
-          {/* User info */}
+          {/* User info + theme + accessibility */}
           <div className="flex items-center gap-2.5 px-2 py-2">
             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-500/40 shadow-lg"
               style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
@@ -215,6 +252,14 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
               <p className="text-[10px] text-slate-500">Student</p>
             </div>
             <ThemeToggle />
+            <button
+              onClick={() => setA11yOpen(v => !v)}
+              className={`p-2 rounded-xl transition-all duration-200 ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800/50 text-slate-400'}`}
+              title="Accessibility settings"
+              aria-label="Toggle accessibility settings"
+            >
+              <Accessibility size={16} />
+            </button>
           </div>
 
           {/* Sign out */}
@@ -250,6 +295,13 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
           <Link href="/student/search" className="p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition">
             <Search size={18} className="text-slate-300" />
           </Link>
+          <button
+            onClick={() => setA11yOpen(v => !v)}
+            className={`p-1.5 rounded-lg transition ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800 text-slate-300'}`}
+            aria-label="Accessibility settings"
+          >
+            <Accessibility size={18} />
+          </button>
           <Link href="/student/settings" className="p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition" aria-label="Profile & Settings">
             <User size={18} className="text-slate-300" />
           </Link>
@@ -258,6 +310,6 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
           </button>
         </div>
       </header>
-    </>
+    </A11yProvider>
   )
 }

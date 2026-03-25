@@ -7,6 +7,41 @@
   --foreground: #171717;
   --shadow-card: 0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04);
   --shadow-card-hover: 0 10px 40px -10px rgba(0,0,0,0.15), 0 20px 25px -5px rgba(0,0,0,0.08);
+
+  /* ── Accessibility variables ─────────────────────────────────── */
+  --base-font-size: 16px;
+  --motion-duration: 200ms;
+  --border-color: #e2e8f0;
+}
+
+/* Font size overrides via data attribute */
+html[data-font-size="sm"] { font-size: 14px; }
+html[data-font-size="md"] { font-size: 16px; }
+html[data-font-size="lg"] { font-size: 18px; }
+html[data-font-size="xl"] { font-size: 20px; }
+
+/* High contrast mode */
+html.high-contrast {
+  --foreground: #000000;
+  --border-color: #000000;
+  filter: contrast(1.2);
+}
+
+/* Reduced motion mode */
+html.reduced-motion {
+  --motion-duration: 0ms;
+}
+html.reduced-motion * {
+  transition-duration: var(--motion-duration) !important;
+  animation-duration: var(--motion-duration) !important;
+}
+
+/* Dyslexic-friendly font */
+html.dyslexic-font body {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: 1.8;
 }
 
 @media (prefers-color-scheme: dark) {

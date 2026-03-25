@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2 } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2, MessageSquare, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -36,6 +36,33 @@ export default async function AdminDashboard() {
     supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'published'),
   ])
 
+  // Trial stats
+  const trialNow = new Date().toISOString()
+  const trialTodayEnd = new Date()
+  trialTodayEnd.setHours(23, 59, 59, 999)
+
+  let activeTrials = 0
+  let endingTodayCount = 0
+  try {
+    const { count: at } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .not('trial_ends_at', 'is', null)
+      .gt('trial_ends_at', trialNow)
+      .eq('plan', 'free')
+    activeTrials = at ?? 0
+  } catch { /* trial_ends_at column may not exist yet */ }
+  try {
+    const { count: et } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .not('trial_ends_at', 'is', null)
+      .gt('trial_ends_at', trialNow)
+      .lt('trial_ends_at', trialTodayEnd.toISOString())
+      .eq('plan', 'free')
+    endingTodayCount = et ?? 0
+  } catch { /* trial_ends_at column may not exist yet */ }
+
   // Fetch announcement count separately (table may not exist yet)
   let activeAnnouncements = 0
   let pendingTeachers = 0
@@ -64,12 +91,14 @@ export default async function AdminDashboard() {
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin'
 
   const stats = [
-    { label: 'Total users',    value: totalUsers ?? 0,        icon: Users,         color: 'text-blue-600',   bg: 'bg-blue-50',   href: '/admin/users' },
-    { label: 'Students',       value: totalStudents ?? 0,     icon: GraduationCap, color: 'text-green-600',  bg: 'bg-green-50',  href: '/admin/users' },
-    { label: 'Subjects',       value: totalSubjects ?? 0,     icon: LayoutList,    color: 'text-purple-600', bg: 'bg-purple-50', href: null as string | null },
-    { label: 'Documents',      value: totalDocuments ?? 0,    icon: Library,       color: 'text-indigo-600', bg: 'bg-indigo-50', href: '/admin/documents' },
-    { label: 'Published',      value: publishedDocuments ?? 0, icon: FileText,     color: 'text-teal-600',   bg: 'bg-teal-50',   href: '/admin/documents' },
-    { label: 'Need review',    value: pendingModeration ?? 0, icon: BarChart2,     color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/documents' },
+    { label: 'Total users',       value: totalUsers ?? 0,        icon: Users,         color: 'text-blue-600',   bg: 'bg-blue-50',   href: '/admin/users' as string | null },
+    { label: 'Students',          value: totalStudents ?? 0,     icon: GraduationCap, color: 'text-green-600',  bg: 'bg-green-50',  href: '/admin/users' },
+    { label: 'Subjects',          value: totalSubjects ?? 0,     icon: LayoutList,    color: 'text-purple-600', bg: 'bg-purple-50', href: null },
+    { label: 'Documents',         value: totalDocuments ?? 0,    icon: Library,       color: 'text-indigo-600', bg: 'bg-indigo-50', href: '/admin/documents' },
+    { label: 'Published',         value: publishedDocuments ?? 0, icon: FileText,     color: 'text-teal-600',   bg: 'bg-teal-50',   href: '/admin/documents' },
+    { label: 'Need review',       value: pendingModeration ?? 0, icon: BarChart2,     color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/documents' },
+    { label: 'Active trials',     value: activeTrials,           icon: Clock,         color: 'text-sky-600',    bg: 'bg-sky-50',    href: '/admin/trials' },
+    { label: 'Trials ending today', value: endingTodayCount,     icon: AlertTriangle, color: endingTodayCount > 0 ? 'text-red-600' : 'text-gray-400', bg: endingTodayCount > 0 ? 'bg-red-50' : 'bg-gray-50', href: '/admin/trials' },
   ]
 
   return (
@@ -102,7 +131,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
           {stats.map(({ label, value, icon: Icon, color, bg, href }) => (
             href ? (
               <Link key={label} href={href} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition group">
@@ -123,6 +152,24 @@ export default async function AdminDashboard() {
             )
           ))}
         </div>
+
+        {/* Churn alert banner */}
+        {endingTodayCount > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="text-red-500 flex-shrink-0" size={20} />
+              <div>
+                <p className="font-semibold text-red-800">
+                  {endingTodayCount} trial{endingTodayCount !== 1 ? 's' : ''} expiring today
+                </p>
+                <p className="text-sm text-red-600">Send reminders to prevent churn</p>
+              </div>
+            </div>
+            <Link href="/admin/trials" className="text-sm font-semibold text-red-700 hover:text-red-900 border border-red-300 rounded-lg px-3 py-1.5 transition hover:bg-red-100 flex-shrink-0">
+              View Users
+            </Link>
+          </div>
+        )}
 
         {/* Moderation alert */}
         {(pendingModeration ?? 0) > 0 && (
@@ -230,6 +277,15 @@ export default async function AdminDashboard() {
                 <p className="text-xs text-gray-500 mt-0.5">Bulk push to users</p>
               </div>
             </Link>
+            <Link href="/admin/notifications/sms" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition group">
+              <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
+                <MessageSquare size={20} className="text-emerald-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Bulk SMS</p>
+                <p className="text-xs text-gray-500 mt-0.5">SMS via Africa&apos;s Talking</p>
+              </div>
+            </Link>
             <Link href="/admin/analytics" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-violet-50 rounded-2xl border border-gray-100 hover:border-violet-200 transition group">
               <div className="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 transition">
                 <BarChart3 size={20} className="text-violet-700" />
@@ -237,6 +293,20 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Analytics</p>
                 <p className="text-xs text-gray-500 mt-0.5">Platform insights</p>
+              </div>
+            </Link>
+            <Link href="/admin/trials" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition group relative">
+              <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition relative">
+                <TrendingUp size={20} className="text-emerald-700" />
+                {endingTodayCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {endingTodayCount}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Trials &amp; Retention</p>
+                <p className="text-xs text-gray-500 mt-0.5">{activeTrials} active trials</p>
               </div>
             </Link>
             <Link href="/admin/settings" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-slate-50 rounded-2xl border border-gray-100 hover:border-slate-200 transition group">
@@ -255,6 +325,15 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold text-gray-900 text-sm">School Licensing</p>
                 <p className="text-xs text-gray-500 mt-0.5">Manage school accounts</p>
+              </div>
+            </Link>
+            <Link href="/admin/cohort" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition group">
+              <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-200 transition">
+                <TrendingUp size={20} className="text-indigo-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Cohort Analytics</p>
+                <p className="text-xs text-gray-500 mt-0.5">Growth, retention &amp; conversion</p>
               </div>
             </Link>
           </div>

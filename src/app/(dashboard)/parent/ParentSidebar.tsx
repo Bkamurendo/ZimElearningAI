@@ -5,12 +5,13 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { logout } from '@/app/actions/auth'
 import {
-  LayoutDashboard, LogOut, Menu, X, GraduationCap, ChevronRight, Users,
+  LayoutDashboard, LogOut, Menu, X, GraduationCap, ChevronRight, Users, MessageSquare,
 } from 'lucide-react'
 
 const NAV = [
   { href: '/parent/dashboard',  label: 'Dashboard',    icon: LayoutDashboard },
   { href: '/parent/children',   label: 'My Children',  icon: Users },
+  { href: '/parent/messages',   label: 'Messages',     icon: MessageSquare },
 ]
 
 interface Props {

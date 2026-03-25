@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, Users, BookOpen, Upload, BarChart3,
-  Settings, LogOut, Menu, X, School, Building2,
+  Settings, LogOut, Menu, X, School, Building2, FileText,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -16,6 +16,7 @@ const NAV = [
   { href: '/school-admin/teachers',  label: 'Teachers',                icon: BookOpen        },
   { href: '/school-admin/import',    label: 'Import Students/Teachers', icon: Upload          },
   { href: '/school-admin/analytics', label: 'Analytics',               icon: BarChart3       },
+  { href: '/school-admin/report',    label: 'Download Report',          icon: FileText        },
   { href: '/school-admin/settings',  label: 'Settings',                icon: Settings        },
 ]
 

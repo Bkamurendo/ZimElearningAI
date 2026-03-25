@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import {
   ArrowLeft, Flame, Star, BookOpen, Brain, Trophy, Target,
-  TrendingUp, AlertTriangle, CheckCircle2, Clock,
+  TrendingUp, AlertTriangle, CheckCircle2, Clock, Download,
 } from 'lucide-react'
 
 const LEVEL_LABEL: Record<string, string> = { primary: 'Primary', olevel: 'O-Level', alevel: 'A-Level' }
@@ -110,9 +110,20 @@ export default async function ChildDetailPage({ params }: { params: { id: string
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5">
 
         {/* Back + Header */}
-        <Link href="/parent/children" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={16} /> Back to My Children
-        </Link>
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/parent/children" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+            <ArrowLeft size={16} /> Back to My Children
+          </Link>
+          <a
+            href={`/api/student/progress-report?studentId=${child.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-colors"
+          >
+            <Download size={15} />
+            Download Report
+          </a>
+        </div>
 
         <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 text-white rounded-2xl p-6 overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />

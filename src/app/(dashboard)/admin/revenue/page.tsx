@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { DollarSign, TrendingUp, Users, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { DollarSign, TrendingUp, Users, CreditCard, ArrowUpRight, ArrowDownRight, Tag } from 'lucide-react'
 
 export default async function AdminRevenuePage() {
   const supabase = createClient()
@@ -45,6 +46,20 @@ export default async function AdminRevenuePage() {
   const paidUsers  = (starterUsers ?? 0) + (proUsers ?? 0) + (eliteUsers ?? 0)
   const estimatedMRR = (starterUsers ?? 0) * 2 + (proUsers ?? 0) * 5 + (eliteUsers ?? 0) * 8
 
+  // Coupon usage
+  type CouponRow = { code: string; discount_amount: number; times_used: number }
+  let topCoupons: CouponRow[] = []
+  let totalCouponSavings = 0
+  try {
+    const { data: coupons } = await supabase
+      .from('coupons')
+      .select('code, discount_amount, times_used')
+      .order('times_used', { ascending: false })
+      .limit(5) as { data: CouponRow[] | null; error: unknown }
+    topCoupons = coupons ?? []
+    totalCouponSavings = topCoupons.reduce((s, c) => s + (c.discount_amount ?? 0) * (c.times_used ?? 0), 0)
+  } catch { /* coupons table may not exist yet */ }
+
   const stats = [
     { label: 'Total Revenue', value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-t-emerald-500' },
     { label: 'This Month', value: `$${thisMonthRevenue.toFixed(2)}`, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-t-blue-500', trend: revenueGrowth },
@@ -57,11 +72,18 @@ export default async function AdminRevenuePage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Revenue Dashboard</h1>
             <p className="text-sm text-gray-500 mt-1">Financial overview and subscription metrics</p>
           </div>
+          <Link
+            href="/admin/trials"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl px-4 py-2 transition"
+          >
+            <TrendingUp size={15} />
+            Trials &amp; Retention →
+          </Link>
         </div>
 
         {/* Stats */}
@@ -107,6 +129,44 @@ export default async function AdminRevenuePage() {
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-4">Estimated MRR: <span className="font-semibold text-gray-600">${estimatedMRR.toFixed(2)}/month</span></p>
+        </div>
+
+        {/* Coupon Usage */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Tag size={16} className="text-purple-500" />
+              <h2 className="text-sm font-semibold text-gray-800">Coupon Usage</h2>
+            </div>
+            <span className="text-xs text-gray-400">
+              Total savings given: <span className="font-semibold text-gray-600">${totalCouponSavings.toFixed(2)}</span>
+            </span>
+          </div>
+          {topCoupons.length === 0 ? (
+            <div className="py-10 text-center text-gray-400 text-sm">No coupon data available</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {topCoupons.map((c) => (
+                <div key={c.code} className="flex items-center justify-between px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                      <Tag size={14} className="text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-mono font-semibold text-gray-900">{c.code}</p>
+                      <p className="text-xs text-gray-400">{c.times_used ?? 0} times used</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-purple-600">-${(c.discount_amount ?? 0).toFixed(2)} each</p>
+                    <p className="text-xs text-gray-400">
+                      ${((c.discount_amount ?? 0) * (c.times_used ?? 0)).toFixed(2)} total savings
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent transactions */}

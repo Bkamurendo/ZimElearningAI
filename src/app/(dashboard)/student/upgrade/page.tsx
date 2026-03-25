@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Zap, CheckCircle2, XCircle, Loader2, ChevronLeft,
-  Smartphone, Shield, Lock, Star, Check, X, Crown, ArrowRight,
+  Smartphone, Shield, Lock, Star, Check, X, Crown, ArrowRight, Tag,
 } from 'lucide-react'
 import { PLANS, type PlanId } from '@/lib/paynow'
 
@@ -156,16 +156,53 @@ export default function UpgradePage() {
   const [loading,        setLoading]        = useState(false)
   const [error,          setError]          = useState('')
 
+  const [couponCode,    setCouponCode]    = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError,   setCouponError]   = useState('')
+  const [couponResult,  setCouponResult]  = useState<{
+    valid: boolean
+    discountedAmount: number
+    savings: number
+    description: string
+    couponId: string
+  } | null>(null)
+
   const [paymentId,     setPaymentId]     = useState<string | null>(null)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'waiting' | 'paid' | 'failed'>('idle')
   const [pollCount,     setPollCount]     = useState(0)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
-  // When tier changes, default to first plan option for that tier
+  // When tier changes, default to first plan option for that tier and clear coupon
   function selectTier(tier: Tier) {
     setSelectedTier(tier)
     const tierDef = TIERS.find(t => t.id === tier)
     if (tierDef) setSelectedPlan(tierDef.planOptions[0])
+    setCouponResult(null)
+    setCouponError('')
+  }
+
+  async function applyCoupon() {
+    if (!couponCode.trim()) { setCouponError('Please enter a coupon code'); return }
+    setCouponLoading(true)
+    setCouponError('')
+    setCouponResult(null)
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode.trim(), planId: selectedPlan, amountUsd: PLANS[selectedPlan].amountUsd }),
+      })
+      const data = await res.json()
+      if (!data.valid) {
+        setCouponError(data.error ?? 'Invalid coupon code')
+      } else {
+        setCouponResult(data)
+      }
+    } catch {
+      setCouponError('Could not validate coupon. Please try again.')
+    } finally {
+      setCouponLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -201,7 +238,7 @@ export default function UpgradePage() {
     try {
       const res = await fetch('/api/payments/flutterwave/initiate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: selectedPlan }),
+        body: JSON.stringify({ planId: selectedPlan, couponCode: couponResult ? couponCode.trim() : undefined }),
       })
       let data: Record<string, unknown> = {}
       try { data = await res.json() } catch { setError(`Server error (${res.status})`); return }
@@ -215,7 +252,11 @@ export default function UpgradePage() {
   async function handlePay() {
     setError(''); setLoading(true)
     try {
-      const body: Record<string, unknown> = { planId: selectedPlan, method: selectedMethod }
+      const body: Record<string, unknown> = {
+        planId: selectedPlan,
+        method: selectedMethod,
+        couponCode: couponResult ? couponCode.trim() : undefined,
+      }
       if (selectedMethod !== 'web') {
         if (!phone.trim()) { setError('Please enter your mobile money phone number'); setLoading(false); return }
         body.phone = phone.trim()
@@ -235,9 +276,10 @@ export default function UpgradePage() {
     } finally { setLoading(false) }
   }
 
-  const plan          = PLANS[selectedPlan]
-  const tier          = TIERS.find(t => t.id === selectedTier)!
-  const selectedLocal = LOCAL_METHODS.find(m => m.id === selectedMethod)
+  const plan            = PLANS[selectedPlan]
+  const tier            = TIERS.find(t => t.id === selectedTier)!
+  const selectedLocal   = LOCAL_METHODS.find(m => m.id === selectedMethod)
+  const effectiveAmount = couponResult ? couponResult.discountedAmount : plan.amountUsd
 
   // ── Paid ────────────────────────────────────────────────────────────────────
   if (paymentStatus === 'paid') {
@@ -417,7 +459,7 @@ export default function UpgradePage() {
               const meta       = PLAN_META[planId]
               const isSelected = selectedPlan === planId
               return (
-                <button key={planId} onClick={() => setSelectedPlan(planId)}
+                <button key={planId} onClick={() => { setSelectedPlan(planId); setCouponResult(null); setCouponError('') }}
                   className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-150 ${
                     isSelected ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100' : 'border-slate-200 hover:border-indigo-300 bg-white'
                   }`}>
@@ -444,6 +486,62 @@ export default function UpgradePage() {
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* ── Coupon / discount code ────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="px-5 pt-5 pb-3 border-b border-slate-100 flex items-center gap-2">
+            <Tag size={16} className="text-indigo-500" />
+            <h2 className="font-bold text-slate-800">Have a Coupon Code?</h2>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponResult(null); setCouponError('') }}
+                onKeyDown={e => { if (e.key === 'Enter') applyCoupon() }}
+                placeholder="e.g. ZIMLEARN50"
+                className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-mono tracking-widest focus:ring-0 focus:border-indigo-500 outline-none transition uppercase placeholder:normal-case placeholder:tracking-normal"
+              />
+              <button
+                onClick={applyCoupon}
+                disabled={couponLoading || !couponCode.trim()}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition flex items-center gap-2"
+              >
+                {couponLoading ? <Loader2 size={15} className="animate-spin" /> : null}
+                Apply
+              </button>
+            </div>
+
+            {couponError && (
+              <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm">
+                <XCircle size={15} className="shrink-0" />
+                {couponError}
+              </div>
+            )}
+
+            {couponResult && couponResult.valid && (
+              <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm">
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-emerald-800">Coupon applied!</p>
+                  <p className="text-emerald-700 text-xs mt-0.5">{couponResult.description}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-emerald-700 font-bold text-sm">-${couponResult.savings.toFixed(2)}</p>
+                  <p className="text-emerald-600 text-xs">saved</p>
+                </div>
+                <button
+                  onClick={() => { setCouponResult(null); setCouponCode(''); setCouponError('') }}
+                  className="ml-1 text-slate-400 hover:text-slate-600 transition"
+                  title="Remove coupon"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -580,10 +678,21 @@ export default function UpgradePage() {
                 <div className="text-xs text-slate-400 mt-0.5">{plan.description}</div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-black text-slate-900">${plan.amountUsd.toFixed(2)}</div>
+                {couponResult && couponResult.valid && (
+                  <div className="text-sm text-slate-400 line-through">${plan.amountUsd.toFixed(2)}</div>
+                )}
+                <div className={`text-2xl font-black ${couponResult && couponResult.valid ? 'text-emerald-600' : 'text-slate-900'}`}>
+                  ${effectiveAmount.toFixed(2)}
+                </div>
                 <div className="text-xs text-slate-400">USD</div>
               </div>
             </div>
+            {couponResult && couponResult.valid && (
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-emerald-700 font-medium flex items-center gap-1"><Tag size={11} /> {couponCode}</span>
+                <span className="text-emerald-700 font-bold">-${couponResult.savings.toFixed(2)} saved</span>
+              </div>
+            )}
           </div>
 
           <div className="p-5 space-y-3">
@@ -598,13 +707,13 @@ export default function UpgradePage() {
                 className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-orange-100 flex items-center justify-center gap-3">
                 {loading
                   ? <><Loader2 size={20} className="animate-spin" /> Redirecting to checkout…</>
-                  : <><Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain brightness-0 invert" /> Pay ${plan.amountUsd.toFixed(2)} USD</>
+                  : <><Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain brightness-0 invert" /> Pay ${effectiveAmount.toFixed(2)} USD</>
                 }
               </button>
             ) : selectedMethod === 'web' ? (
               <button onClick={handlePay} disabled={loading}
                 className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
-                {loading ? <><Loader2 size={20} className="animate-spin" /> Redirecting…</> : <>Pay ${plan.amountUsd.toFixed(2)} via Paynow</>}
+                {loading ? <><Loader2 size={20} className="animate-spin" /> Redirecting…</> : <>Pay ${effectiveAmount.toFixed(2)} via Paynow</>}
               </button>
             ) : (
               <button onClick={handlePay} disabled={loading}
@@ -612,7 +721,7 @@ export default function UpgradePage() {
                 {loading ? (
                   <><Loader2 size={20} className="animate-spin" /> Sending request…</>
                 ) : (
-                  <><Logo src={selectedLocal?.logoSrc ?? '/logos/ecocash.png'} alt={selectedLocal?.label ?? 'Pay'} className="h-6 w-auto object-contain brightness-0 invert" /> Send ${plan.amountUsd.toFixed(2)} Payment Request</>
+                  <><Logo src={selectedLocal?.logoSrc ?? '/logos/ecocash.png'} alt={selectedLocal?.label ?? 'Pay'} className="h-6 w-auto object-contain brightness-0 invert" /> Send ${effectiveAmount.toFixed(2)} Payment Request</>
                 )}
               </button>
             )}
