@@ -42,16 +42,20 @@ export async function POST(req: NextRequest) {
     subjectCode,
     level,
     mode,
+    documentId,
     documentContext,
     studentAnswer,
+    conversationHistory,
   }: {
     question: string
     subjectName: string
     subjectCode: string
     level: string
     mode: 'step_by_step' | 'essay' | 'explain' | 'mark_answer'
+    documentId?: string | null
     documentContext?: string
     studentAnswer?: string
+    conversationHistory?: { role: 'user' | 'assistant'; content: string }[]
   } = await req.json()
 
   // Security: sanitize all user-supplied fields injected into system prompt
@@ -59,9 +63,25 @@ export async function POST(req: NextRequest) {
   const safeSubjectCode = String(subjectCode ?? '').slice(0, 20).replace(/[^A-Z0-9\s]/gi, '')
   const safeLevel = ['primary', 'olevel', 'alevel'].includes(level) ? level : 'olevel'
   const safeMode = ['step_by_step', 'essay', 'explain', 'mark_answer'].includes(mode) ? mode : 'explain'
+
+  // Resolve document context: prefer server-side lookup via documentId over client-provided text
+  let resolvedDocumentContext = documentContext
+  if (documentId && !resolvedDocumentContext) {
+    const { data: doc } = await supabase
+      .from('uploaded_documents')
+      .select('title, extracted_text, ai_summary')
+      .eq('id', documentId)
+      .eq('moderation_status', 'published')
+      .single()
+    if (doc) {
+      const text = doc.extracted_text ?? doc.ai_summary ?? ''
+      if (text) resolvedDocumentContext = `[${doc.title}]\n\n${text}`
+    }
+  }
+
   // documentContext comes from the client — strip any injection attempts, cap at 3000 chars
-  const safeDocumentContext = documentContext
-    ? String(documentContext).slice(0, 3000).replace(/\[INST\]|\[\/INST\]|<\|system\|>|<\|user\|>/gi, '')
+  const safeDocumentContext = resolvedDocumentContext
+    ? String(resolvedDocumentContext).slice(0, 3000).replace(/\[INST\]|\[\/INST\]|<\|system\|>|<\|user\|>/gi, '')
     : undefined
 
   const levelLabel = safeLevel === 'primary' ? 'Primary' : safeLevel === 'olevel' ? 'O-Level' : 'A-Level'
@@ -161,10 +181,20 @@ Always:
 - Format with clear markdown (headings, bold, numbered steps)
 - Be encouraging and patient`
 
-  // Build messages
-  const userContent = mode === 'mark_answer' && studentAnswer
+  // Build messages — include conversation history for multi-turn context
+  const userContent = safeMode === 'mark_answer' && studentAnswer
     ? `QUESTION:\n${question}\n\nSTUDENT'S ANSWER:\n${studentAnswer}`
     : question
+
+  const history: { role: 'user' | 'assistant'; content: string }[] = (conversationHistory ?? [])
+    .slice(-8)
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => ({ role: m.role, content: String(m.content).slice(0, 4000) }))
+
+  const messages: { role: 'user' | 'assistant'; content: string }[] = [
+    ...history,
+    { role: 'user', content: userContent },
+  ]
 
   const encoder = new TextEncoder()
 
@@ -175,7 +205,7 @@ Always:
           model: 'claude-sonnet-4-5',
           max_tokens: 4096,
           system,
-          messages: [{ role: 'user', content: userContent }],
+          messages,
         })
 
         for await (const event of stream) {

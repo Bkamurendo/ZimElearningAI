@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { BookOpen, Plus, ChevronRight } from 'lucide-react'
+import { BookOpen, Plus } from 'lucide-react'
+import CourseActions from './CourseActions'
 
 export default async function TeacherCoursesPage() {
   const supabase = createClient()
@@ -23,39 +24,65 @@ export default async function TeacherCoursesPage() {
     title: string
     description: string | null
     published: boolean
+    created_at: string
     subject: { name: string; code: string } | null
+    lesson_count: number
   }
 
-  const { data: courses } = (await supabase
+  const { data: rawCourses } = (await supabase
     .from('courses')
-    .select('id, title, description, published, subject:subjects(name, code)')
+    .select('id, title, description, published, created_at, subject:subjects(name, code)')
     .eq('teacher_id', teacher.id)
     .order('created_at', { ascending: false })) as {
-    data: CourseRow[] | null
+    data: Omit<CourseRow, 'lesson_count'>[] | null
     error: unknown
+  }
+
+  const courses = rawCourses ?? []
+
+  // Fetch lesson counts
+  const courseIds = courses.map(c => c.id)
+  const { data: lessons } = await supabase
+    .from('lessons')
+    .select('course_id')
+    .in('course_id', courseIds.length > 0 ? courseIds : ['none']) as { data: { course_id: string }[] | null; error: unknown }
+
+  const lessonCounts: Record<string, number> = {}
+  for (const l of lessons ?? []) {
+    lessonCounts[l.course_id] = (lessonCounts[l.course_id] ?? 0) + 1
+  }
+
+  const coursesWithCount: CourseRow[] = courses.map(c => ({ ...c, lesson_count: lessonCounts[c.id] ?? 0 }))
+
+  const levelColor = (code: string | undefined) => {
+    if (!code) return 'from-slate-400 to-slate-600'
+    if (code.includes('primary')) return 'from-green-400 to-emerald-600'
+    if (code.includes('olevel')) return 'from-blue-400 to-indigo-600'
+    if (code.includes('alevel')) return 'from-purple-400 to-violet-600'
+    return 'from-blue-400 to-indigo-600'
   }
 
   return (
     <div className="min-h-screen">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Page header */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">My Courses</h1>
+            <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {courses?.length ?? 0} course{(courses?.length ?? 0) !== 1 ? 's' : ''}
+              {coursesWithCount.length} course{coursesWithCount.length !== 1 ? 's' : ''}
             </p>
           </div>
           <Link
             href="/teacher/courses/new"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-xl transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-xl transition shadow-sm"
           >
             <Plus size={16} />
-            New course
+            New Course
           </Link>
         </div>
 
-        {!courses || courses.length === 0 ? (
+        {coursesWithCount.length === 0 ? (
           <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center shadow-sm">
             <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <BookOpen size={28} className="text-blue-400" />
@@ -72,47 +99,47 @@ export default async function TeacherCoursesPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {courses.map((c) => (
-              <Link
+            {coursesWithCount.map((c) => (
+              <div
                 key={c.id}
-                href={`/teacher/courses/${c.id}`}
-                className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 p-5 hover:border-blue-200 hover:shadow-md transition-all duration-150 shadow-sm"
+                className="group relative bg-white rounded-2xl border border-gray-100 p-5 hover:border-blue-200 hover:shadow-md transition-all duration-150 shadow-sm"
               >
-                {/* Subject badge */}
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <span className="text-white text-xs font-bold">
-                    {c.subject?.code?.split('-')[1]?.slice(0, 2) ?? 'CO'}
-                  </span>
-                </div>
+                <div className="flex items-center gap-4">
+                  {/* Subject badge */}
+                  <Link href={`/teacher/courses/${c.id}`} className="flex-shrink-0">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${levelColor(c.subject?.code)} rounded-xl flex items-center justify-center shadow-sm`}>
+                      <span className="text-white text-xs font-bold">
+                        {c.subject?.code?.split('-')[1]?.slice(0, 2).toUpperCase() ?? 'CO'}
+                      </span>
+                    </div>
+                  </Link>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-gray-900 text-sm">{c.title}</h3>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        c.published
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {c.published ? 'Published' : 'Draft'}
-                    </span>
-                  </div>
-                  {c.description && (
-                    <p className="text-sm text-gray-400 mt-0.5 truncate">{c.description}</p>
-                  )}
-                  {c.subject && (
-                    <p className="text-xs text-gray-400 mt-1 font-medium">
-                      {c.subject.name}
-                    </p>
-                  )}
-                </div>
+                  {/* Info */}
+                  <Link href={`/teacher/courses/${c.id}`} className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-gray-900 text-sm">{c.title}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {c.published ? '● Published' : '○ Draft'}
+                      </span>
+                    </div>
+                    {c.description && (
+                      <p className="text-sm text-gray-400 mt-0.5 truncate">{c.description}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                      {c.subject && <span className="font-medium">{c.subject.name}</span>}
+                      <span>·</span>
+                      <span>{c.lesson_count} lesson{c.lesson_count !== 1 ? 's' : ''}</span>
+                    </div>
+                  </Link>
 
-                <ChevronRight
-                  size={18}
-                  className="text-gray-300 group-hover:text-blue-400 transition flex-shrink-0"
-                />
-              </Link>
+                  {/* Actions */}
+                  <CourseActions
+                    courseId={c.id}
+                    currentTitle={c.title}
+                    currentDescription={c.description}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}

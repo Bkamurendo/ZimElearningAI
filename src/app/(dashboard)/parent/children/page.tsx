@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { Users, TrendingUp, Flame, Star, ChevronRight } from 'lucide-react'
 
 const LEVEL_LABEL: Record<string, string> = { primary: 'Primary', olevel: 'O-Level', alevel: 'A-Level' }
@@ -18,19 +19,33 @@ export default async function ParentChildrenPage() {
     id: string
     grade: string
     zimsec_level: string
+    user_id: string
     user: { full_name: string } | null
   }
-  const { data: children } = await supabase
+
+  // Use service client to bypass RLS for the profiles join
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+  const { data: childProfiles } = await serviceClient
     .from('student_profiles')
-    .select('id, grade, zimsec_level, user:profiles(full_name)')
-    .eq('parent_id', user.id) as { data: ChildRow[] | null; error: unknown }
+    .select('id, grade, zimsec_level, user_id')
+    .eq('parent_id', user.id) as { data: { id: string; grade: string; zimsec_level: string; user_id: string }[] | null; error: unknown }
+
+  const children: ChildRow[] = []
+  for (const cp of childProfiles ?? []) {
+    const { data: prof } = await serviceClient
+      .from('profiles').select('full_name').eq('id', cp.user_id).single() as { data: { full_name: string } | null; error: unknown }
+    children.push({ ...cp, user: prof ?? null })
+  }
 
   // Per-child quick stats
   type ChildStat = ChildRow & {
     streak: number; totalXp: number; subjectCount: number
   }
   const stats: ChildStat[] = []
-  for (const child of children ?? []) {
+  for (const child of children) {
     const { data: sk } = await supabase
       .from('student_streaks').select('current_streak, total_xp')
       .eq('student_id', child.id).single() as { data: { current_streak: number; total_xp: number } | null; error: unknown }

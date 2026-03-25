@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { markAllNotificationsRead } from '@/app/actions/notifications'
 
 export default async function ParentDashboard() {
@@ -19,12 +20,32 @@ export default async function ParentDashboard() {
     id: string
     grade: string
     zimsec_level: string
+    user_id: string
     user: { full_name: string; email: string } | null
   }
-  const { data: children } = await supabase
+
+  // Use service client to bypass RLS for the profiles join
+  // (parent RLS allows reading student_profiles, but not the child's profile row)
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+
+  const { data: childProfiles } = await serviceClient
     .from('student_profiles')
-    .select('id, grade, zimsec_level, user:profiles(full_name, email)')
-    .eq('parent_id', user.id) as { data: ChildRow[] | null; error: unknown }
+    .select('id, grade, zimsec_level, user_id')
+    .eq('parent_id', user.id) as { data: { id: string; grade: string; zimsec_level: string; user_id: string }[] | null; error: unknown }
+
+  // Fetch each child's public profile
+  const children: ChildRow[] = []
+  for (const cp of childProfiles ?? []) {
+    const { data: prof } = await serviceClient
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', cp.user_id)
+      .single() as { data: { full_name: string; email: string } | null; error: unknown }
+    children.push({ ...cp, user: prof ?? null })
+  }
 
   // Rich stats for each child
   type ChildStats = ChildRow & {
@@ -38,7 +59,7 @@ export default async function ParentDashboard() {
   }
 
   const childStats: ChildStats[] = []
-  for (const child of children ?? []) {
+  for (const child of children) {
     const { count: lessons } = await supabase
       .from('lesson_progress').select('id', { count: 'exact', head: true }).eq('student_id', child.id)
     const { count: quizzes } = await supabase

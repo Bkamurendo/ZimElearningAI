@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import {
   ArrowLeft, Flame, Star, BookOpen, Brain, Trophy, Target,
   TrendingUp, AlertTriangle, CheckCircle2, Clock,
@@ -17,19 +18,31 @@ export default async function ChildDetailPage({ params }: { params: { id: string
     .from('profiles').select('role').eq('id', user.id).single()
   if (parentProfile?.role !== 'parent') redirect(`/${parentProfile?.role}/dashboard`)
 
-  // Verify this child belongs to this parent
+  // Use service client to bypass profiles RLS for child data
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+
+  // Verify this child belongs to this parent (using session client for security check)
+  const { data: childBase } = await supabase
+    .from('student_profiles')
+    .select('id, grade, zimsec_level, user_id')
+    .eq('id', params.id)
+    .eq('parent_id', user.id)
+    .single() as { data: { id: string; grade: string; zimsec_level: string; user_id: string } | null; error: unknown }
+
+  if (!childBase) notFound()
+
+  // Fetch child's profile data with service client (bypasses profiles RLS)
+  const { data: childProfile } = await serviceClient
+    .from('profiles').select('full_name, email').eq('id', childBase.user_id).single() as { data: { full_name: string; email: string } | null; error: unknown }
+
   type ChildRow = {
     id: string; grade: string; zimsec_level: string
     user: { full_name: string; email: string } | null
   }
-  const { data: child } = await supabase
-    .from('student_profiles')
-    .select('id, grade, zimsec_level, user:profiles(full_name, email)')
-    .eq('id', params.id)
-    .eq('parent_id', user.id)
-    .single() as { data: ChildRow | null; error: unknown }
-
-  if (!child) notFound()
+  const child: ChildRow = { ...childBase, user: childProfile ?? null }
 
   // ── Aggregate stats ──
   const { data: streak } = await supabase

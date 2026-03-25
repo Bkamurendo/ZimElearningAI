@@ -73,17 +73,22 @@ async function sendSmsOtp(to: string, code: string): Promise<void> {
     },
     body: JSON.stringify({
       messages: [{
-        sender: 'ZimLearn',
         destinations: [{ to: phone }],
         content: { text: `Your ZimLearn verification code is: ${code}. Valid for 10 minutes.` },
       }],
     }),
   })
+  const body = await res.text()
   if (!res.ok) {
-    const body = await res.text()
-    console.error('[mfa/send] Infobip SMS delivery failed:', body)
+    console.error('[mfa/send] Infobip SMS failed:', body)
     throw new Error('SMS delivery failed. Please try email verification instead, or contact support.')
   }
+  // Log success with message ID for delivery tracking
+  try {
+    const parsed = JSON.parse(body)
+    const msg = parsed?.messages?.[0]
+    console.log(`[mfa/send] Infobip SMS queued → to:${phone} msgId:${msg?.messageId} status:${msg?.status?.name}`)
+  } catch { /* ignore parse errors */ }
 }
 
 /* ── route handler ───────────────────────────────────────────────────────── */
@@ -111,9 +116,7 @@ export async function POST(req: NextRequest) {
     if (method === 'email' && profile?.mfa_method !== 'email') {
       return NextResponse.json({ error: 'Email OTP not enabled on this account' }, { status: 400 })
     }
-    if (method === 'phone' && profile?.mfa_method !== 'phone') {
-      return NextResponse.json({ error: 'Phone OTP not enabled on this account' }, { status: 400 })
-    }
+    // Phone: allow send if a phone number is saved (covers both setup verification and active-method sends)
     if (method === 'phone' && !profile?.mfa_phone) {
       return NextResponse.json({ error: 'No phone number registered' }, { status: 400 })
     }

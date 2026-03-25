@@ -33,6 +33,38 @@ export async function createCourse(formData: FormData): Promise<void> {
   redirect(`/teacher/courses/${course.id}`)
 }
 
+export async function updateCourse(formData: FormData): Promise<void> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const courseId = formData.get('course_id') as string
+  const title = formData.get('title') as string
+  const description = formData.get('description') as string
+
+  await supabase
+    .from('courses')
+    .update({ title, description })
+    .eq('id', courseId)
+
+  revalidatePath(`/teacher/courses/${courseId}`)
+  revalidatePath('/teacher/courses')
+  redirect(`/teacher/courses/${courseId}`)
+}
+
+export async function deleteCourse(formData: FormData): Promise<void> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const courseId = formData.get('course_id') as string
+
+  await supabase.from('courses').delete().eq('id', courseId)
+
+  revalidatePath('/teacher/courses')
+  redirect('/teacher/courses')
+}
+
 export async function createLesson(formData: FormData): Promise<void> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -61,6 +93,26 @@ export async function createLesson(formData: FormData): Promise<void> {
     content,
     order_index: orderIndex,
   })
+
+  revalidatePath(`/teacher/courses/${courseId}`)
+  redirect(`/teacher/courses/${courseId}`)
+}
+
+export async function updateLesson(formData: FormData): Promise<void> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const lessonId = formData.get('lesson_id') as string
+  const courseId = formData.get('course_id') as string
+  const title = formData.get('title') as string
+  const contentType = formData.get('content_type') as string
+  const content = formData.get('content') as string
+
+  await supabase
+    .from('lessons')
+    .update({ title, content_type: contentType, content })
+    .eq('id', lessonId)
 
   revalidatePath(`/teacher/courses/${courseId}`)
   redirect(`/teacher/courses/${courseId}`)

@@ -123,10 +123,10 @@ export default function SecuritySettingsPage() {
   async function sendPhoneOtp() {
     if (!phone.trim()) { setError('Enter a phone number first'); return }
     setBusy(true); setError('')
-    // Temporarily set method to phone so the send route allows it
+    // Save phone number only — mfa_method stays unchanged until code is verified
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from('profiles').update({ mfa_method: 'phone', mfa_phone: phone.trim() }).eq('id', user.id)
+      await supabase.from('profiles').update({ mfa_phone: phone.trim() }).eq('id', user.id)
     }
     try {
       const res = await fetch('/api/auth/mfa/send', {

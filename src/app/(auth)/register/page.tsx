@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { register } from '@/app/actions/auth'
 import type { UserRole } from '@/types/database'
-import { GraduationCap, Users, BookOpen, Shield, User, Zap } from 'lucide-react'
+import { GraduationCap, Users, BookOpen, User, Zap } from 'lucide-react'
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
+import { FacebookAuthButton } from '@/components/auth/FacebookAuthButton'
 
 const ROLES: {
   value: UserRole
@@ -44,16 +45,6 @@ const ROLES: {
     activeBorder: 'has-[:checked]:border-purple-500',
     activeText: 'has-[:checked]:text-purple-700',
   },
-  {
-    value: 'admin',
-    label: 'Admin',
-    desc: 'I manage platform',
-    icon: Shield,
-    gradient: 'from-gray-500 to-slate-600',
-    activeBg: 'has-[:checked]:bg-gray-50',
-    activeBorder: 'has-[:checked]:border-gray-500',
-    activeText: 'has-[:checked]:text-gray-700',
-  },
 ]
 
 export default function RegisterPage({
@@ -71,10 +62,17 @@ export default function RegisterPage({
       >
         {/* Animated glow orbs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full animate-float"
-            style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, transparent 70%)' }} />
-          <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full animate-float"
-            style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)', animationDelay: '1.5s' }} />
+          <div
+            className="absolute -top-32 -left-32 w-96 h-96 rounded-full animate-float"
+            style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full animate-float"
+            style={{
+              background: 'radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)',
+              animationDelay: '1.5s',
+            }}
+          />
         </div>
 
         <div className="relative z-10">
@@ -136,7 +134,9 @@ export default function RegisterPage({
                 <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
                   <Zap size={13} className="text-white" />
                 </div>
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Free forever</span>
+                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
+                  Free forever
+                </span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
               <p className="text-gray-400 text-sm mt-1">Join ZimLearn today — it&apos;s free</p>
@@ -149,13 +149,18 @@ export default function RegisterPage({
               </div>
             )}
 
-            {/* Google OAuth */}
-            <GoogleAuthButton label="Sign up with Google" />
+            {/* Social auth */}
+            <div className="space-y-3">
+              <GoogleAuthButton label="Sign up with Google" />
+              <FacebookAuthButton label="Sign up with Facebook" />
+            </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">or email</span>
+              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+                or email
+              </span>
               <div className="flex-1 h-px bg-gray-100" />
             </div>
 
@@ -164,7 +169,10 @@ export default function RegisterPage({
               className="space-y-4"
             >
               <div>
-                <label htmlFor="full_name" className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">
+                <label
+                  htmlFor="full_name"
+                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+                >
                   Full name
                 </label>
                 <input
@@ -178,7 +186,10 @@ export default function RegisterPage({
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+                >
                   Email address
                 </label>
                 <input
@@ -193,7 +204,10 @@ export default function RegisterPage({
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+                >
                   Password
                 </label>
                 <input
@@ -210,13 +224,13 @@ export default function RegisterPage({
               {/* Role picker */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-2.5 uppercase tracking-wider">
-                  I am a...
+                  I am a…
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {ROLES.map((r) => (
                     <label
                       key={r.value}
-                      className={`relative flex items-center gap-2.5 cursor-pointer border-2 border-gray-100 rounded-2xl p-3 hover:border-gray-200 transition-all duration-150 ${r.activeBg} ${r.activeBorder}`}
+                      className={`relative flex flex-col items-center gap-2 cursor-pointer border-2 border-gray-100 rounded-2xl p-3 hover:border-gray-200 transition-all duration-150 ${r.activeBg} ${r.activeBorder}`}
                     >
                       <input
                         type="radio"
@@ -226,16 +240,26 @@ export default function RegisterPage({
                         required
                         defaultChecked={r.value === 'student'}
                       />
-                      <div className={`w-8 h-8 bg-gradient-to-br ${r.gradient} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                        <r.icon size={14} className="text-white" />
+                      <div className={`w-9 h-9 bg-gradient-to-br ${r.gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                        <r.icon size={16} className="text-white" />
                       </div>
-                      <div>
-                        <p className={`font-bold text-gray-900 text-sm leading-tight ${r.activeText}`}>{r.label}</p>
+                      <div className="text-center">
+                        <p className={`font-bold text-gray-900 text-sm leading-tight ${r.activeText}`}>
+                          {r.label}
+                        </p>
                         <p className="text-gray-400 text-[10px] leading-tight mt-0.5">{r.desc}</p>
                       </div>
                     </label>
                   ))}
                 </div>
+
+                {/* Admin note */}
+                <p className="mt-2.5 text-[11px] text-gray-400 text-center">
+                  Admin access?{' '}
+                  <Link href="/login" className="text-gray-500 underline hover:text-gray-700 transition">
+                    Contact your platform administrator
+                  </Link>
+                </p>
               </div>
 
               <button
@@ -246,6 +270,18 @@ export default function RegisterPage({
                 Create account →
               </button>
             </form>
+
+            {/* Terms note */}
+            <p className="text-center text-[11px] text-gray-300 mt-4 leading-relaxed">
+              By creating an account you agree to our{' '}
+              <Link href="/terms" className="hover:text-gray-500 underline transition">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="hover:text-gray-500 underline transition">
+                Privacy Policy
+              </Link>
+            </p>
           </div>
 
           <div className="mt-5 text-center">

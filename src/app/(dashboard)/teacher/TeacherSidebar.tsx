@@ -6,20 +6,28 @@ import Link from 'next/link'
 import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, BookOpen, ClipboardList, LogOut, Menu, X,
-  GraduationCap, Library, MessageSquare, Sparkles,
+  GraduationCap, Library, MessageSquare, Sparkles, Users, BookMarked,
+  HelpCircle, FlaskConical, CalendarCheck, BarChart3,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 const NAV = [
-  { href: '/teacher/dashboard',   label: 'Dashboard',        icon: LayoutDashboard, badge: null },
-  { href: '/teacher/courses',     label: 'My Courses',       icon: BookOpen,        badge: null },
-  { href: '/teacher/assignments', label: 'Assignments',      icon: ClipboardList,   badge: null },
-  { href: '/teacher/resources',   label: 'My Resources',     icon: Library,         badge: null },
-  { href: '/teacher/messages',    label: 'Messages',         icon: MessageSquare,   badge: 'messages' as const },
+  { href: '/teacher/dashboard',      label: 'Dashboard',        icon: LayoutDashboard, badge: null },
+  { href: '/teacher/courses',        label: 'My Courses',       icon: BookOpen,        badge: null },
+  { href: '/teacher/assignments',    label: 'Assignments',      icon: ClipboardList,   badge: null },
+  { href: '/teacher/tests',          label: 'Tests',            icon: FlaskConical,    badge: null },
+  { href: '/teacher/projects',       label: 'Projects (SBP)',   icon: BookMarked,      badge: null },
+  { href: '/teacher/students',       label: 'My Students',      icon: Users,           badge: null },
+  { href: '/teacher/gradebook',      label: 'Grade Book',       icon: BookMarked,      badge: null },
+  { href: '/teacher/question-bank',  label: 'Question Bank',    icon: HelpCircle,      badge: null },
+  { href: '/teacher/resources',      label: 'Resources',        icon: Library,         badge: null },
+  { href: '/teacher/analytics',      label: 'Analytics',        icon: BarChart3,       badge: null },
+  { href: '/teacher/messages',       label: 'Messages',         icon: MessageSquare,   badge: 'messages' as const },
 ]
 
 const TOOLS = [
-  { href: '/teacher/resources/generate', label: 'AI Materials Generator', icon: Sparkles },
+  { href: '/teacher/lesson-planner', label: 'Lesson Planner',         icon: CalendarCheck },
+  { href: '/teacher/resources',      label: 'AI Materials Generator',  icon: Sparkles },
 ]
 
 interface Props {
@@ -106,7 +114,7 @@ export default function TeacherSidebar({ userName, unreadMessages = 0 }: Props) 
                 const active = isActive(href)
                 return (
                   <Link
-                    key={href}
+                    key={`tool-${href}-${label}`}
                     href={href}
                     onClick={() => setOpen(false)}
                     className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${

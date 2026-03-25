@@ -562,7 +562,15 @@ DROP POLICY IF EXISTS "profiles_update"       ON public.profiles;
 DROP POLICY IF EXISTS "profiles_admin"        ON public.profiles;
 
 CREATE POLICY "profiles_select" ON public.profiles FOR SELECT
-  USING (id = auth.uid() OR public.get_my_role() IN ('teacher', 'admin'));
+  USING (
+    id = auth.uid()
+    OR public.get_my_role() IN ('teacher', 'admin')
+    OR EXISTS (
+      SELECT 1 FROM public.student_profiles sp
+      WHERE sp.user_id = profiles.id
+        AND sp.parent_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE
   USING (id = auth.uid()) WITH CHECK (id = auth.uid());

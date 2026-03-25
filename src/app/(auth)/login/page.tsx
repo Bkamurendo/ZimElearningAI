@@ -1,13 +1,19 @@
-import Link from 'next/link'
-import { login } from '@/app/actions/auth'
-import { GraduationCap, Brain, Target, BookOpen, CheckCircle, Zap } from 'lucide-react'
-import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
+import { GraduationCap, Brain, Target, BookOpen, CheckCircle } from 'lucide-react'
+import { LoginForm } from './LoginForm'
+
+const SUCCESS_MESSAGES: Record<string, string> = {
+  password_reset_success: 'Password updated successfully. Please sign in with your new password.',
+}
 
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; message?: string }
 }) {
+  const successMessage = searchParams.message
+    ? SUCCESS_MESSAGES[searchParams.message]
+    : undefined
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
 
@@ -18,12 +24,24 @@ export default function LoginPage({
       >
         {/* Animated glow orbs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full animate-float"
-            style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, transparent 70%)' }} />
-          <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full animate-float"
-            style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)', animationDelay: '1.5s' }} />
-          <div className="absolute top-1/2 left-2/3 w-48 h-48 rounded-full animate-float"
-            style={{ background: 'radial-gradient(circle, rgba(110,231,183,0.15) 0%, transparent 70%)', animationDelay: '3s' }} />
+          <div
+            className="absolute -top-32 -left-32 w-96 h-96 rounded-full animate-float"
+            style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full animate-float"
+            style={{
+              background: 'radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)',
+              animationDelay: '1.5s',
+            }}
+          />
+          <div
+            className="absolute top-1/2 left-2/3 w-48 h-48 rounded-full animate-float"
+            style={{
+              background: 'radial-gradient(circle, rgba(110,231,183,0.15) 0%, transparent 70%)',
+              animationDelay: '3s',
+            }}
+          />
         </div>
 
         {/* Top: logo + headline */}
@@ -73,7 +91,10 @@ export default function LoginPage({
               { value: '500+', label: 'Lessons' },
               { value: '4.9★', label: 'Rating' },
             ].map(({ value, label }) => (
-              <div key={label} className="flex-1 bg-white/10 rounded-2xl px-3 py-3 text-center border border-white/10 backdrop-blur-sm">
+              <div
+                key={label}
+                className="flex-1 bg-white/10 rounded-2xl px-3 py-3 text-center border border-white/10 backdrop-blur-sm"
+              >
                 <p className="text-white font-bold text-lg leading-tight">{value}</p>
                 <p className="text-emerald-300 text-xs mt-0.5">{label}</p>
               </div>
@@ -97,99 +118,7 @@ export default function LoginPage({
           <span className="font-bold text-gray-900 text-xl">ZimLearn</span>
         </div>
 
-        <div className="w-full max-w-sm">
-          {/* Glass card */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-            <div className="mb-7">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-                  <Zap size={13} className="text-white" />
-                </div>
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Welcome back</span>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Sign in to ZimLearn</h2>
-              <p className="text-gray-400 text-sm mt-1">Continue your learning journey</p>
-            </div>
-
-            {searchParams.error && (
-              <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm flex items-start gap-2.5">
-                <span className="flex-shrink-0 mt-0.5 text-red-400">⚠</span>
-                <span>{searchParams.error}</span>
-              </div>
-            )}
-
-            {/* Google OAuth */}
-            <GoogleAuthButton label="Sign in with Google" />
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">or email</span>
-              <div className="flex-1 h-px bg-gray-100" />
-            </div>
-
-            <form
-              action={login as unknown as (formData: FormData) => void}
-              className="space-y-4"
-            >
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
-                >
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 font-bold rounded-2xl transition-all duration-200 text-sm shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01] active:scale-[0.99] text-white mt-2"
-                style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
-              >
-                Sign in →
-              </button>
-            </form>
-          </div>
-
-          <div className="mt-5 text-center">
-            <p className="text-sm text-gray-400">
-              Don&apos;t have an account?{' '}
-              <Link
-                href="/register"
-                className="text-emerald-600 font-bold hover:text-emerald-700 transition"
-              >
-                Create one free
-              </Link>
-            </p>
-          </div>
-        </div>
+        <LoginForm error={searchParams.error} successMessage={successMessage} />
       </div>
     </div>
   )

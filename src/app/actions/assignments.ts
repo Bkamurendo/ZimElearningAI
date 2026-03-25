@@ -4,6 +4,39 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
+export async function updateAssignment(formData: FormData): Promise<void> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const id = formData.get('id') as string
+  const title = formData.get('title') as string
+  const description = formData.get('description') as string
+  const dueDateStr = formData.get('due_date') as string
+  const maxScore = parseInt(formData.get('max_score') as string, 10) || 100
+
+  await supabase
+    .from('assignments')
+    .update({ title, description, due_date: dueDateStr || null, max_score: maxScore })
+    .eq('id', id)
+
+  revalidatePath('/teacher/assignments')
+  redirect('/teacher/assignments')
+}
+
+export async function deleteAssignment(formData: FormData): Promise<void> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const id = formData.get('id') as string
+
+  await supabase.from('assignments').delete().eq('id', id)
+
+  revalidatePath('/teacher/assignments')
+  redirect('/teacher/assignments')
+}
+
 export async function createAssignment(formData: FormData): Promise<void> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, GraduationCap, BookOpen, Heart, Shield, ArrowLeft } from 'lucide-react'
+import { Users, GraduationCap, BookOpen, Heart, Shield, ArrowLeft, ChevronRight } from 'lucide-react'
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
   student: { label: 'Student',  color: 'text-green-700',  bg: 'bg-green-50 border-green-200',  icon: GraduationCap },
@@ -55,7 +55,7 @@ export default async function AdminUsersPage() {
               <ArrowLeft size={13} /> Dashboard
             </Link>
             <h1 className="text-xl font-bold text-gray-900">User Management</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{users.length} registered users</p>
+            <p className="text-sm text-gray-500 mt-0.5">{users.length} registered users — click any row to edit</p>
           </div>
         </div>
 
@@ -115,17 +115,21 @@ export default async function AdminUsersPage() {
                 const roleCfg = ROLE_CONFIG[u.role] ?? ROLE_CONFIG.student
                 const RoleIcon = roleCfg.icon
                 return (
-                  <div key={u.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition">
+                  <Link
+                    key={u.id}
+                    href={`/admin/users/${u.id}`}
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-indigo-50/40 transition group"
+                  >
                     {/* Avatar */}
-                    <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-gray-500">
+                    <div className="w-9 h-9 bg-gray-100 group-hover:bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 transition-colors">
+                      <span className="text-sm font-bold text-gray-500 group-hover:text-indigo-600 transition-colors">
                         {(u.full_name ?? u.email)[0]?.toUpperCase()}
                       </span>
                     </div>
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
+                        <p className="font-semibold text-gray-900 text-sm truncate group-hover:text-indigo-700 transition-colors">
                           {u.full_name ?? 'No name'}
                         </p>
                         {!u.onboarding_completed && (
@@ -145,7 +149,9 @@ export default async function AdminUsersPage() {
                     <span className="text-xs text-gray-300 flex-shrink-0 hidden sm:block">
                       {new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
                     </span>
-                  </div>
+                    {/* Chevron */}
+                    <ChevronRight size={14} className="text-gray-300 group-hover:text-indigo-400 flex-shrink-0 transition-colors" />
+                  </Link>
                 )
               })}
             </div>
