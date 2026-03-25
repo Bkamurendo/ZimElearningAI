@@ -8,6 +8,7 @@ import {
   LayoutDashboard, TrendingUp, Target, CalendarDays, LogOut,
   Flame, Menu, X, GraduationCap, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
+  ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -24,6 +25,15 @@ const NAV = [
   { href: '/student/grade-predictor',   label: 'Grade Predictor', icon: Target,          badge: null },
   { href: '/student/study-planner',     label: 'Study Planner',   icon: CalendarDays,    badge: null },
   { href: '/student/solver',            label: 'Problem Solver',  icon: Calculator,      badge: null },
+  { href: '/student/assignments',       label: 'Assignments',     icon: ClipboardList,   badge: null },
+  { href: '/student/projects',          label: 'Projects (SBP)',  icon: FlaskConical,    badge: null },
+  { href: '/student/projects/examples', label: 'SBP Examples',    icon: BookOpen,        badge: null },
+  { href: '/student/projects/templates',label: 'SBP Templates',   icon: Crown,           badge: null },
+  { href: '/student/notes',             label: 'My Notes',        icon: FileText,        badge: null },
+  { href: '/student/flashcards',        label: 'Flashcards',      icon: Layers,          badge: null },
+  { href: '/student/ai-teacher',        label: 'AI Teacher',      icon: Bot,             badge: null },
+  { href: '/student/ai-workspace',      label: 'AI Workspace',    icon: Sparkles,        badge: null },
+  { href: '/student/exam-timetable',    label: 'Exam Timetable',  icon: CalendarCheck,   badge: null },
   { href: '/student/settings/security', label: 'Security',        icon: Settings,        badge: null },
 ]
 
@@ -32,9 +42,21 @@ interface Props {
   streak: number
   unreadNotifications?: number
   unreadMessages?: number
+  plan?: 'free' | 'starter' | 'pro' | 'elite'
+  aiUsed?: number
+  trialEndsAt?: string | null
 }
 
-export default function StudentSidebar({ userName, streak, unreadNotifications = 0, unreadMessages = 0 }: Props) {
+const PLAN_LIMITS: Record<string, number> = { free: 25, starter: 100, pro: 9999, elite: 9999 }
+const PLAN_LABELS: Record<string, string> = { free: 'Free', starter: 'Starter', pro: 'Pro', elite: 'Elite' }
+const PLAN_COLORS: Record<string, string> = {
+  free: 'bg-slate-600 text-slate-200',
+  starter: 'bg-blue-600 text-blue-100',
+  pro: 'bg-indigo-600 text-indigo-100',
+  elite: 'bg-amber-500 text-amber-100',
+}
+
+export default function StudentSidebar({ userName, streak, unreadNotifications = 0, unreadMessages = 0, plan = 'free', aiUsed = 0, trialEndsAt = null }: Props) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
@@ -108,22 +130,71 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
 
         {/* Footer */}
         <div className="px-3 py-4 border-t border-slate-800 space-y-2">
-          {/* Upgrade banner */}
-          <Link
-            href="/student/upgrade"
-            onClick={() => setOpen(false)}
-            className="relative overflow-hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.02] group"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)' }}
-          >
-            <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100" />
-            <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Zap size={14} className="text-yellow-300" />
+          {/* Trial banner */}
+          {trialEndsAt && new Date(trialEndsAt) > new Date() && (plan === 'free' || plan === 'starter') && (() => {
+            const daysLeft = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            return (
+              <Link href="/student/upgrade" onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all">
+                <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Zap size={14} className="text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-emerald-300 leading-tight">Pro Trial Active</div>
+                  <div className="text-[10px] text-emerald-500 leading-tight">{daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining · Upgrade to keep access</div>
+                </div>
+              </Link>
+            )
+          })()}
+
+          {/* AI quota bar (free / starter only) */}
+          {plan !== 'pro' && plan !== 'elite' && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
+            const limit = PLAN_LIMITS[plan] ?? 25
+            const pct = Math.min(100, Math.round((aiUsed / limit) * 100))
+            const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
+            return (
+              <div className="px-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">AI Requests Today</span>
+                  <span className={`text-[10px] font-bold ${pct >= 90 ? 'text-red-400' : 'text-slate-400'}`}>{aiUsed}/{limit}</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                </div>
+                {pct >= 80 && (
+                  <p className="text-[10px] text-amber-400">Running low — <Link href="/student/upgrade" className="underline hover:text-amber-300">upgrade now</Link></p>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Upgrade banner (hide for pro/elite) */}
+          {plan === 'pro' || plan === 'elite' ? (
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800/60">
+              <Crown size={14} className="text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-slate-200 leading-tight">{PLAN_LABELS[plan]} Plan</div>
+                <div className="text-[10px] text-slate-500 leading-tight">Unlimited AI access</div>
+              </div>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${PLAN_COLORS[plan]}`}>{PLAN_LABELS[plan].toUpperCase()}</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
-              <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
-            </div>
-          </Link>
+          ) : (
+            <Link
+              href="/student/upgrade"
+              onClick={() => setOpen(false)}
+              className="relative overflow-hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.02] group"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)' }}
+            >
+              <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100" />
+              <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Zap size={14} className="text-yellow-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
+                <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
+              </div>
+            </Link>
+          )}
 
           {/* Streak pill */}
           {streak > 0 && (

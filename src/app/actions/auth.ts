@@ -97,9 +97,13 @@ export async function register(formData: FormData): Promise<void> {
     data: { user },
   } = await supabase.auth.getUser()
   if (user) {
+    // Give every new student a 7-day free Pro trial
+    const trialEndsAt = role === 'student'
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      : null
     await supabase
       .from('profiles')
-      .update({ role, full_name: fullName })
+      .update({ role, full_name: fullName, ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}) })
       .eq('id', user.id)
   }
 

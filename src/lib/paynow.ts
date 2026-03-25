@@ -223,6 +223,48 @@ export const PLANS = {
     days: 365,
     description: 'ZimLearn Elite — 1 Year Access',
   },
+  // ── Exam Bootcamp (seasonal) ────────────────────────────────────────────────
+  bootcamp_2week: {
+    id: 'bootcamp_2week',
+    label: 'Exam Bootcamp 2-Week',
+    tier: 'pro' as const,
+    amountUsd: 3.00,
+    days: 14,
+    description: 'ZimLearn Exam Bootcamp — 2 Weeks Pro Access (ZIMSEC Prep)',
+  },
+  bootcamp_4week: {
+    id: 'bootcamp_4week',
+    label: 'Exam Bootcamp 4-Week',
+    tier: 'pro' as const,
+    amountUsd: 5.00,
+    days: 28,
+    description: 'ZimLearn Exam Bootcamp — 4 Weeks Pro Access (ZIMSEC Prep)',
+  },
+  // ── School Licensing ────────────────────────────────────────────────────────
+  school_basic_monthly: {
+    id: 'school_basic_monthly',
+    label: 'School Basic Monthly',
+    tier: 'pro' as const,
+    amountUsd: 50.00,
+    days: 30,
+    description: 'ZimLearn School Basic — Up to 50 Students (1 Month)',
+  },
+  school_pro_monthly: {
+    id: 'school_pro_monthly',
+    label: 'School Pro Monthly',
+    tier: 'elite' as const,
+    amountUsd: 120.00,
+    days: 30,
+    description: 'ZimLearn School Pro — Unlimited Students (1 Month)',
+  },
+  school_pro_yearly: {
+    id: 'school_pro_yearly',
+    label: 'School Pro Yearly',
+    tier: 'elite' as const,
+    amountUsd: 1000.00,
+    days: 365,
+    description: 'ZimLearn School Pro — Unlimited Students (1 Year)',
+  },
 } as const
 
 export type PlanId = keyof typeof PLANS

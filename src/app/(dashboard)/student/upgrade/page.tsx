@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Zap, CheckCircle2, XCircle, Loader2, ChevronLeft,
-  Smartphone, Shield, Lock, Star, Check, X, Crown,
+  Smartphone, Shield, Lock, Star, Check, X, Crown, ArrowRight,
 } from 'lucide-react'
 import { PLANS, type PlanId } from '@/lib/paynow'
 
@@ -105,13 +105,18 @@ const TIERS: {
 // ─── Plan option metadata ─────────────────────────────────────────────────────
 
 const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: string }> = {
-  starter_monthly:   { perMonth: '$2.00', period: 'per month' },
-  starter_quarterly: { perMonth: '$1.67', period: 'per month, billed $5 quarterly', badge: 'Save 17%' },
-  pro_monthly:       { perMonth: '$5.00', period: 'per month' },
-  pro_quarterly:     { perMonth: '$4.00', period: 'per month, billed $12 quarterly', badge: 'Save 20%' },
-  pro_yearly:        { perMonth: '$2.92', period: 'per month, billed $35 yearly', badge: 'Best Value' },
-  elite_monthly:     { perMonth: '$8.00', period: 'per month' },
-  elite_yearly:      { perMonth: '$5.00', period: 'per month, billed $60 yearly', badge: 'Save 38%' },
+  starter_monthly:      { perMonth: '$2.00', period: 'per month' },
+  starter_quarterly:    { perMonth: '$1.67', period: 'per month, billed $5 quarterly', badge: 'Save 17%' },
+  pro_monthly:          { perMonth: '$5.00', period: 'per month' },
+  pro_quarterly:        { perMonth: '$4.00', period: 'per month, billed $12 quarterly', badge: 'Save 20%' },
+  pro_yearly:           { perMonth: '$2.92', period: 'per month, billed $35 yearly', badge: 'Best Value' },
+  elite_monthly:        { perMonth: '$8.00', period: 'per month' },
+  elite_yearly:         { perMonth: '$5.00', period: 'per month, billed $60 yearly', badge: 'Save 38%' },
+  bootcamp_2week:       { perMonth: '$3.00', period: '2-week access (ZIMSEC exam prep)', badge: 'One-time' },
+  bootcamp_4week:       { perMonth: '$5.00', period: '4-week access (ZIMSEC exam prep)', badge: 'Best Bootcamp' },
+  school_basic_monthly: { perMonth: '$50.00', period: 'per month (up to 50 students)' },
+  school_pro_monthly:   { perMonth: '$120.00', period: 'per month (unlimited students)' },
+  school_pro_yearly:    { perMonth: '$83.33', period: 'per month, billed $1,000 yearly', badge: 'Save 31%' },
 }
 
 type PaymentMethod = 'ecocash' | 'onemoney' | 'innbucks' | 'web'
@@ -620,6 +625,46 @@ export default function UpgradePage() {
               <div className="flex items-center gap-1.5 text-xs text-slate-400"><CheckCircle2 size={11} className="text-green-500" /> Cancel anytime</div>
             </div>
           </div>
+        </div>
+
+        {/* ── Exam Bootcamp passes ─────────────────────────────────────────── */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">📅</span>
+            <h3 className="font-bold text-white text-base">Exam Bootcamp Passes</h3>
+            <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-semibold">ZIMSEC Season</span>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">Short-term Pro access for the weeks before exams. No subscription commitment.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(['bootcamp_2week', 'bootcamp_4week'] as PlanId[]).map(planId => {
+              const p = PLANS[planId]
+              const meta = PLAN_META[planId]
+              return (
+                <button key={planId}
+                  onClick={() => { setSelectedTier('pro'); setSelectedPlan(planId) }}
+                  className={`text-left p-4 rounded-xl border-2 transition-all ${selectedPlan === planId ? 'border-rose-400 bg-rose-500/10' : 'border-white/10 hover:border-white/30'}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-bold text-white text-sm">{p.label}</p>
+                    {meta.badge && <span className="text-[10px] bg-rose-500 text-white px-1.5 py-0.5 rounded-full font-bold">{meta.badge}</span>}
+                  </div>
+                  <p className="text-xl font-extrabold text-rose-300">${p.amountUsd.toFixed(2)}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{meta.period}</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── School licensing CTA ─────────────────────────────────────────── */}
+        <div className="bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="font-bold text-white text-sm mb-0.5">Are you a headmaster or teacher?</p>
+            <p className="text-xs text-slate-300">Get ZimLearn for your entire school from $50/month — less than $0.40 per student. Includes teacher tools, admin dashboard, and parent visibility.</p>
+          </div>
+          <Link href="/schools"
+            className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-700 font-bold text-sm rounded-xl hover:bg-indigo-50 transition whitespace-nowrap">
+            School Licensing <ArrowRight size={14} />
+          </Link>
         </div>
 
       </div>

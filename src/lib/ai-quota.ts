@@ -46,7 +46,7 @@ export async function checkAIQuota(
 ): Promise<QuotaResult> {
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('plan, ai_requests_today, ai_quota_reset_at')
+    .select('plan, ai_requests_today, ai_quota_reset_at, trial_ends_at')
     .eq('id', userId)
     .single()
 
@@ -56,8 +56,14 @@ export async function checkAIQuota(
     return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
+  // Check if 7-day free trial is still active — treat as 'pro' while on trial
+  const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null
+  const isTrialActive = trialEndsAt ? trialEndsAt > new Date() : false
+
   const plan: PlanTier = profile.plan ?? 'free'
-  const limit = getDailyLimit(plan)
+  // Effective plan for quota purposes: trial users get pro limits
+  const effectivePlan: PlanTier = isTrialActive ? 'pro' : plan
+  const limit = getDailyLimit(effectivePlan)
 
   // Reset counter if it's a new day (UTC)
   const now = new Date()
@@ -66,8 +72,8 @@ export async function checkAIQuota(
 
   const used: number = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
 
-  if (plan === 'pro' || plan === 'elite') {
-    // Unlimited plans — increment for analytics, never block
+  if (effectivePlan === 'pro' || effectivePlan === 'elite') {
+    // Unlimited plans (and trial users) — increment for analytics, never block
     await supabase.from('profiles').update({
       ai_requests_today: used + 1,
       ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),
