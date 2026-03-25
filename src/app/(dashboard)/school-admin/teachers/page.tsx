@@ -39,7 +39,7 @@ export default async function SchoolAdminTeachersPage() {
 
   // Try to fetch teacher_profiles for qualification/bio/subjects
   const teacherIds = (teachers ?? []).map((t) => t.id)
-  let teacherProfileMap: Record<
+  const teacherProfileMap: Record<
     string,
     { qualification: string | null; bio: string | null; subjects: string[] }
   > = {}

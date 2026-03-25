@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   Building2, Plus, CheckCircle2, XCircle, Loader2,
-  Users, Crown, Calendar, MapPin, Phone, Mail, X,
+  Users, Calendar, MapPin, Phone, X,
 } from 'lucide-react'
 
 const PROVINCES = [
