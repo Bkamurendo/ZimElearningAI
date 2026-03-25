@@ -179,7 +179,7 @@ function InquiryForm() {
         <div>
           <label className="block text-xs font-semibold text-gray-700 mb-1">Phone / WhatsApp *</label>
           <input required type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-            placeholder="+263 77 xxx xxxx" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            placeholder="+263 78 517 0918" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
         </div>
         <div>
           <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
@@ -413,7 +413,7 @@ export default function SchoolsPage() {
             {/* Direct contact options */}
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               {[
-                { icon: <Phone size={18} className="text-emerald-500" />, label: 'WhatsApp', value: '+263 77 123 4567' },
+                { icon: <Phone size={18} className="text-emerald-500" />, label: 'WhatsApp', value: '+263 78 517 0918' },
                 { icon: <Mail size={18} className="text-blue-500" />, label: 'Email', value: 'schools@zimlearn.co.zw' },
                 { icon: <Globe size={18} className="text-indigo-500" />, label: 'Website', value: 'zim-elearningai.co.zw' },
               ].map(c => (
