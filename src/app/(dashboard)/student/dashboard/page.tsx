@@ -6,13 +6,17 @@ import {
   Brain,
   BarChart3,
   CalendarDays,
-  FileText,
   Star,
   CheckCircle2,
   Zap,
   ChevronRight,
   Trophy,
   Bell,
+  ClipboardList,
+  PlayCircle,
+  CalendarCheck,
+  Clock,
+  Sparkles,
 } from 'lucide-react'
 
 const SUBJECT_COLORS = [
@@ -110,6 +114,109 @@ export default async function StudentDashboard() {
     data: { badge_name: string; earned_at: string }[] | null
     error: unknown
   }
+
+  // Pending assignments count
+  const subjectIds = subjects.map(s => s.code)
+  let pendingAssignmentsCount = 0
+  if (subjectIds.length > 0 && studentProfile) {
+    const { data: subjectIdRows } = await supabase
+      .from('student_subjects')
+      .select('subject_id')
+      .eq('student_id', studentProfile.id)
+    const sIds = (subjectIdRows ?? []).map(r => r.subject_id as string)
+    if (sIds.length > 0) {
+      const { data: allAssignments } = await supabase
+        .from('assignments')
+        .select('id')
+        .in('subject_id', sIds)
+      const allAIds = (allAssignments ?? []).map(a => a.id as string)
+      if (allAIds.length > 0) {
+        const { data: submitted } = await supabase
+          .from('assignment_submissions')
+          .select('assignment_id')
+          .eq('student_id', studentProfile.id)
+          .in('assignment_id', allAIds)
+        const submittedIds = new Set((submitted ?? []).map(s => s.assignment_id as string))
+        pendingAssignmentsCount = allAIds.filter(id => !submittedIds.has(id)).length
+      }
+    }
+  }
+
+  // Continue Learning — first incomplete lesson per enrolled subject
+  type ContinueItem = {
+    subjectName: string
+    subjectCode: string
+    courseId: string
+    courseTitle: string
+    lessonId: string
+    lessonTitle: string
+  }
+  const continueItems: ContinueItem[] = []
+  if (studentProfile && subjects.length > 0) {
+    const { data: subjectRows } = await supabase
+      .from('student_subjects')
+      .select('subject_id, subjects(id, name, code)')
+      .eq('student_id', studentProfile.id)
+      .limit(6) as {
+      data: { subject_id: string; subjects: { id: string; name: string; code: string } | null }[] | null
+      error: unknown
+    }
+
+    for (const row of (subjectRows ?? []).slice(0, 6)) {
+      if (continueItems.length >= 3) break
+      const subj = row.subjects as unknown as { id: string; name: string; code: string } | null
+      if (!subj) continue
+
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, title')
+        .eq('subject_id', subj.id)
+        .eq('published', true)
+        .limit(3)
+
+      for (const course of (courses ?? [])) {
+        if (continueItems.length >= 3) break
+        const { data: lessons } = await supabase
+          .from('lessons')
+          .select('id, title, order_index')
+          .eq('course_id', course.id)
+          .order('order_index')
+
+        if (!lessons?.length) continue
+
+        const lessonIds = lessons.map(l => l.id)
+        const { data: done } = await supabase
+          .from('lesson_progress')
+          .select('lesson_id')
+          .eq('student_id', studentProfile.id)
+          .in('lesson_id', lessonIds)
+
+        const doneSet = new Set((done ?? []).map(d => d.lesson_id as string))
+        const nextLesson = lessons.find(l => !doneSet.has(l.id))
+        if (nextLesson) {
+          continueItems.push({
+            subjectName: subj.name,
+            subjectCode: subj.code,
+            courseId: course.id,
+            courseTitle: course.title,
+            lessonId: nextLesson.id,
+            lessonTitle: nextLesson.title,
+          })
+        }
+      }
+    }
+  }
+
+  // Upcoming ZIMSEC exams from timetable
+  const todayStr = new Date().toISOString().split('T')[0]
+  type ExamRow = { id: string; exam_date: string; paper_number: string; subjects: { name: string; code: string } | null }
+  const { data: upcomingExams } = await supabase
+    .from('exam_timetable')
+    .select('id, exam_date, paper_number, subjects(name, code)')
+    .eq('student_id', studentProfile?.id ?? '')
+    .gte('exam_date', todayStr)
+    .order('exam_date', { ascending: true })
+    .limit(3) as { data: ExamRow[] | null; error: unknown }
 
   // Get exam date from study plan
   const { data: studyPlan } = await supabase
@@ -291,6 +398,68 @@ export default async function StudentDashboard() {
           </div>
         )}
 
+        {/* Continue Learning */}
+        {continueItems.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Continue Learning</h2>
+            </div>
+            <div className="space-y-2">
+              {continueItems.map(item => (
+                <Link key={item.lessonId} href={`/student/lessons/${item.lessonId}`}
+                  className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 p-4 hover:border-emerald-300 hover:shadow-md transition-all shadow-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                    <PlayCircle size={18} className="text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-400 font-medium truncate">{item.subjectName} · {item.courseTitle}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{item.lessonTitle}</p>
+                  </div>
+                  <ChevronRight size={15} className="text-gray-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming ZIMSEC Exams */}
+        {(upcomingExams?.length ?? 0) > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <CalendarCheck size={13} /> Upcoming Exams
+              </h2>
+              <Link href="/student/exam-timetable" className="text-xs text-teal-600 font-semibold hover:text-teal-700 transition flex items-center gap-1">
+                Manage <ChevronRight size={12} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {upcomingExams!.map(exam => {
+                const subj = exam.subjects as unknown as { name: string; code: string } | null
+                const days = Math.ceil((new Date(exam.exam_date).getTime() - Date.now()) / 86400000)
+                const chipCls = days <= 7 ? 'bg-red-100 text-red-700' : days <= 14 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                return (
+                  <div key={exam.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{subj?.name ?? 'Exam'}</p>
+                        <p className="text-xs text-gray-500">Paper {exam.paper_number}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{new Date(exam.exam_date).toLocaleDateString('en-ZW', { day: 'numeric', month: 'short' })}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 flex items-center gap-0.5 ${chipCls}`}>
+                        <Clock size={9} />{days <= 0 ? 'Today' : `${days}d`}
+                      </span>
+                    </div>
+                    <Link href="/student/ai-workspace" className="mt-2 flex items-center gap-1 text-xs text-purple-600 font-semibold hover:text-purple-700 transition">
+                      <Sparkles size={11} /> Prepare with MaFundi
+                    </Link>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -299,12 +468,22 @@ export default async function StudentDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
+                href: '/student/assignments',
+                label: 'Assignments',
+                desc: pendingAssignmentsCount > 0 ? `${pendingAssignmentsCount} pending` : 'View all',
+                icon: ClipboardList,
+                gradient: 'from-orange-500 to-amber-500',
+                shadow: 'shadow-orange-200',
+                badge: pendingAssignmentsCount > 0 ? pendingAssignmentsCount : null,
+              },
+              {
                 href: '/student/progress',
                 label: 'My Progress',
                 desc: 'Knowledge profile',
                 icon: BarChart3,
                 gradient: 'from-emerald-500 to-teal-600',
                 shadow: 'shadow-emerald-200',
+                badge: null,
               },
               {
                 href: '/student/study-planner',
@@ -313,6 +492,7 @@ export default async function StudentDashboard() {
                 icon: CalendarDays,
                 gradient: 'from-blue-500 to-indigo-600',
                 shadow: 'shadow-blue-200',
+                badge: null,
               },
               {
                 href: subjects[0] ? `/student/quiz/${subjects[0].code}` : '#',
@@ -321,21 +501,19 @@ export default async function StudentDashboard() {
                 icon: Brain,
                 gradient: 'from-purple-500 to-violet-600',
                 shadow: 'shadow-purple-200',
+                badge: null,
               },
-              {
-                href: subjects[0] ? `/student/past-papers/${subjects[0].code}` : '/student/past-papers',
-                label: 'Past Papers',
-                desc: 'AI-marked practice',
-                icon: FileText,
-                gradient: 'from-orange-500 to-rose-500',
-                shadow: 'shadow-orange-200',
-              },
-            ].map(({ href, label, desc, icon: Icon, gradient, shadow }) => (
+            ].map(({ href, label, desc, icon: Icon, gradient, shadow, badge }) => (
               <Link
                 key={label}
                 href={href}
-                className="group bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shadow-sm"
+                className="group relative bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shadow-sm"
               >
+                {badge && (
+                  <span className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
                 <div
                   className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center mb-3 shadow-md ${shadow} group-hover:scale-110 transition-transform duration-200`}
                 >

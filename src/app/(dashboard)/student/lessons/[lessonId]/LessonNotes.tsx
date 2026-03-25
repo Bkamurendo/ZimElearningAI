@@ -1,0 +1,203 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { FileText, Plus, Trash2, Sparkles, ChevronDown, ChevronUp, Save } from 'lucide-react'
+
+type Note = {
+  id: string
+  title: string
+  content: string
+  updated_at: string
+}
+
+export default function LessonNotes({
+  lessonId,
+  subjectId,
+}: {
+  lessonId: string
+  subjectId: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [loading, setLoading] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newContent, setNewContent] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [genToast, setGenToast] = useState<string | null>(null)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!open || notes.length > 0) return
+    setLoading(true)
+    fetch(`/api/student/notes?lesson_id=${lessonId}`)
+      .then(r => r.json())
+      .then(d => { setNotes(d.notes ?? []); setLoading(false) })
+  }, [open, lessonId, notes.length])
+
+  function scheduleAutoSave(id: string, field: 'title' | 'content', value: string) {
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, [field]: value } : n))
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(async () => {
+      await fetch('/api/student/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, [field]: value }),
+      })
+    }, 800)
+  }
+
+  async function addNote() {
+    if (!newTitle.trim() && !newContent.trim()) return
+    setSaving(true)
+    const res = await fetch('/api/student/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: newTitle.trim() || 'Untitled Note',
+        content: newContent,
+        lesson_id: lessonId,
+        subject_id: subjectId,
+      }),
+    })
+    const data = await res.json()
+    if (data.note) {
+      setNotes(prev => [data.note, ...prev])
+      setNewTitle(''); setNewContent(''); setAdding(false)
+      setEditingId(data.note.id)
+    }
+    setSaving(false)
+  }
+
+  async function deleteNote(id: string) {
+    await fetch(`/api/student/notes?id=${id}`, { method: 'DELETE' })
+    setNotes(prev => prev.filter(n => n.id !== id))
+    if (editingId === id) setEditingId(null)
+  }
+
+  async function generateFlashcards() {
+    setGenerating(true)
+    setGenToast(null)
+    const res = await fetch('/api/student/flashcards/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lesson_id: lessonId, subject_id: subjectId }),
+    })
+    const data = await res.json()
+    if (data.count) {
+      setGenToast(`✓ Generated ${data.count} flashcards!`)
+    } else {
+      setGenToast(data.error ?? 'Could not generate flashcards (text lessons only)')
+    }
+    setGenerating(false)
+    setTimeout(() => setGenToast(null), 5000)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header toggle */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition text-left"
+      >
+        <div className="flex items-center gap-2">
+          <FileText size={16} className="text-emerald-600" />
+          <span className="font-semibold text-gray-800 text-sm">My Notes for this lesson</span>
+          {notes.length > 0 && (
+            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">{notes.length}</span>
+          )}
+        </div>
+        {open ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-50 px-5 pb-5 pt-4 space-y-4">
+          {/* Generate flashcards button */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <button onClick={() => setAdding(a => !a)}
+              className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+              <Plus size={15} /> Add Note
+            </button>
+            <button onClick={generateFlashcards} disabled={generating}
+              className="flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-700 font-medium disabled:opacity-50">
+              <Sparkles size={14} /> {generating ? 'Generating…' : 'Generate Flashcards'}
+            </button>
+          </div>
+
+          {genToast && (
+            <p className={`text-xs font-medium px-3 py-2 rounded-xl ${genToast.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+              {genToast}
+              {genToast.startsWith('✓') && (
+                <Link href="/student/flashcards" className="ml-2 underline">View flashcards →</Link>
+              )}
+            </p>
+          )}
+
+          {/* Add note form */}
+          {adding && (
+            <div className="bg-emerald-50 rounded-xl p-4 space-y-3 border border-emerald-100">
+              <input type="text" placeholder="Note title…" value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-400 outline-none bg-white" />
+              <textarea rows={4} placeholder="Write your note…" value={newContent}
+                onChange={e => setNewContent(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-400 outline-none resize-none bg-white" />
+              <div className="flex gap-2">
+                <button onClick={addNote} disabled={saving}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50">
+                  <Save size={13} /> {saving ? 'Saving…' : 'Save'}
+                </button>
+                <button onClick={() => setAdding(false)}
+                  className="px-4 py-2 bg-white text-gray-600 text-sm font-semibold rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Notes list */}
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
+            </div>
+          ) : notes.length === 0 ? (
+            <p className="text-sm text-gray-400 italic text-center py-3">No notes yet for this lesson</p>
+          ) : (
+            <div className="space-y-3">
+              {notes.map(note => (
+                <div key={note.id} className="border border-gray-100 rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 cursor-pointer"
+                    onClick={() => setEditingId(editingId === note.id ? null : note.id)}>
+                    <span className="text-sm font-medium text-gray-800 truncate">{note.title}</span>
+                    <button onClick={e => { e.stopPropagation(); deleteNote(note.id) }}
+                      className="text-gray-300 hover:text-red-400 transition ml-2 flex-shrink-0">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  {editingId === note.id && (
+                    <div className="p-3 space-y-2">
+                      <input value={note.title}
+                        onChange={e => scheduleAutoSave(note.id, 'title', e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-400 outline-none" />
+                      <textarea rows={5} value={note.content}
+                        onChange={e => scheduleAutoSave(note.id, 'content', e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-400 outline-none resize-none" />
+                      <p className="text-xs text-gray-400 text-right">Auto-saved</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Link href="/student/notes" className="block text-center text-xs text-gray-400 hover:text-emerald-600 transition mt-2">
+            View all my notes →
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}

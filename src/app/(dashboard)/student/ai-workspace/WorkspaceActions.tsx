@@ -1,0 +1,264 @@
+'use client'
+
+import { useState } from 'react'
+import { Loader2, BookOpen, FileText, ClipboardList, X, ChevronRight, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+
+type Subject = { id: string; name: string; code: string }
+
+interface Props {
+  subjects: Subject[]
+}
+
+type ModalType = 'notes' | 'mock_exam' | 'revision' | null
+
+type Result =
+  | { type: 'notes'; note_id: string; title: string }
+  | { type: 'mock_exam'; note_id: string; title: string }
+  | { type: 'revision'; note_id: string; title: string }
+
+export default function WorkspaceActions({ subjects }: Props) {
+  const [modal, setModal] = useState<ModalType>(null)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<Result | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // Notes form
+  const [notesSubject, setNotesSubject] = useState('')
+  const [notesTopic, setNotesTopic] = useState('')
+
+  // Mock exam form
+  const [mockSubject, setMockSubject] = useState('')
+  const [mockPaper, setMockPaper] = useState('2')
+
+  // Revision form
+  const [revSubject, setRevSubject] = useState('')
+  const [revTopics, setRevTopics] = useState('')
+  const [revType, setRevType] = useState('summary')
+
+  function openModal(type: ModalType) {
+    setModal(type)
+    setResult(null)
+    setError(null)
+  }
+
+  function closeModal() {
+    setModal(null)
+    setResult(null)
+    setError(null)
+  }
+
+  async function generateNotes() {
+    if (!notesSubject || !notesTopic.trim()) return
+    setLoading(true); setError(null)
+    const res = await fetch('/api/ai-teacher/generate-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject_id: notesSubject, topic: notesTopic.trim() }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (data.note_id) {
+      setResult({ type: 'notes', note_id: data.note_id, title: data.title })
+    } else {
+      setError(data.error ?? 'Failed to generate notes')
+    }
+  }
+
+  async function generateMockExam() {
+    if (!mockSubject) return
+    setLoading(true); setError(null)
+    const res = await fetch('/api/ai-teacher/generate-mock-exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject_id: mockSubject, paper_number: mockPaper }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (data.note_id) {
+      setResult({ type: 'mock_exam', note_id: data.note_id, title: data.title })
+    } else {
+      setError(data.error ?? 'Failed to generate exam')
+    }
+  }
+
+  async function generateRevision() {
+    if (!revSubject || !revTopics.trim()) return
+    setLoading(true); setError(null)
+    const topics = revTopics.split(',').map(t => t.trim()).filter(Boolean)
+    const res = await fetch('/api/ai-teacher/generate-revision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject_id: revSubject, topics, revision_type: revType }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (data.note_id) {
+      setResult({ type: 'revision', note_id: data.note_id, title: data.title })
+    } else {
+      setError(data.error ?? 'Failed to generate revision')
+    }
+  }
+
+  const revTypeOptions = [
+    { value: 'summary', label: 'Quick Summary' },
+    { value: 'common_questions', label: 'Common Exam Questions' },
+    { value: 'marking_tips', label: 'Marking Tips' },
+    { value: 'key_concepts', label: 'Key Concepts' },
+  ]
+
+  return (
+    <>
+      {/* Generate buttons bar */}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => openModal('notes')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition text-sm">
+          <BookOpen size={15} /> Generate Notes
+        </button>
+        <button onClick={() => openModal('mock_exam')}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition text-sm">
+          <ClipboardList size={15} /> Generate Mock Exam
+        </button>
+        <button onClick={() => openModal('revision')}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition text-sm">
+          <FileText size={15} /> Generate Revision Sheet
+        </button>
+      </div>
+
+      {/* Modal */}
+      {modal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Sparkles size={18} className="text-purple-600" />
+                {modal === 'notes' && 'Generate Study Notes'}
+                {modal === 'mock_exam' && 'Generate Mock Exam'}
+                {modal === 'revision' && 'Generate Revision Sheet'}
+              </h2>
+              <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-lg transition text-gray-400">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Success result */}
+            {result && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                <p className="text-green-700 font-semibold text-sm mb-1">✓ Generated successfully!</p>
+                <p className="text-green-600 text-xs mb-3 font-medium">{result.title}</p>
+                {(result.type === 'notes' || result.type === 'mock_exam' || result.type === 'revision') && (
+                  <Link href="/student/notes"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                    Open in My Notes <ChevronRight size={14} />
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {/* Notes form */}
+            {modal === 'notes' && !result && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Subject *</label>
+                  <select value={notesSubject} onChange={e => setNotesSubject(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
+                    <option value="">Select subject...</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Topic *</label>
+                  <input type="text" value={notesTopic} onChange={e => setNotesTopic(e.target.value)}
+                    placeholder="e.g. Photosynthesis, Quadratic Equations, World War 2..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400" />
+                </div>
+                <p className="text-xs text-gray-400">MaFundi will generate comprehensive ZIMSEC-aligned notes with worked examples and exam tips. Takes ~20 seconds.</p>
+              </div>
+            )}
+
+            {/* Mock exam form */}
+            {modal === 'mock_exam' && !result && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Subject *</label>
+                  <select value={mockSubject} onChange={e => setMockSubject(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-400">
+                    <option value="">Select subject...</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Paper Type *</label>
+                  <select value={mockPaper} onChange={e => setMockPaper(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-400">
+                    <option value="1">Paper 1 — Multiple Choice (40 MCQ)</option>
+                    <option value="2">Paper 2 — Structured Questions</option>
+                    <option value="3">Paper 3 — Essay Questions</option>
+                  </select>
+                </div>
+                <p className="text-xs text-gray-400">MaFundi will generate a full ZIMSEC-format exam with model answers. Your weak topics will be prioritised. Takes ~30 seconds.</p>
+              </div>
+            )}
+
+            {/* Revision form */}
+            {modal === 'revision' && !result && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Subject *</label>
+                  <select value={revSubject} onChange={e => setRevSubject(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400">
+                    <option value="">Select subject...</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Topics * <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                  <input type="text" value={revTopics} onChange={e => setRevTopics(e.target.value)}
+                    placeholder="e.g. Osmosis, Cell Division, Genetics"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {revTypeOptions.map(opt => (
+                      <button key={opt.value} onClick={() => setRevType(opt.value)}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium border transition text-left ${revType === opt.value ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300'}`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action button */}
+            {!result && (
+              <div className="flex gap-3 pt-1">
+                <button onClick={closeModal} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                  Cancel
+                </button>
+                <button
+                  onClick={modal === 'notes' ? generateNotes : modal === 'mock_exam' ? generateMockExam : generateRevision}
+                  disabled={loading || (modal === 'notes' && (!notesSubject || !notesTopic.trim())) || (modal === 'mock_exam' && !mockSubject) || (modal === 'revision' && (!revSubject || !revTopics.trim()))}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
+                  {loading ? (
+                    <><Loader2 size={15} className="animate-spin" /> Generating...</>
+                  ) : (
+                    <><Sparkles size={15} /> Generate with MaFundi</>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

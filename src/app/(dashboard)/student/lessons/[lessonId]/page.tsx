@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { markLessonComplete } from '@/app/actions/progress'
+import LessonNotes from './LessonNotes'
+import AskMaFundi from './AskMaFundi'
+import MarkdownContent from '@/components/MarkdownContent'
 
 export default async function LessonPage({
   params,
@@ -25,13 +28,13 @@ export default async function LessonPage({
     course: {
       id: string
       title: string
-      subject: { name: string; code: string; zimsec_level: string } | null
+      subject: { id: string; name: string; code: string; zimsec_level: string } | null
     } | null
   }
 
   const { data: lesson } = await supabase
     .from('lessons')
-    .select('id, title, content_type, content, order_index, course:courses(id, title, subject:subjects(name, code, zimsec_level))')
+    .select('id, title, content_type, content, order_index, course:courses(id, title, subject:subjects(id, name, code, zimsec_level))')
     .eq('id', params.lessonId)
     .single() as { data: LessonData | null; error: unknown }
 
@@ -93,9 +96,7 @@ export default async function LessonPage({
           </div>
 
           {lesson.content_type === 'text' && (
-            <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap leading-relaxed">
-              {lesson.content}
-            </div>
+            <MarkdownContent content={lesson.content} />
           )}
 
           {lesson.content_type === 'video' && (
@@ -145,6 +146,21 @@ export default async function LessonPage({
             </button>
           </form>
         )}
+
+        {/* Ask MaFundi */}
+        {lesson.content_type === 'text' && (
+          <AskMaFundi
+            lessonTitle={lesson.title}
+            lessonContent={lesson.content}
+            subjectName={lesson.course?.subject?.name ?? 'this subject'}
+          />
+        )}
+
+        {/* Lesson Notes */}
+        <LessonNotes
+          lessonId={params.lessonId}
+          subjectId={lesson.course?.subject?.id ?? ''}
+        />
 
         {/* Prev / Next */}
         <div className="flex gap-3">
