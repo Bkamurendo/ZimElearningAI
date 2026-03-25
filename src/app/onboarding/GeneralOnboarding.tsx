@@ -47,6 +47,10 @@ const ROLE_CONFIG: Record<
     title: 'Admin Setup',
     desc: 'You have full platform access.',
   },
+  school_admin: {
+    title: 'School Admin Setup',
+    desc: 'You can manage your school\'s students and teachers.',
+  },
 }
 
 export default function GeneralOnboarding({

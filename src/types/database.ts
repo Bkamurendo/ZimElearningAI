@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'teacher' | 'parent' | 'admin'
+export type UserRole = 'student' | 'teacher' | 'parent' | 'admin' | 'school_admin'
 export type ZimsecLevel = 'primary' | 'olevel' | 'alevel'
 
 export interface Profile {
@@ -7,7 +7,26 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   role: UserRole
+  school_id?: string | null
   onboarding_completed: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface School {
+  id: string
+  name: string
+  slug: string | null
+  logo_url: string | null
+  address: string | null
+  province: string | null
+  phone: string | null
+  email: string | null
+  admin_user_id: string | null
+  subscription_plan: 'basic' | 'pro'
+  subscription_expires_at: string | null
+  max_students: number
+  is_active: boolean
   created_at: string
   updated_at: string
 }
@@ -118,8 +137,25 @@ export type Database = {
         Update: Partial<Omit<TeacherSubject, 'id' | 'assigned_at'>>
         Relationships: Rel[]
       }
+      schools: {
+        Row: School
+        Insert: Omit<School, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<School, 'id' | 'created_at'>>
+        Relationships: Rel[]
+      }
     }
-    Views: Record<string, never>
+    Views: {
+      school_stats: {
+        Row: {
+          school_id: string
+          school_name: string
+          total_students: number
+          total_teachers: number
+          total_ai_requests_today: number
+        }
+        Relationships: Rel[]
+      }
+    }
     Functions: Record<string, never>
     Enums: {
       user_role: UserRole

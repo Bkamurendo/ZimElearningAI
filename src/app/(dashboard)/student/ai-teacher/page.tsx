@@ -10,7 +10,7 @@ import {
   Send, Bot, User, Loader2, Plus, MessageCircle, BookOpen,
   Mic, MicOff, Image as ImageIcon, Save, Map, FlaskConical,
   FileText, X, CheckCircle2, XCircle, Trophy, ChevronRight,
-  Volume2, Lightbulb, AlignLeft,
+  Volume2, Lightbulb, AlignLeft, Zap,
 } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2 } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2 } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -38,6 +38,8 @@ export default async function AdminDashboard() {
 
   // Fetch announcement count separately (table may not exist yet)
   let activeAnnouncements = 0
+  let pendingTeachers = 0
+  let totalQuestions = 0
   try {
     const { count } = await supabase
       .from('announcements')
@@ -45,6 +47,19 @@ export default async function AdminDashboard() {
       .eq('is_active', true)
     activeAnnouncements = count ?? 0
   } catch { /* announcements table not yet created */ }
+  try {
+    const { count } = await supabase
+      .from('teacher_profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_approved', false)
+    pendingTeachers = count ?? 0
+  } catch { /* column may not exist yet */ }
+  try {
+    const { count } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true })
+    totalQuestions = count ?? 0
+  } catch { /* table may not exist yet */ }
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin'
 
@@ -176,10 +191,7 @@ export default async function AdminDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900 mb-4">Platform Management</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link
-              href="/admin/users"
-              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-blue-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition group"
-            >
+            <Link href="/admin/users" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-blue-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition group">
               <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
                 <Users size={20} className="text-blue-700" />
               </div>
@@ -188,10 +200,19 @@ export default async function AdminDashboard() {
                 <p className="text-xs text-gray-500 mt-0.5">{totalUsers ?? 0} registered users</p>
               </div>
             </Link>
-            <Link
-              href="/admin/announcements"
-              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-amber-50 rounded-2xl border border-gray-100 hover:border-amber-200 transition group"
-            >
+            <Link href="/admin/teachers" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition group">
+              <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-200 transition relative">
+                <GraduationCap size={20} className="text-indigo-700" />
+                {pendingTeachers > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{pendingTeachers}</span>
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Teacher Approvals</p>
+                <p className="text-xs text-gray-500 mt-0.5">{pendingTeachers > 0 ? `${pendingTeachers} pending` : 'All reviewed'}</p>
+              </div>
+            </Link>
+            <Link href="/admin/announcements" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-amber-50 rounded-2xl border border-gray-100 hover:border-amber-200 transition group">
               <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-200 transition">
                 <Megaphone size={20} className="text-amber-700" />
               </div>
@@ -200,15 +221,76 @@ export default async function AdminDashboard() {
                 <p className="text-xs text-gray-500 mt-0.5">{activeAnnouncements} active</p>
               </div>
             </Link>
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 opacity-40 cursor-not-allowed">
-              <div className="w-11 h-11 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <BarChart2 size={20} className="text-gray-400" />
+            <Link href="/admin/notifications/send" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-orange-50 rounded-2xl border border-gray-100 hover:border-orange-200 transition group">
+              <div className="w-11 h-11 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-orange-200 transition">
+                <Bell size={20} className="text-orange-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Send Notification</p>
+                <p className="text-xs text-gray-500 mt-0.5">Bulk push to users</p>
+              </div>
+            </Link>
+            <Link href="/admin/analytics" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-violet-50 rounded-2xl border border-gray-100 hover:border-violet-200 transition group">
+              <div className="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 transition">
+                <BarChart3 size={20} className="text-violet-700" />
               </div>
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Analytics</p>
-                <p className="text-xs text-gray-500 mt-0.5">Coming soon</p>
+                <p className="text-xs text-gray-500 mt-0.5">Platform insights</p>
               </div>
-            </div>
+            </Link>
+            <Link href="/admin/settings" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-slate-50 rounded-2xl border border-gray-100 hover:border-slate-200 transition group">
+              <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-slate-200 transition">
+                <Settings size={20} className="text-slate-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Platform Settings</p>
+                <p className="text-xs text-gray-500 mt-0.5">Feature flags &amp; limits</p>
+              </div>
+            </Link>
+            <Link href="/admin/schools" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition group">
+              <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-200 transition">
+                <Building2 size={20} className="text-indigo-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">School Licensing</p>
+                <p className="text-xs text-gray-500 mt-0.5">Manage school accounts</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Curriculum & Learning */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Curriculum &amp; Learning</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link href="/admin/subjects" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-teal-50 rounded-2xl border border-gray-100 hover:border-teal-200 transition group">
+              <div className="w-11 h-11 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-teal-200 transition">
+                <LayoutList size={20} className="text-teal-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Curriculum Manager</p>
+                <p className="text-xs text-gray-500 mt-0.5">{totalSubjects ?? 0} subjects</p>
+              </div>
+            </Link>
+            <Link href="/admin/questions" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-purple-50 rounded-2xl border border-gray-100 hover:border-purple-200 transition group">
+              <div className="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 transition">
+                <HelpCircle size={20} className="text-purple-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Question Bank</p>
+                <p className="text-xs text-gray-500 mt-0.5">{totalQuestions} questions</p>
+              </div>
+            </Link>
+            <Link href="/admin/audit-logs" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100 hover:border-gray-300 transition group">
+              <div className="w-11 h-11 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-gray-200 transition">
+                <ClipboardList size={20} className="text-gray-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Audit Logs</p>
+                <p className="text-xs text-gray-500 mt-0.5">Admin action trail</p>
+              </div>
+            </Link>
           </div>
         </div>
       </div>

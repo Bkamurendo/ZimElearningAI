@@ -63,6 +63,8 @@ export async function login(formData: FormData): Promise<void> {
   revalidatePath('/', 'layout')
 
   if (!profile?.onboarding_completed) redirect('/onboarding')
+  // school_admin has its own dashboard path
+  else if (profile.role === 'school_admin') redirect('/school-admin/dashboard')
   else redirect(`/${profile.role}/dashboard`)
 }
 
