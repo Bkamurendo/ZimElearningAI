@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
-  TrendingUp, Clock, AlertTriangle, Users, CheckCircle,
+  TrendingUp, Clock, AlertTriangle, CheckCircle,
   XCircle, BarChart2, ArrowLeft, Mail,
 } from 'lucide-react'
 

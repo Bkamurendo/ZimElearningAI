@@ -190,7 +190,7 @@ export default function DailyChallengesPage() {
   const [error, setError] = useState<string | null>(null)
   const [challenge, setChallenge] = useState<DailyChallenge | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [zimsecLevel, setZimsecLevel] = useState<string | null>(null)
+  const [_zimsecLevel, setZimsecLevel] = useState<string | null>(null)
 
   // Quiz state
   const [currentQ, setCurrentQ] = useState(0)
@@ -378,7 +378,7 @@ export default function DailyChallengesPage() {
   }
 
   // ---------- Derived ----------
-  const allAnswered = challenge
+  const _allAnswered = challenge
     ? Object.keys(selectedAnswers).length === challenge.questions.length ||
       (Object.keys(selectedAnswers).length === challenge.questions.length - 1 && pendingSelection !== null)
     : false

@@ -45,7 +45,7 @@ export default function SecuritySettingsPage() {
   const [signOutAllModal, setSignOutAllModal] = useState<'none' | 'others' | 'all'>('none')
 
   // Password change state
-  const [pwCurrent, setPwCurrent]         = useState('')
+  const [_pwCurrent, setPwCurrent]         = useState('')
   const [pwNew, setPwNew]                 = useState('')
   const [pwConfirm, setPwConfirm]         = useState('')
   const [pwBusy, setPwBusy]               = useState(false)

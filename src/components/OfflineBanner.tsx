@@ -12,7 +12,7 @@ export function OfflineBanner() {
   const isOnline = useOnlineStatus()
   // "justRestored" gives the user a brief "Back online" confirmation before
   // the banner slides away entirely.
-  const [justRestored, setJustRestored] = useState(false)
+  const [_justRestored, setJustRestored] = useState(false)
   // Controls CSS visibility — lets us animate out before removing from DOM.
   const [visible, setVisible] = useState(false)
 
