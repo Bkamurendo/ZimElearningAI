@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, BookOpen, ClipboardList, LogOut, Menu, X,
-  GraduationCap, Library, MessageSquare, Sparkles, Users, BookMarked,
+  Library, MessageSquare, Sparkles, Users, BookMarked,
   HelpCircle, FlaskConical, CalendarCheck, BarChart3,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -57,9 +58,7 @@ export default function TeacherSidebar({ userName, unreadMessages = 0 }: Props) 
         {/* Brand */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
-              <GraduationCap size={18} className="text-white" />
-            </div>
+            <Image src="/zimlearn-logo.svg" alt="ZimLearn" width={36} height={36} className="rounded-xl flex-shrink-0" />
             <div>
               <p className="font-bold text-white text-sm leading-tight tracking-wide">ZimLearn</p>
               <p className="text-[11px] text-blue-400 font-medium">Teacher Portal</p>
@@ -163,9 +162,7 @@ export default function TeacherSidebar({ userName, unreadMessages = 0 }: Props) 
       {/* Mobile top bar */}
       <header className="lg:hidden fixed top-0 inset-x-0 h-14 bg-slate-900 border-b border-slate-800 z-20 flex items-center justify-between px-4 shadow-xl">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30">
-            <GraduationCap size={13} className="text-white" />
-          </div>
+          <Image src="/zimlearn-logo.svg" alt="ZimLearn" width={28} height={28} className="rounded-lg" />
           <span className="font-bold text-white text-sm tracking-wide">ZimLearn</span>
         </div>
         <div className="flex items-center gap-2">

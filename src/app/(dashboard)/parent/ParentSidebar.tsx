@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { logout } from '@/app/actions/auth'
 import {
-  LayoutDashboard, LogOut, Menu, X, GraduationCap, ChevronRight, Users, MessageSquare,
+  LayoutDashboard, LogOut, Menu, X, ChevronRight, Users, MessageSquare,
 } from 'lucide-react'
 
 const NAV = [
@@ -30,9 +31,7 @@ export default function ParentSidebar({ userName }: Props) {
       <aside className={`fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40 flex flex-col shadow-xl lg:shadow-sm transform transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-              <GraduationCap size={18} className="text-white" />
-            </div>
+            <Image src="/zimlearn-logo.svg" alt="ZimLearn" width={36} height={36} className="rounded-xl flex-shrink-0" />
             <div>
               <p className="font-bold text-gray-900 text-sm leading-tight">ZimLearn</p>
               <p className="text-xs text-purple-600 font-medium">Parent Portal</p>
@@ -79,9 +78,7 @@ export default function ParentSidebar({ userName }: Props) {
 
       <header className="lg:hidden fixed top-0 inset-x-0 h-14 bg-white border-b border-gray-100 z-20 flex items-center justify-between px-4 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center">
-            <GraduationCap size={13} className="text-white" />
-          </div>
+          <Image src="/zimlearn-logo.svg" alt="ZimLearn" width={28} height={28} className="rounded-lg" />
           <span className="font-bold text-gray-900 text-sm">ZimLearn</span>
         </div>
         <button onClick={() => setOpen(true)} className="p-2 rounded-xl hover:bg-gray-100 transition">
