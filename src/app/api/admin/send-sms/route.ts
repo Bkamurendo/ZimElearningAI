@@ -177,3 +177,55 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 }
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  try {
+    const { user, supabase } = await requireAdmin()
+    if (!user) {
+      return NextResponse.json({ error: 'Forbidden — admin only' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get('userId')
+
+    if (!userId) {
+      return NextResponse.redirect(new URL('/admin/trials', req.url))
+    }
+
+    // Fetch the target user's phone number
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('phone, full_name')
+      .eq('id', userId)
+      .single()
+
+    if (!targetProfile?.phone) {
+      // Missing phone number; redirect back with error or just silently return
+      // We will redirect back to trials since it was probably clicked from a link
+      return NextResponse.redirect(new URL('/admin/trials?error=no_phone', req.url))
+    }
+
+    // Default message template
+    const firstName = targetProfile.full_name?.split(' ')[0] || 'Student'
+    const defaultMessage = `Hi ${firstName}, your AI E-Learning Platform ZIM free trial is ending soon! Don't lose access, upgrade to a paid plan today: https://zim-elearningai.co.zw/pricing`
+
+    const result = await sendBulkSMS([{ phone: targetProfile.phone, message: defaultMessage }])
+
+    // Audit log
+    await supabase.from('audit_logs').insert({
+      admin_id: user.id,
+      action: 'single_sms_reminder',
+      resource_type: 'sms',
+      details: {
+        target_user: userId,
+        sent: result.sent,
+      },
+    })
+
+    // Redirect the admin smoothly back to the trials page
+    return NextResponse.redirect(new URL('/admin/trials?success=sms_sent', req.url))
+  } catch (err) {
+    console.error('[/api/admin/send-sms GET]', err)
+    return NextResponse.redirect(new URL('/admin/trials?error=sms_failed', req.url))
+  }
+}
