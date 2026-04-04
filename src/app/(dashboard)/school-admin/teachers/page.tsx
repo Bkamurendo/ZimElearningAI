@@ -39,11 +39,7 @@ export default async function SchoolAdminTeachersPage() {
 
   // Try to fetch teacher_profiles for qualification/bio/subjects
   const teacherIds = (teachers ?? []).map((t) => t.id)
-<<<<<<< HEAD
   const teacherProfileMap = new Map<
-=======
-  const teacherProfileMap: Record<
->>>>>>> f4ce9480f3f65bb8d4b586f333b68ef6b9571e05
     string,
     { qualification: string | null; bio: string | null; subjects: string[] }
   >()

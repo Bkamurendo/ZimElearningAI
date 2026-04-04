@@ -68,7 +68,7 @@ export default async function AdminChurnReductionPage() {
       .from('profiles')
       .select('id, full_name, email, plan, trial_ends_at, created_at, last_sign_in_at')
       .eq('role', 'student')
-      .not('trial_ends_at', 'is', null')
+      .not('trial_ends_at', 'is', null)
       .lte('trial_ends_at', new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString())
       .gt('trial_ends_at', now.toISOString()),
     

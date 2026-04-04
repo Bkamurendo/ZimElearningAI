@@ -14,7 +14,7 @@ export async function GET(): Promise<NextResponse> {
       engagement_scores_updated: 0,
       automated_campaigns: 0,
       interventions_created: 0,
-      errors: []
+      errors: [] as string[]
     }
 
     console.log('[CHURN AUTOMATION] Starting automated churn reduction process...')
@@ -24,7 +24,7 @@ export async function GET(): Promise<NextResponse> {
       const { data: engagementUpdate } = await supabase.rpc('update_all_engagement_scores')
       results.engagement_scores_updated = engagementUpdate || 0
       console.log(`[CHURN AUTOMATION] Updated engagement scores for ${results.engagement_scores_updated} users`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CHURN AUTOMATION] Failed to update engagement scores:', error)
       results.errors.push('Failed to update engagement scores: ' + error.message)
     }
@@ -45,7 +45,7 @@ export async function GET(): Promise<NextResponse> {
       } else {
         throw new Error('Failed to fetch churn predictions')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CHURN AUTOMATION] Failed to generate churn predictions:', error)
       results.errors.push('Failed to generate churn predictions: ' + error.message)
     }
@@ -64,7 +64,7 @@ export async function GET(): Promise<NextResponse> {
       }
 
       console.log(`[CHURN AUTOMATION] Executed ${triggers?.length || 0} automated triggers`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CHURN AUTOMATION] Failed to execute triggers:', error)
       results.errors.push('Failed to execute triggers: ' + error.message)
     }
@@ -84,7 +84,7 @@ export async function GET(): Promise<NextResponse> {
       }
 
       console.log(`[CHURN AUTOMATION] Created ${results.interventions_created} interventions`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CHURN AUTOMATION] Failed to create interventions:', error)
       results.errors.push('Failed to create interventions: ' + error.message)
     }
@@ -92,7 +92,7 @@ export async function GET(): Promise<NextResponse> {
     // 5. Send daily summary to admin
     try {
       await sendDailySummary(supabase, results)
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CHURN AUTOMATION] Failed to send summary:', error)
       results.errors.push('Failed to send summary: ' + error.message)
     }
@@ -131,7 +131,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
 
       // Filter by activity count if specified
       if (minActivity > 0) {
-        const userIds = inactiveUsers?.map(u => u.id) || []
+        const userIds = inactiveUsers?.map((u: any) => u.id) || []
         const { data: activityData } = await supabase
           .from('user_activity')
           .select('user_id')
@@ -143,7 +143,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
           return acc
         }, {}) || {}
 
-        targetUsers = inactiveUsers?.filter(user => 
+        targetUsers = inactiveUsers?.filter((user: any) => 
           (activityCounts[user.id] || 0) <= minActivity
         ) || []
       } else {
@@ -162,7 +162,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
           .from('profiles')
           .select('id, full_name, email, trial_ends_at')
           .eq('role', 'student')
-          .not('trial_ends_at', 'is', null')
+          .not('trial_ends_at', 'is', null)
           .lte('trial_ends_at', new Date(now.getTime() + daysBefore * 24 * 60 * 60 * 1000).toISOString())
           .gt('trial_ends_at', now.toISOString())
         
@@ -173,7 +173,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
           .from('profiles')
           .select('id, full_name, email, trial_ends_at')
           .eq('role', 'student')
-          .not('trial_ends_at', 'is', null')
+          .not('trial_ends_at', 'is', null)
           .lte('trial_ends_at', new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString())
           .gt('trial_ends_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString())
         
@@ -192,7 +192,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
         .eq('role', 'student')
         .gte('created_at', new Date(now.getTime() - daysSinceCreation * 24 * 60 * 60 * 1000).toISOString())
 
-      const userIds = lowEngagementUsers?.map(u => u.id) || []
+      const userIds = lowEngagementUsers?.map((u: any) => u.id) || []
       const { data: activityData } = await supabase
         .from('user_activity')
         .select('user_id')
@@ -204,7 +204,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
         return acc
       }, {}) || {}
 
-      targetUsers = lowEngagementUsers?.filter(user => 
+      targetUsers = lowEngagementUsers?.filter((user: any) => 
         (activityCounts[user.id] || 0) <= maxActivity
       ) || []
       break
@@ -225,7 +225,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
       }, {}) || {}
 
       const highTicketUserIds = Object.entries(ticketCounts)
-        .filter(([_, count]) => count >= ticketCount)
+        .filter(([_, count]) => (count as number) >= ticketCount)
         .map(([userId, _]) => userId)
 
       const { data: highTicketUsers } = await supabase
@@ -252,7 +252,7 @@ async function executeTrigger(supabase: any, trigger: any, results: any) {
       },
       body: JSON.stringify({
         campaignType: campaignType,
-        targetUsers: targetUsers.map(u => u.id),
+        targetUsers: targetUsers.map((u: any) => u.id),
         message: message,
         schedule: null // Send immediately
       })
@@ -309,7 +309,7 @@ function generateTriggerMessage(triggerType: string, triggerName: string): strin
     'multiple_support_tickets': `Hi {{name}}, we noticed you've had some challenges recently. We're here to help! Let us know how we can improve your experience.`
   }
 
-  return messages[triggerName] || `Hi {{name}}, we're here to support your learning journey. Let us know how we can help!`
+  return messages[triggerName as keyof typeof messages] || `Hi {{name}}, we're here to support your learning journey. Let us know how we can help!`
 }
 
 async function sendDailySummary(supabase: any, results: any) {

@@ -50,7 +50,7 @@ export async function GET(): Promise<NextResponse> {
         .from('profiles')
         .select('id, trial_ends_at')
         .eq('role', 'student')
-        .not('trial_ends_at', 'is', null')
+        .not('trial_ends_at', 'is', null)
     ])
 
     // Calculate churn risk for each user
