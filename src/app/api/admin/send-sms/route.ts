@@ -69,30 +69,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'message is required' }, { status: 400 })
     }
 
-    // ── Resolve phone numbers by audience ─────────────────────────────────────
+    // ── Resolve contacts by audience ──────────────────────────────────────────
 
-    type PhoneRow = { phone_number: string }
-    const phones: string[] = []
+    type ValidRecipient = { phone?: string; email?: string; full_name?: string }
+    const targets: ValidRecipient[] = []
 
     if (audience === 'all' || audience === 'students' || audience === 'teachers') {
-      // Fetch from profiles — assumes a `phone` column exists (may be null)
-      type ProfilePhoneRow = { phone: string | null }
       const query = supabase
         .from('profiles')
-        .select('phone')
+        .select('phone, email, full_name')
         .eq('suspended', false)
-        .not('phone', 'is', null)
 
       if (audience === 'students') {
-        const { data } = await query.eq('role', 'student') as { data: ProfilePhoneRow[] | null }
-        if (data) phones.push(...data.map(r => r.phone!))
+        const { data } = await query.eq('role', 'student') as { data: ValidRecipient[] | null }
+        if (data) targets.push(...data)
       } else if (audience === 'teachers') {
-        const { data } = await query.eq('role', 'teacher') as { data: ProfilePhoneRow[] | null }
-        if (data) phones.push(...data.map(r => r.phone!))
+        const { data } = await query.eq('role', 'teacher') as { data: ValidRecipient[] | null }
+        if (data) targets.push(...data)
       } else {
-        // all — grab every non-null phone across all roles
-        const { data } = await query as { data: ProfilePhoneRow[] | null }
-        if (data) phones.push(...data.map(r => r.phone!))
+        const { data } = await query as { data: ValidRecipient[] | null }
+        if (data) targets.push(...data)
       }
 
       // Also include parent phone numbers from parent_profiles
@@ -100,74 +96,112 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const { data: parentRows } = await supabase
           .from('parent_profiles')
           .select('phone_number')
-          .not('phone_number', 'is', null) as { data: PhoneRow[] | null }
-        if (parentRows) phones.push(...parentRows.map(r => r.phone_number))
+          .not('phone_number', 'is', null) as { data: { phone_number: string }[] | null }
+        if (parentRows) {
+          targets.push(...parentRows.map(r => ({ phone: r.phone_number })))
+        }
       }
     }
 
     if (audience === 'trial_ending') {
-      // Students whose trial ends within the next 3 days
       const now = new Date()
       const cutoff = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()
 
-      type TrialRow = { phone: string | null }
       const { data } = await supabase
         .from('profiles')
-        .select('phone')
+        .select('phone, email, full_name')
         .eq('role', 'student')
         .eq('suspended', false)
         .not('trial_ends_at', 'is', null)
         .lte('trial_ends_at', cutoff)
-        .gte('trial_ends_at', now.toISOString())
-        .not('phone', 'is', null) as { data: TrialRow[] | null }
+        .gte('trial_ends_at', now.toISOString()) as { data: ValidRecipient[] | null }
 
-      if (data) phones.push(...data.map(r => r.phone!))
+      if (data) targets.push(...data)
     }
 
     if (audience === 'schools') {
-      // School admin phone numbers from school_licenses joined to profiles
-      type SchoolAdminRow = { phone: string | null }
       const { data } = await supabase
         .from('profiles')
-        .select('phone')
+        .select('phone, email, full_name')
         .eq('role', 'school_admin')
-        .eq('suspended', false)
-        .not('phone', 'is', null) as { data: SchoolAdminRow[] | null }
+        .eq('suspended', false) as { data: ValidRecipient[] | null }
 
-      if (data) phones.push(...data.map(r => r.phone!))
+      if (data) targets.push(...data)
     }
 
-    // Deduplicate
-    const uniquePhones = Array.from(new Set(phones.filter(Boolean)))
+    // Filter valid contacts and Deduplicate by email/phone
+    const sentSet = new Set()
+    const validTargets = targets.filter(t => {
+      const id = t.phone || t.email
+      if (!id || sentSet.has(id)) return false
+      sentSet.add(id)
+      return true
+    })
 
-    if (uniquePhones.length === 0) {
+    if (validTargets.length === 0) {
       return NextResponse.json(
-        { sent: 0, failed: 0, errors: ['No phone numbers found for the selected audience'] }
+        { sent: 0, failed: 0, errors: ['No contact details found for the selected audience'] }
       )
     }
 
     // ── Send ──────────────────────────────────────────────────────────────────
 
-    const recipients = uniquePhones.map(phone => ({ phone, message: message.trim() }))
-    const result = await sendBulkSMS(recipients)
+    const { sendEmail } = await import('@/lib/email')
+    
+    let totalSent = 0
+    let totalFailed = 0
+    const errorsList: string[] = []
+
+    // SMS batch
+    const smsTargets = validTargets.filter(t => t.phone)
+    if (smsTargets.length > 0) {
+      const recipients = smsTargets.map(t => ({ phone: t.phone!, message: message.trim() }))
+      const smsResult = await sendBulkSMS(recipients)
+      totalSent += smsResult.sent
+      totalFailed += smsResult.failed
+      if (smsResult.errors) errorsList.push(...smsResult.errors)
+    }
+
+    // Email batch (fallback for those without phone numbers)
+    const emailTargets = validTargets.filter(t => !t.phone && t.email)
+    if (emailTargets.length > 0) {
+      for (const t of emailTargets) {
+        const firstName = t.full_name?.split(' ')[0] || 'User'
+        const htmlMsg = `
+          <div style="font-family:sans-serif;max-width:500px;margin:0 auto">
+            <h2 style="color:#d97706">Update from Zim E-Learning AI</h2>
+            <p style="font-size:16px;">Hi ${firstName},</p>
+            <p style="font-size:16px;">${message.trim()}</p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+            <p style="color:#9ca3af;font-size:12px;text-align:center;">Zim E-Learning AI Team</p>
+          </div>
+        `
+        const res = await sendEmail(t.email!, 'Important Update from ZimLearn', htmlMsg)
+        if (res.success) totalSent++
+        else {
+          totalFailed++
+          if (res.error) errorsList.push(res.error)
+        }
+      }
+    }
 
     // Audit log
     await supabase.from('audit_logs').insert({
       admin_id: user.id,
-      action: 'bulk_sms',
-      resource_type: 'sms',
+      action: 'bulk_contact',
+      resource_type: 'reminder',
       details: {
         audience,
-        total: uniquePhones.length,
-        sent: result.sent,
-        failed: result.failed,
+        total: validTargets.length,
+        sent: totalSent,
+        failed: totalFailed,
       },
     })
 
     return NextResponse.json({
-      sent: result.sent,
-      failed: result.failed,
-      errors: result.errors ?? [],
+      sent: totalSent,
+      failed: totalFailed,
+      errors: errorsList,
     })
   } catch (err) {
     console.error('[/api/admin/send-sms]', err)
@@ -195,37 +229,59 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     // Fetch the target user's phone number
     const { data: targetProfile } = await supabase
       .from('profiles')
-      .select('phone, full_name')
+      .select('phone, email, full_name')
       .eq('id', userId)
       .single()
 
-    if (!targetProfile?.phone) {
-      // Missing phone number; redirect back with error or just silently return
-      // We will redirect back to trials since it was probably clicked from a link
-      return NextResponse.redirect(new URL('/admin/trials?error=no_phone', req.url))
+    if (!targetProfile?.phone && !targetProfile?.email) {
+      return NextResponse.redirect(new URL('/admin/trials?error=no_contact', req.url))
     }
 
     // Default message template
     const firstName = targetProfile.full_name?.split(' ')[0] || 'Student'
     const defaultMessage = `Hi ${firstName}, your AI E-Learning Platform ZIM free trial is ending soon! Don't lose access, upgrade to a paid plan today: https://zim-elearningai.co.zw/pricing`
 
-    const result = await sendBulkSMS([{ phone: targetProfile.phone, message: defaultMessage }])
+    let sentResult = { sent: 0 }
+    let actionType = 'single_sms_reminder'
+
+    if (targetProfile.phone) {
+      sentResult = await sendBulkSMS([{ phone: targetProfile.phone, message: defaultMessage }])
+    } else if (targetProfile.email) {
+      const { sendEmail } = await import('@/lib/email')
+      const htmlMsg = `
+        <div style="font-family:sans-serif;max-width:500px;margin:0 auto">
+          <h2 style="color:#d97706">Your Trial is Ending Soon!</h2>
+          <p style="font-size:16px;">Hi ${firstName},</p>
+          <p style="font-size:16px;">Your free trial for AI E-Learning Platform ZIM is nearing its end!</p>
+          <p style="font-size:16px;">Don't lose your progress and access to all premium learning materials. Upgrade your plan now to continue your educational journey without any interruptions.</p>
+          <div style="text-align:center;margin:30px 0">
+            <a href="https://zim-elearningai.co.zw/pricing" style="background-color:#16a34a;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px;">View Pro Plans & Upgrade</a>
+          </div>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+          <p style="color:#9ca3af;font-size:12px;text-align:center;">Zim E-Learning AI Team</p>
+        </div>
+      `
+      const emailRes = await sendEmail(targetProfile.email, 'Action Required: Your Free Trial is Expiring', htmlMsg)
+      sentResult = { sent: emailRes.success ? 1 : 0 }
+      actionType = 'single_email_reminder'
+    }
 
     // Audit log
     await supabase.from('audit_logs').insert({
       admin_id: user.id,
-      action: 'single_sms_reminder',
-      resource_type: 'sms',
+      action: actionType,
+      resource_type: 'reminder',
       details: {
         target_user: userId,
-        sent: result.sent,
+        sent: sentResult.sent,
+        method: targetProfile.phone ? 'sms' : 'email'
       },
     })
 
     // Redirect the admin smoothly back to the trials page
-    return NextResponse.redirect(new URL('/admin/trials?success=sms_sent', req.url))
+    return NextResponse.redirect(new URL(`/admin/trials?success=${actionType}`, req.url))
   } catch (err) {
     console.error('[/api/admin/send-sms GET]', err)
-    return NextResponse.redirect(new URL('/admin/trials?error=sms_failed', req.url))
+    return NextResponse.redirect(new URL('/admin/trials?error=reminder_failed', req.url))
   }
 }
