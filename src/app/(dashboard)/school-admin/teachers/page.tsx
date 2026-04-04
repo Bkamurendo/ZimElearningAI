@@ -39,10 +39,10 @@ export default async function SchoolAdminTeachersPage() {
 
   // Try to fetch teacher_profiles for qualification/bio/subjects
   const teacherIds = (teachers ?? []).map((t) => t.id)
-  let teacherProfileMap: Record<
+  const teacherProfileMap = new Map<
     string,
     { qualification: string | null; bio: string | null; subjects: string[] }
-  > = {}
+  >()
 
   if (teacherIds.length > 0) {
     const { data: teacherProfiles } = await supabase
@@ -61,11 +61,11 @@ export default async function SchoolAdminTeachersPage() {
         )
           ?.map((ts) => ts.subjects?.name)
           .filter(Boolean) as string[]
-      teacherProfileMap[tp.user_id as string] = {
+      teacherProfileMap.set(tp.user_id as string, {
         qualification: tp.qualification ?? null,
         bio: tp.bio ?? null,
         subjects: subjects ?? [],
-      }
+      })
     }
   }
 
@@ -174,7 +174,7 @@ export default async function SchoolAdminTeachersPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {all.map((teacher) => {
-                    const tp = teacherProfileMap[teacher.id]
+                    const tp = teacherProfileMap.get(teacher.id)
                     const initials = (teacher.full_name ?? 'T')
                       .split(' ')
                       .map((n: string) => n[0] ?? '')
@@ -215,7 +215,7 @@ export default async function SchoolAdminTeachersPage() {
                         <td className="px-6 py-4">
                           {tp?.subjects && tp.subjects.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {tp.subjects.slice(0, 3).map((s) => (
+                              {tp.subjects.slice(0, 3).map((s: string) => (
                                 <span
                                   key={s}
                                   className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"
