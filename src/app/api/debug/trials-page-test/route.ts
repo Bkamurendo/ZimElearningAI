@@ -20,7 +20,7 @@ export async function GET(): Promise<NextResponse> {
         last_sign_in_at
       `)
       .eq('role', 'student')
-      .not('trial_ends_at', 'is', null')
+      .not('trial_ends_at', 'is', null)
       .order('trial_ends_at', { ascending: true })
 
     if (error) {
