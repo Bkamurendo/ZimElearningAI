@@ -45,12 +45,14 @@ export default async function AdminTrialsPage() {
   const now = new Date()
   
   // Categorize users
-  const activeTrials = trialUsers?.filter(user => 
-    user.plan === 'free' && new Date(user.trial_ends_at) > now
-  ) || []
+  const activeTrials = trialUsers?.filter(user => {
+    // Active trials are users with trial_ends_at in the future
+    // regardless of their current plan (they might have upgraded during trial)
+    return new Date(user.trial_ends_at) > now
+  }) || []
   
   const expiredTrials = trialUsers?.filter(user => 
-    user.plan === 'free' && new Date(user.trial_ends_at) <= now
+    new Date(user.trial_ends_at) <= now
   ) || []
   
   const paidUsers = trialUsers?.filter(user => 

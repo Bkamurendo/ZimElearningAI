@@ -38,7 +38,7 @@ export default async function AdminDashboard() {
     supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'ai_reviewed'),
     supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'published'),
     // Trial statistics
-    supabase.from('profiles').select('plan, trial_ends_at').eq('role', 'student'),
+    supabase.from('profiles').select('trial_ends_at').eq('role', 'student').not('trial_ends_at', 'is', null),
     // Payment statistics  
     supabase.from('profiles').select('plan, subscription_expires_at').eq('role', 'student').not('plan', 'is', null),
     // Cohort data (registrations by month)
@@ -72,7 +72,7 @@ export default async function AdminDashboard() {
 
   // Process trial and payment statistics
   const now = new Date()
-  const trialUsers = trialStats?.filter(p => p.plan === 'free' && p.trial_ends_at) || []
+  const trialUsers = trialStats?.filter(p => p.trial_ends_at) || []
   const activeTrials = trialUsers.filter(p => new Date(p.trial_ends_at) > now)
   const expiredTrials = trialUsers.filter(p => new Date(p.trial_ends_at) <= now)
   const expiringSoon = trialUsers.filter(p => {
