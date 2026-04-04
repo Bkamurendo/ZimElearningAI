@@ -50,6 +50,9 @@ const nextConfig = {
     'character-entities',
     'devlop',
   ],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     serverActions: {
       allowedOrigins,

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { BarChart3, Users, DollarSign, ArrowLeft, Filter, FileText, Download, Calendar } from 'lucide-react'
+import { BarChart3, Users, DollarSign, ArrowLeft, Filter, FileText, Download, Calendar, TrendingUp } from 'lucide-react'
 
 export const metadata = { title: 'Reports — Admin' }
 
@@ -17,7 +17,8 @@ export default async function AdminReportsPage() {
     { data: userData },
     { data: revenueData },
     { data: activityData },
-    { data: performanceData },
+    { data: contentData },
+    { data: quizData },
   ] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, role, plan, created_at, last_sign_in_at'),
     supabase.from('profiles').select('plan, subscription_expires_at, created_at').not('plan', 'is', null),
@@ -77,13 +78,13 @@ export default async function AdminReportsPage() {
   )
 
   const performanceReport = generateCSV(
-    performanceData?.map(p => ({
-      'Student ID': p.student_id,
-      'Subject ID': p.subject_id,
-      Score: p.score,
-      Total: p.total,
-      Percentage: Math.round((p.score / p.total) * 100),
-      'Attempt Date': p.created_at
+    quizData?.map(p => ({
+      'Student ID': p.student_id || 'N/A',
+      'Subject ID': p.subject_id || 'N/A',
+      'Score': p.score || 'N/A',
+      'Total': p.total || 'N/A',
+      Percentage: p.score && p.total ? Math.round((p.score / p.total) * 100) : 'N/A',
+      'Attempt Date': p.created_at || 'N/A'
     })) || [],
     'performance_report.csv'
   )
@@ -122,7 +123,6 @@ export default async function AdminReportsPage() {
       icon: BarChart3,
       color: 'amber',
       data: performanceReport,
-      records: performanceData?.length || 0,
       lastUpdated: new Date().toLocaleDateString()
     }
   ]
@@ -212,7 +212,7 @@ export default async function AdminReportsPage() {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-sm text-gray-500 mb-1">Quiz Attempts</p>
-            <p className="text-2xl font-bold text-purple-600">{performanceData?.length || 0}</p>
+            <p className="text-2xl font-bold text-purple-600">{quizData?.length || 0}</p>
           </div>
         </div>
 

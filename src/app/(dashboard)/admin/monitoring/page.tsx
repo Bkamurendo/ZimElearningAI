@@ -11,7 +11,29 @@ export default function AdminMonitoringPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [realTimeData, setRealTimeData] = useState({
+  const [realTimeData, setRealTimeData] = useState<{
+    activeUsers: number;
+    serverLoad: number;
+    memoryUsage: number;
+    diskUsage: number;
+    networkTraffic: number;
+    apiRequests: number;
+    responseTime: number;
+    errorRate: number;
+    recentActivity: Array<{
+      id: number;
+      type: string;
+      user: string;
+      time: string;
+      status: string;
+    }>;
+    systemAlerts: Array<{
+      id: number;
+      level: string;
+      message: string;
+      time: string;
+    }>;
+  }>({
     activeUsers: 0,
     serverLoad: 0,
     memoryUsage: 0,

@@ -49,7 +49,7 @@ export default async function AdminEngagementPage() {
 
   // Study time analytics
   const totalStudyMinutes = studyTime?.reduce((sum, session) => sum + (session.duration || 0), 0) || 0
-  const avgStudySession = studyTime?.length > 0 ? Math.round(totalStudyMinutes / studyTime.length) : 0
+  const avgStudySession = studyTime && studyTime.length > 0 ? Math.round(totalStudyMinutes / studyTime.length) : 0
 
   // Feature popularity
   const featureStats = featureUsage?.reduce((acc, feature) => {

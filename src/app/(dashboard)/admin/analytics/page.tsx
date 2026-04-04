@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { BarChart3, Users, BookOpen, ArrowLeft, CreditCard, Activity, Clock, AlertTriangle, Target, Zap, DollarSign } from 'lucide-react'
+import { BarChart3, Users, ArrowLeft, CreditCard, Activity, Target, Zap, DollarSign } from 'lucide-react'
 
 export const metadata = { title: 'Analytics — ZimLearn Admin' }
 
@@ -20,7 +20,6 @@ export default async function AdminAnalyticsPage() {
     { count: totalStudents },
     { count: totalTeachers },
     { data: recentAttempts },
-    { count: lessonProgress },
     { data: subjectEnrollments },
     { data: masteryStats },
     { data: revenueData },
@@ -34,7 +33,6 @@ export default async function AdminAnalyticsPage() {
       .select('score, total, subject_id, created_at, student_id, subjects(name)')
       .order('created_at', { ascending: false })
       .limit(50),
-    supabase.from('lesson_progress').select('id', { count: 'exact', head: true }),
     supabase.from('student_subjects').select('subject_id, subjects(name)', { count: 'exact' }),
     supabase.from('topic_mastery').select('mastery_level'),
     // Revenue analytics
