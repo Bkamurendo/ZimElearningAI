@@ -14,6 +14,7 @@ function daysLeft(dateStr: string): number {
 }
 
 function DaysChip({ days }: { days: number }) {
+  if (isNaN(days)) return <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">Unknown</span>
   if (days <= 1)
     return <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{days}d left</span>
   if (days <= 4)
@@ -83,7 +84,7 @@ export default async function TrialsRetentionPage() {
     supabase.from('profiles')
       .select('*', { count: 'exact', head: true })
       .not('trial_ends_at', 'is', null)
-      .not('plan', 'in', '("free")'),
+      .not('plan', 'in', ['free']),
 
     // total who ever had a trial
     supabase.from('profiles')
@@ -100,12 +101,12 @@ export default async function TrialsRetentionPage() {
     // new paid this month (created_at proxy — not perfect but no plan_changed_at column assumed)
     supabase.from('profiles')
       .select('*', { count: 'exact', head: true })
-      .not('plan', 'in', '("free")')
+      .not('plan', 'in', ['free'])
       .gte('updated_at', startOfMonth.toISOString()),
 
     supabase.from('profiles')
       .select('*', { count: 'exact', head: true })
-      .not('plan', 'in', '("free")')
+      .not('plan', 'in', ['free'])
       .gte('updated_at', startOfLastMonth.toISOString())
       .lt('updated_at', startOfMonth.toISOString()),
   ])
@@ -285,9 +286,18 @@ export default async function TrialsRetentionPage() {
                         </td>
                         <td className="px-5 py-3.5 text-gray-500">{row.email ?? '—'}</td>
                         <td className="px-5 py-3.5 text-gray-500">
-                          {new Date(row.trial_ends_at).toLocaleDateString('en-GB', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
+                          {(() => {
+                            try {
+                              if (!row.trial_ends_at) return '—'
+                              const d = new Date(row.trial_ends_at)
+                              if (isNaN(d.getTime())) return 'Invalid Date'
+                              return d.toLocaleDateString('en-GB', {
+                                day: 'numeric', month: 'short', year: 'numeric',
+                              })
+                            } catch (e) {
+                              return 'Invalid Date'
+                            }
+                          })()}
                         </td>
                         <td className="px-5 py-3.5">
                           <DaysChip days={daysLeft(row.trial_ends_at)} />
