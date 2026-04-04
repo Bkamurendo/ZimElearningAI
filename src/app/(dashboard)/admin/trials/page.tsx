@@ -294,7 +294,7 @@ export default async function TrialsRetentionPage() {
                               return d.toLocaleDateString('en-GB', {
                                 day: 'numeric', month: 'short', year: 'numeric',
                               })
-                            } catch (e) {
+                            } catch (_) {
                               return 'Invalid Date'
                             }
                           })()}
