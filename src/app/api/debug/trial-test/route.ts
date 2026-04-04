@@ -45,7 +45,8 @@ export async function GET(): Promise<NextResponse> {
       .from('user_activity')
       .select('count')
       .single()
-      .catch(() => ({ data: null, error: { message: 'Table does not exist' } }))
+    
+    const userActivityTableExists = !activityError
     
     const now = new Date()
     const activeTrials = trialUsers?.filter(user => 
