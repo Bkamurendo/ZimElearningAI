@@ -1,24 +1,32 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { Clock, AlertTriangle, CheckCircle, XCircle, MessageSquare, Users, CreditCard } from 'lucide-react'
 
 export const metadata = { title: 'Trial Management — Admin' }
 
 export default async function AdminTrialsPage() {
-  const supabase = createClient()
+  // Use server client for authentication
+  const serverSupabase = createServerClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await serverSupabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const { data: profile } = await serverSupabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
 
   if (profile?.role !== 'admin') redirect(`/${profile?.role}/dashboard`)
+
+  // Use admin client for data fetching
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   // Fetch all trial users with their details
   const { data: trialUsers, error } = await supabase
