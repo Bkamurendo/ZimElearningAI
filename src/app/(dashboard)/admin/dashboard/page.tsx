@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2 } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LayoutList, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2, CreditCard, Clock, TrendingUp } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -27,6 +27,9 @@ export default async function AdminDashboard() {
     { count: totalDocuments },
     { count: pendingModeration },
     { count: publishedDocuments },
+    { data: trialStats },
+    { data: paymentStats },
+    { data: cohortData },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
@@ -34,6 +37,12 @@ export default async function AdminDashboard() {
     supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }),
     supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'ai_reviewed'),
     supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'published'),
+    // Trial statistics
+    supabase.from('profiles').select('plan, trial_ends_at').eq('role', 'student'),
+    // Payment statistics  
+    supabase.from('profiles').select('plan, subscription_expires_at').eq('role', 'student').not('plan', 'is', null),
+    // Cohort data (registrations by month)
+    supabase.from('profiles').select('created_at, role').gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
   ])
 
   // Fetch announcement count separately (table may not exist yet)
@@ -61,15 +70,36 @@ export default async function AdminDashboard() {
     totalQuestions = count ?? 0
   } catch { /* table may not exist yet */ }
 
+  // Process trial and payment statistics
+  const now = new Date()
+  const trialUsers = trialStats?.filter(p => p.plan === 'free' && p.trial_ends_at) || []
+  const activeTrials = trialUsers.filter(p => new Date(p.trial_ends_at) > now)
+  const expiredTrials = trialUsers.filter(p => new Date(p.trial_ends_at) <= now)
+  const expiringSoon = trialUsers.filter(p => {
+    const daysLeft = Math.ceil((new Date(p.trial_ends_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    return daysLeft > 0 && daysLeft <= 3
+  })
+
+  const paidUsers = paymentStats?.filter(p => p.plan !== 'free') || []
+  const premiumUsers = paidUsers.filter(p => p.plan === 'premium')
+  const expiredSubscriptions = paidUsers.filter(p => p.subscription_expires_at && new Date(p.subscription_expires_at) < now)
+
+  // Process cohort data
+  const cohortByMonth = cohortData?.reduce((acc, user) => {
+    const month = new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    acc[month] = (acc[month] || 0) + 1
+    return acc
+  }, {} as Record<string, number>) || {}
+
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin'
 
   const stats = [
     { label: 'Total users',    value: totalUsers ?? 0,        icon: Users,         color: 'text-blue-600',   bg: 'bg-blue-50',   href: '/admin/users' },
     { label: 'Students',       value: totalStudents ?? 0,     icon: GraduationCap, color: 'text-green-600',  bg: 'bg-green-50',  href: '/admin/users' },
-    { label: 'Subjects',       value: totalSubjects ?? 0,     icon: LayoutList,    color: 'text-purple-600', bg: 'bg-purple-50', href: null as string | null },
+    { label: 'Active Trials',  value: activeTrials.length,      icon: Clock,         color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/trials' },
+    { label: 'Paid Users',     value: paidUsers.length,         icon: CreditCard,    color: 'text-emerald-600', bg: 'bg-emerald-50', href: '/admin/payments' },
     { label: 'Documents',      value: totalDocuments ?? 0,    icon: Library,       color: 'text-indigo-600', bg: 'bg-indigo-50', href: '/admin/documents' },
-    { label: 'Published',      value: publishedDocuments ?? 0, icon: FileText,     color: 'text-teal-600',   bg: 'bg-teal-50',   href: '/admin/documents' },
-    { label: 'Need review',    value: pendingModeration ?? 0, icon: BarChart2,     color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/documents' },
+    { label: 'Expiring Soon',  value: expiringSoon.length,       icon: TrendingUp,    color: 'text-red-600',    bg: 'bg-red-50',   href: '/admin/trials' },
   ]
 
   return (
@@ -122,6 +152,79 @@ export default async function AdminDashboard() {
               </div>
             )
           ))}
+        </div>
+
+        {/* Trial and Payment Alerts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {expiringSoon.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Clock size={18} className="text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-red-900 text-sm">
+                  {expiringSoon.length} trial{expiringSoon.length !== 1 ? 's' : ''} expiring soon
+                </p>
+                <p className="text-xs text-red-700 mt-0.5">Send reminders before they expire</p>
+              </div>
+              <Link href="/admin/trials" className="text-sm font-semibold text-red-700 hover:text-red-900 transition flex-shrink-0">
+                Manage →
+              </Link>
+            </div>
+          )}
+          
+          {expiredSubscriptions.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <CreditCard size={18} className="text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-amber-900 text-sm">
+                  {expiredSubscriptions.length} subscription{expiredSubscriptions.length !== 1 ? 's' : ''} expired
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">Users need to renew access</p>
+              </div>
+              <Link href="/admin/payments" className="text-sm font-semibold text-amber-700 hover:text-amber-900 transition flex-shrink-0">
+                Review →
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Cohort Analysis */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Cohort Analysis (Last 90 Days)</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{Object.values(cohortByMonth).reduce((a, b) => a + b, 0)}</p>
+              <p className="text-xs text-gray-500 mt-0.5">New Users</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{activeTrials.length}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Active Trials</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-emerald-600">{paidUsers.length}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Paid Users</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{premiumUsers.length}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Premium Users</p>
+            </div>
+          </div>
+          {Object.keys(cohortByMonth).length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Monthly Signups</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(cohortByMonth).map(([month, count]) => (
+                  <div key={month} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-center">
+                    <p className="text-lg font-bold text-gray-900">{count}</p>
+                    <p className="text-xs text-gray-500">{month}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Moderation alert */}
@@ -228,6 +331,24 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Send Notification</p>
                 <p className="text-xs text-gray-500 mt-0.5">Bulk push to users</p>
+              </div>
+            </Link>
+            <Link href="/admin/trials" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-amber-50 rounded-2xl border border-gray-100 hover:border-amber-200 transition group">
+              <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-200 transition">
+                <Clock size={20} className="text-amber-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Trial Management</p>
+                <p className="text-xs text-gray-500 mt-0.5">{activeTrials.length} active · {expiredTrials.length} expired</p>
+              </div>
+            </Link>
+            <Link href="/admin/payments" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition group">
+              <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
+                <CreditCard size={20} className="text-emerald-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Payment Tracking</p>
+                <p className="text-xs text-gray-500 mt-0.5">{paidUsers.length} paid users</p>
               </div>
             </Link>
             <Link href="/admin/analytics" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-violet-50 rounded-2xl border border-gray-100 hover:border-violet-200 transition group">
