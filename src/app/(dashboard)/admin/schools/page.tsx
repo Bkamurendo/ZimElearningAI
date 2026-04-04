@@ -1,262 +1,289 @@
-'use client'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { Building2, Users, CreditCard, Calendar, ArrowLeft, Plus, Search, Filter, Download, CheckCircle, AlertTriangle, Activity, MapPin, Phone, Mail } from 'lucide-react'
 
-import { useState, useEffect } from 'react'
-import {
-  Building2, Plus, CheckCircle2, XCircle, Loader2,
-  Users, Calendar, MapPin, Phone, X,
-} from 'lucide-react'
+export const metadata = { title: 'School Management — Admin' }
 
-const PROVINCES = [
-  'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
-  'Mashonaland East', 'Mashonaland West', 'Masvingo',
-  'Matabeleland North', 'Matabeleland South', 'Midlands',
-]
+export default async function AdminSchoolsPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') redirect('/admin/dashboard')
 
-type School = {
-  id: string
-  name: string
-  slug: string | null
-  province: string | null
-  phone: string | null
-  email: string | null
-  subscription_plan: 'basic' | 'pro'
-  subscription_expires_at: string | null
-  max_students: number
-  is_active: boolean
-  created_at: string
-  admin: { id: string; full_name: string | null; email: string } | null
-}
+  // Fetch schools and licensing data
+  const [
+    { data: schools },
+    { data: licenses },
+    { data: schoolStats },
+  ] = await Promise.all([
+    supabase.from('schools').select('*, admin:profiles(full_name, email)').order('created_at', { ascending: false }),
+    supabase.from('school_licenses').select('*, schools(name)').order('created_at', { ascending: false }),
+    supabase.from('school_statistics').select('*').order('date', { ascending: false }).limit(30),
+  ])
 
-export default function AdminSchoolsPage() {
-  const [schools, setSchools] = useState<School[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [result, setResult] = useState<{ success?: string; error?: string } | null>(null)
-
-  const [form, setForm] = useState({
-    name: '', province: '', phone: '', email: '',
-    subscription_plan: 'basic', max_students: '50',
-    admin_name: '', admin_email: '', admin_password: '',
-  })
-
-  useEffect(() => { loadSchools() }, [])
-
-  async function loadSchools() {
-    setLoading(true)
-    const res = await fetch('/api/admin/schools')
-    const data = await res.json()
-    setSchools(data.schools ?? [])
-    setLoading(false)
-  }
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-    setResult(null)
-    const res = await fetch('/api/admin/schools', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, max_students: parseInt(form.max_students) }),
-    })
-    const data = await res.json()
-    setSaving(false)
-    if (!res.ok || data.error) {
-      setResult({ error: data.error })
-    } else {
-      setResult({ success: `School "${data.school.name}" created${data.adminUser ? ` with admin ${data.adminUser.email}` : ''}.` })
-      setShowForm(false)
-      setForm({ name: '', province: '', phone: '', email: '', subscription_plan: 'basic', max_students: '50', admin_name: '', admin_email: '', admin_password: '' })
-      loadSchools()
-    }
-  }
-
-  const planBadge = (plan: string) => plan === 'pro'
-    ? <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Pro</span>
-    : <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Basic</span>
+  const totalSchools = schools?.length || 0
+  const activeLicenses = licenses?.filter(l => l.status === 'active')?.length || 0
+  const expiredLicenses = licenses?.filter(l => l.status === 'expired')?.length || 0
+  const totalStudents = schools?.reduce((sum, school) => sum + (school.student_count || 0), 0) || 0
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Building2 size={22} className="text-indigo-500" /> Schools
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage school licenses and school admin accounts</p>
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-8">
+        <div className="max-w-6xl mx-auto">
+          <Link href="/admin/dashboard" className="inline-flex items-center gap-1.5 text-indigo-200 hover:text-white text-sm mb-4 transition">
+            <ArrowLeft size={14} /> Dashboard
+          </Link>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <Building2 size={20} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">School & Institution Management</h1>
+              <p className="text-indigo-200 text-sm">Manage school licenses and institutional accounts</p>
+            </div>
+          </div>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">
-          <Plus size={16} /> Add School
-        </button>
       </div>
 
-      {/* Result banner */}
-      {result && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${result.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-          {result.success ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-          {result.success ?? result.error}
-          <button onClick={() => setResult(null)} className="ml-auto"><X size={14} /></button>
-        </div>
-      )}
-
-      {/* Create School Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="font-bold text-gray-900">Create New School</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        {/* School Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <Building2 size={20} className="text-indigo-600" />
+              </div>
+              <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                Total
+              </span>
             </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">School Name *</label>
-                <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. St. George's College" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            <p className="text-2xl font-bold text-gray-900">{totalSchools}</p>
+            <p className="text-sm text-gray-500 mt-1">Registered Schools</p>
+          </div>
+          
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <CheckCircle size={20} className="text-green-600" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Province</label>
-                  <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                    <option value="">Select...</option>
-                    {PROVINCES.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Plan</label>
-                  <select value={form.subscription_plan} onChange={e => setForm(f => ({ ...f, subscription_plan: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                    <option value="basic">Basic ($50/mo)</option>
-                    <option value="pro">Pro ($120/mo)</option>
-                  </select>
-                </div>
+              <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                Active
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{activeLicenses}</p>
+            <p className="text-sm text-gray-500 mt-1">Active Licenses</p>
+          </div>
+          
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <AlertTriangle size={20} className="text-red-600" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Max Students</label>
-                  <input type="number" min="1" value={form.max_students} onChange={e => setForm(f => ({ ...f, max_students: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">School Phone</label>
-                  <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="+263 ..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                </div>
+              <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                Expired
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{expiredLicenses}</p>
+            <p className="text-sm text-gray-500 mt-1">Expired Licenses</p>
+          </div>
+          
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Users size={20} className="text-purple-600" />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">School Email</label>
-                <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  placeholder="admin@school.ac.zw" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-              </div>
-
-              <div className="border-t pt-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">School Admin Account (optional)</p>
-                <div className="space-y-3">
-                  <input value={form.admin_name} onChange={e => setForm(f => ({ ...f, admin_name: e.target.value }))}
-                    placeholder="Admin full name" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                  <input type="email" value={form.admin_email} onChange={e => setForm(f => ({ ...f, admin_email: e.target.value }))}
-                    placeholder="Admin email" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                  <input type="password" value={form.admin_password} onChange={e => setForm(f => ({ ...f, admin_password: e.target.value }))}
-                    placeholder="Temporary password" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 transition flex items-center justify-center gap-2">
-                  {saving ? <><Loader2 size={14} className="animate-spin" /> Creating...</> : 'Create School'}
-                </button>
-              </div>
-            </form>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{totalStudents.toLocaleString()}</p>
+            <p className="text-sm text-gray-500 mt-1">Total Students</p>
           </div>
         </div>
-      )}
 
-      {/* Schools table */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20"><Loader2 size={24} className="animate-spin text-indigo-400" /></div>
-      ) : schools.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <Building2 size={40} className="text-gray-300 mx-auto mb-3" />
-          <p className="font-semibold text-gray-500">No schools yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add your first school to get started with school licensing</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">
-            Add First School
-          </button>
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="font-bold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button className="flex items-center gap-3 p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition">
+              <Plus size={20} className="text-indigo-600" />
+              <div className="text-left">
+                <p className="font-medium text-indigo-900">Add New School</p>
+                <p className="text-sm text-indigo-600">Register new institution</p>
+              </div>
+            </button>
+            
+            <button className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition">
+              <CreditCard size={20} className="text-green-600" />
+              <div className="text-left">
+                <p className="font-medium text-green-900">Issue License</p>
+                <p className="text-sm text-green-600">Create new license</p>
+              </div>
+            </button>
+            
+            <button className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition">
+              <Download size={20} className="text-purple-600" />
+              <div className="text-left">
+                <p className="font-medium text-purple-900">Export Data</p>
+                <p className="text-sm text-purple-600">Download school data</p>
+              </div>
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">School</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Location</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Plan</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Students</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Admin</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden xl:table-cell">Expires</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {schools.map(school => (
-                <tr key={school.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Building2 size={14} className="text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{school.name}</p>
-                        {school.email && <p className="text-xs text-gray-400">{school.email}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <div className="flex items-center gap-1 text-gray-500 text-xs">
-                      <MapPin size={12} />{school.province ?? '—'}
-                    </div>
-                    {school.phone && <div className="flex items-center gap-1 text-gray-400 text-xs mt-0.5"><Phone size={10} />{school.phone}</div>}
-                  </td>
-                  <td className="px-4 py-3">{planBadge(school.subscription_plan)}</td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <div className="flex items-center gap-1 text-gray-600 text-xs">
-                      <Users size={12} /> max {school.max_students}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    {school.admin ? (
-                      <div>
-                        <p className="text-xs font-medium text-gray-700">{school.admin.full_name}</p>
-                        <p className="text-xs text-gray-400">{school.admin.email}</p>
-                      </div>
-                    ) : <span className="text-xs text-gray-400">No admin set</span>}
-                  </td>
-                  <td className="px-4 py-3 hidden xl:table-cell">
-                    {school.subscription_expires_at ? (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar size={11} />
-                        {new Date(school.subscription_expires_at).toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </div>
-                    ) : <span className="text-xs text-gray-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    {school.is_active
-                      ? <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Active</span>
-                      : <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Inactive</span>}
-                  </td>
+
+        {/* Schools List */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-bold text-gray-900">Registered Schools</h2>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search schools..."
+                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                <Plus size={16} />
+                Add School
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">School</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Admin</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Students</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">License</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400">
-            {schools.length} school{schools.length !== 1 ? 's' : ''} registered
+              </thead>
+              <tbody>
+                {schools?.map((school) => {
+                  const license = licenses?.find(l => l.school_id === school.id)
+                  return (
+                    <tr key={school.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="font-medium text-gray-900">{school.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <MapPin size={12} className="text-gray-400" />
+                            <span className="text-xs text-gray-500">{school.province}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="text-sm text-gray-900">{school.admin?.full_name || 'Not assigned'}</p>
+                          <p className="text-xs text-gray-500">{school.admin?.email || '-'}</p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-sm text-gray-600">{school.student_count || 0}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {license ? (
+                          <div>
+                            <p className="text-sm text-gray-900">{license.license_type}</p>
+                            <p className="text-xs text-gray-500">
+                              Expires: {new Date(license.expires_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">No license</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          license?.status === 'active' ? 'bg-green-100 text-green-600' :
+                          license?.status === 'expired' ? 'bg-red-100 text-red-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {license?.status || 'inactive'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <button className="p-1 text-gray-400 hover:text-gray-600 transition">
+                            <Activity size={16} />
+                          </button>
+                          <button className="p-1 text-gray-400 hover:text-gray-600 transition">
+                            <CreditCard size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+                {(!schools || schools.length === 0) && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-gray-400">
+                      <Building2 size={40} className="mx-auto mb-3" />
+                      <p className="font-medium">No schools registered</p>
+                      <p className="text-sm mt-1">Add your first school to get started</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+
+        {/* License Management */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-bold text-gray-900">License Management</h2>
+            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+              <CreditCard size={16} />
+              Issue New License
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {licenses?.slice(0, 5).map((license) => (
+              <div key={license.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-medium text-gray-900">{license.schools?.name}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      license.status === 'active' ? 'bg-green-100 text-green-600' :
+                      license.status === 'expired' ? 'bg-red-100 text-red-600' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {license.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span>Type: {license.license_type}</span>
+                    <span>Students: {license.student_limit}</span>
+                    <span>Expires: {new Date(license.expires_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-1 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                    Renew
+                  </button>
+                  <button className="px-3 py-1 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">
+                    Details
+                  </button>
+                </div>
+              </div>
+            ))}
+            {(!licenses || licenses.length === 0) && (
+              <div className="text-center py-8 text-gray-400">
+                <CreditCard size={40} className="mx-auto mb-3" />
+                <p className="font-medium">No licenses issued</p>
+                <p className="text-sm mt-1">Issue your first license to get started</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

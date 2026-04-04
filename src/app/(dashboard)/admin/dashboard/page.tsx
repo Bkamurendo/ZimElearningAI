@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2, CreditCard, Clock, TrendingUp } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LayoutList, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2, CreditCard, Clock, TrendingUp, Activity, FileText, Monitor, Brain } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -351,6 +351,42 @@ export default async function AdminDashboard() {
                 <p className="text-xs text-gray-500 mt-0.5">{paidUsers.length} paid users</p>
               </div>
             </Link>
+            <Link href="/admin/engagement" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-blue-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition group">
+              <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
+                <Activity size={20} className="text-blue-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">User Engagement</p>
+                <p className="text-xs text-gray-500 mt-0.5">Activity monitoring & insights</p>
+              </div>
+            </Link>
+            <Link href="/admin/reports" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-green-50 rounded-2xl border border-gray-100 hover:border-green-200 transition group">
+              <div className="w-11 h-11 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 transition">
+                <FileText size={20} className="text-green-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Reports & Export</p>
+                <p className="text-xs text-gray-500 mt-0.5">Data analytics & CSV export</p>
+              </div>
+            </Link>
+            <Link href="/admin/security" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-red-50 rounded-2xl border border-gray-100 hover:border-red-200 transition group">
+              <div className="w-11 h-11 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition">
+                <Shield size={20} className="text-red-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Security & Audit</p>
+                <p className="text-xs text-gray-500 mt-0.5">Security monitoring & logs</p>
+              </div>
+            </Link>
+            <Link href="/admin/communications" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition group">
+              <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-200 transition">
+                <Megaphone size={20} className="text-indigo-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Communications</p>
+                <p className="text-xs text-gray-500 mt-0.5">Announcements & support</p>
+              </div>
+            </Link>
             <Link href="/admin/analytics" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-violet-50 rounded-2xl border border-gray-100 hover:border-violet-200 transition group">
               <div className="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 transition">
                 <BarChart3 size={20} className="text-violet-700" />
@@ -367,6 +403,33 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Platform Settings</p>
                 <p className="text-xs text-gray-500 mt-0.5">Feature flags &amp; limits</p>
+              </div>
+            </Link>
+            <Link href="/admin/monitoring" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-cyan-50 rounded-2xl border border-gray-100 hover:border-cyan-200 transition group">
+              <div className="w-11 h-11 bg-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-200 transition">
+                <Monitor size={20} className="text-cyan-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Real-Time Monitoring</p>
+                <p className="text-xs text-gray-500 mt-0.5">Live system performance</p>
+              </div>
+            </Link>
+            <Link href="/admin/content" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition group">
+              <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
+                <FileText size={20} className="text-emerald-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Content Management</p>
+                <p className="text-xs text-gray-500 mt-0.5">Bulk operations & moderation</p>
+              </div>
+            </Link>
+            <Link href="/admin/insights" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-purple-50 rounded-2xl border border-gray-100 hover:border-purple-200 transition group">
+              <div className="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 transition">
+                <Brain size={20} className="text-purple-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">AI Insights</p>
+                <p className="text-xs text-gray-500 mt-0.5">Predictive analytics</p>
               </div>
             </Link>
             <Link href="/admin/schools" className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition group">
