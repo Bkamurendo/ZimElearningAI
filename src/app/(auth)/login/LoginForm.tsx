@@ -3,10 +3,11 @@
 import { useFormStatus } from 'react-dom'
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { login } from '@/app/actions/auth'
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
 import { FacebookAuthButton } from '@/components/auth/FacebookAuthButton'
-import { Eye, EyeOff, Loader2, Zap } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
 /* ── Submit button — reads pending state from parent form ── */
 function SubmitButton() {
@@ -45,15 +46,14 @@ export function LoginForm({
       {/* Glass card */}
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
         <div className="mb-7">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-              <Zap size={13} className="text-white" />
+          <div className="flex items-center gap-3 mb-4">
+            <Image src="/zimlearn-logo.svg" alt="ZimLearn" width={44} height={44} className="rounded-xl" />
+            <div>
+              <p className="font-extrabold text-gray-900 text-lg leading-tight">ZimLearn</p>
+              <p className="text-xs text-emerald-600 font-medium">ZIMSEC E-Learning Platform</p>
             </div>
-            <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
-              Welcome back
-            </span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Sign in to ZimLearn</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Sign in</h2>
           <p className="text-gray-400 text-sm mt-1">Continue your learning journey</p>
         </div>
 

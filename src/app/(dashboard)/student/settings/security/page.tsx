@@ -6,11 +6,29 @@ import Link from 'next/link'
 import {
   ShieldCheck, ShieldOff, ArrowLeft, Loader2, XCircle,
   CheckCircle2, KeyRound, AlertTriangle, Copy, Check,
-  Mail, Phone, QrCode,
+  Mail, Phone, QrCode, Monitor, Smartphone, LogOut, Eye, EyeOff,
 } from 'lucide-react'
 
 type MfaMethod = 'none' | 'totp' | 'email' | 'phone'
 type SetupStep = 'choose' | 'totp-qr' | 'email-confirm' | 'phone-enter' | 'phone-verify'
+
+interface SessionInfo {
+  id: string
+  created_at: string
+  user_agent: string | null
+  isCurrent: boolean
+}
+
+function parseDeviceInfo(ua: string | null): { label: string; isMobile: boolean } {
+  if (!ua) return { label: 'Unknown device', isMobile: false }
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(ua)
+  let label = isMobile ? 'Mobile device' : 'Desktop / laptop'
+  if (/Chrome/i.test(ua) && !/Chromium|Edge/i.test(ua)) label += ' · Chrome'
+  else if (/Firefox/i.test(ua)) label += ' · Firefox'
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) label += ' · Safari'
+  else if (/Edge/i.test(ua)) label += ' · Edge'
+  return { label, isMobile }
+}
 
 export default function SecuritySettingsPage() {
   const supabase = createClient()
@@ -19,6 +37,22 @@ export default function SecuritySettingsPage() {
   const [currentMethod, setCurrentMethod] = useState<MfaMethod>('none')
   const [pageLoading, setPageLoading]     = useState(true)
   const [step, setStep]                   = useState<SetupStep>('choose')
+
+  // Session state
+  const [sessions, setSessions]           = useState<SessionInfo[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(true)
+  const [signOutAllBusy, setSignOutAllBusy]   = useState(false)
+  const [signOutAllModal, setSignOutAllModal] = useState<'none' | 'others' | 'all'>('none')
+
+  // Password change state
+  const [_pwCurrent, setPwCurrent]         = useState('')
+  const [pwNew, setPwNew]                 = useState('')
+  const [pwConfirm, setPwConfirm]         = useState('')
+  const [pwBusy, setPwBusy]               = useState(false)
+  const [pwError, setPwError]             = useState('')
+  const [pwSuccess, setPwSuccess]         = useState('')
+  const [showPwCurrent, setShowPwCurrent] = useState(false)
+  const [showPwNew, setShowPwNew]         = useState(false)
 
   // TOTP enroll
   const [qrUrl, setQrUrl]       = useState('')
@@ -57,6 +91,32 @@ export default function SecuritySettingsPage() {
       setPageLoading(false)
     }
     load()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── load sessions ── */
+  useEffect(() => {
+    async function loadSessions() {
+      try {
+        const { data: { session: current } } = await supabase.auth.getSession()
+        // Supabase doesn't expose a multi-session list on the client SDK;
+        // we represent just the current session here.
+        if (current) {
+          setSessions([
+            {
+              id: current.access_token.slice(-8),
+              created_at: new Date().toISOString(),
+              user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+              isCurrent: true,
+            },
+          ])
+        }
+      } catch {
+        // ignore
+      } finally {
+        setSessionsLoading(false)
+      }
+    }
+    loadSessions()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── helpers ── */
@@ -167,6 +227,42 @@ export default function SecuritySettingsPage() {
       setSuccess('Two-factor authentication has been disabled.')
       resetState()
     } finally { setBusy(false) }
+  }
+
+  /* ── Change password ── */
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault()
+    setPwError(''); setPwSuccess('')
+    if (!pwNew.trim() || pwNew.length < 8) { setPwError('New password must be at least 8 characters.'); return }
+    if (pwNew !== pwConfirm) { setPwError('Passwords do not match.'); return }
+    setPwBusy(true)
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password: pwNew })
+      if (err) { setPwError(err.message); return }
+      setPwSuccess('Password updated successfully.')
+      setPwCurrent(''); setPwNew(''); setPwConfirm('')
+    } finally {
+      setPwBusy(false)
+    }
+  }
+
+  /* ── Sign out other/all sessions ── */
+  async function handleSignOut(scope: 'others' | 'global') {
+    setSignOutAllBusy(true)
+    try {
+      await supabase.auth.signOut({ scope })
+      if (scope === 'global') {
+        window.location.href = '/login'
+      } else {
+        setSignOutAllModal('none')
+        setSuccess('All other sessions have been signed out.')
+      }
+    } catch {
+      setError('Failed to sign out sessions. Please try again.')
+      setSignOutAllModal('none')
+    } finally {
+      setSignOutAllBusy(false)
+    }
   }
 
   /* ── Render ── */
@@ -437,6 +533,204 @@ export default function SecuritySettingsPage() {
             </div>
           </div>
         )}
+
+      {/* ── Current Session ───────────────────────────────────────── */}
+      <div className="mt-10">
+        <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Monitor size={16} className="text-indigo-500" /> Active Sessions
+        </h2>
+
+        {sessionsLoading ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-3">
+            <Loader2 size={16} className="animate-spin text-slate-400" />
+            <span className="text-sm text-slate-400">Loading sessions…</span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sessions.map(s => {
+              const { label, isMobile } = parseDeviceInfo(s.user_agent)
+              return (
+                <div key={s.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    {isMobile
+                      ? <Smartphone size={18} className="text-indigo-500" />
+                      : <Monitor size={18} className="text-indigo-500" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{label}</p>
+                      {s.isCurrent && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                          This device
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      {s.isCurrent ? 'Active now' : `Last seen ${new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Change Password ───────────────────────────────────────── */}
+      <div className="mt-8">
+        <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <KeyRound size={16} className="text-indigo-500" /> Change Password
+        </h2>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          {pwSuccess && (
+            <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl mb-4">
+              <CheckCircle2 size={15} className="shrink-0" />{pwSuccess}
+            </div>
+          )}
+          {pwError && (
+            <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
+              <XCircle size={15} className="shrink-0" />{pwError}
+            </div>
+          )}
+          <form onSubmit={changePassword} className="space-y-4">
+            {/* New password */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">New Password</label>
+              <div className="relative">
+                <input
+                  type={showPwNew ? 'text' : 'password'}
+                  value={pwNew}
+                  onChange={e => setPwNew(e.target.value)}
+                  placeholder="Min. 8 characters"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwNew(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  aria-label={showPwNew ? 'Hide password' : 'Show password'}
+                >
+                  {showPwNew ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm password */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Confirm New Password</label>
+              <div className="relative">
+                <input
+                  type={showPwCurrent ? 'text' : 'password'}
+                  value={pwConfirm}
+                  onChange={e => setPwConfirm(e.target.value)}
+                  placeholder="Repeat new password"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwCurrent(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  aria-label={showPwCurrent ? 'Hide password' : 'Show password'}
+                >
+                  {showPwCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            {pwNew && pwConfirm && pwNew !== pwConfirm && (
+              <p className="text-xs text-red-500">Passwords do not match.</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={pwBusy || !pwNew || !pwConfirm}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition flex items-center justify-center gap-2"
+            >
+              {pwBusy ? <><Loader2 size={15} className="animate-spin" /> Updating…</> : <><KeyRound size={15} /> Update Password</>}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* ── Danger Zone ───────────────────────────────────────────── */}
+      <div className="mt-8 mb-6">
+        <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <AlertTriangle size={16} className="text-red-500" /> Danger Zone
+        </h2>
+        <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-5 space-y-4">
+          {/* Sign out all other devices */}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Sign out all other devices</p>
+              <p className="text-xs text-gray-400 mt-0.5">Revoke access on every device except this one.</p>
+            </div>
+            <button
+              onClick={() => setSignOutAllModal('others')}
+              className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl hover:bg-amber-100 transition"
+            >
+              <LogOut size={13} /> Sign out others
+            </button>
+          </div>
+
+          <hr className="border-red-100" />
+
+          {/* Sign out everywhere */}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Sign out everywhere</p>
+              <p className="text-xs text-gray-400 mt-0.5">Sign out of all devices including this one. You will be redirected to login.</p>
+            </div>
+            <button
+              onClick={() => setSignOutAllModal('all')}
+              className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl hover:bg-red-100 transition"
+            >
+              <LogOut size={13} /> Sign out all
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Confirmation Modal ────────────────────────────────────── */}
+      {signOutAllModal !== 'none' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <AlertTriangle size={22} className="text-red-500" />
+            </div>
+            <h3 className="text-base font-bold text-gray-900 text-center mb-2">
+              {signOutAllModal === 'others' ? 'Sign out other devices?' : 'Sign out everywhere?'}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              {signOutAllModal === 'others'
+                ? 'All sessions on other devices will be invalidated immediately. This device stays signed in.'
+                : 'You will be signed out on ALL devices including this one and redirected to the login page.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSignOutAllModal('none')}
+                disabled={signOutAllBusy}
+                className="flex-1 py-3 border border-gray-200 text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSignOut(signOutAllModal === 'others' ? 'others' : 'global')}
+                disabled={signOutAllBusy}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition flex items-center justify-center gap-2"
+              >
+                {signOutAllBusy
+                  ? <><Loader2 size={15} className="animate-spin" /> Signing out…</>
+                  : <><LogOut size={15} /> Confirm</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       </div>
     </div>

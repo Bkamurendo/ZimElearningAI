@@ -13,6 +13,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
   let plan: 'free' | 'starter' | 'pro' | 'elite' = 'free'
   let aiUsed = 0
   let trialEndsAt: string | null = null
+  let hasChallenge = false
 
   if (user) {
     const { data: profile } = await supabase
@@ -50,6 +51,40 @@ export default async function StudentLayout({ children }: { children: React.Reac
         .eq('recipient_id', user.id).eq('read', false)
       unreadMessages = count ?? 0
     } catch { /* table may not exist */ }
+
+    // Check if today's challenge is available and not yet attempted
+    try {
+      if (sp) {
+        const { data: spFull } = await supabase
+          .from('student_profiles')
+          .select('zimsec_level')
+          .eq('user_id', user.id)
+          .single() as { data: { zimsec_level: string } | null; error: unknown }
+
+        if (spFull?.zimsec_level) {
+          const todayStr = new Date().toISOString().split('T')[0]
+          const { data: todayChallenge } = await supabase
+            .from('daily_challenges')
+            .select('id')
+            .eq('challenge_date', todayStr)
+            .eq('zimsec_level', spFull.zimsec_level)
+            .single()
+
+          if (todayChallenge) {
+            const { data: attempt } = await supabase
+              .from('daily_challenge_attempts')
+              .select('id')
+              .eq('challenge_id', todayChallenge.id)
+              .eq('user_id', user.id)
+              .single()
+            hasChallenge = !attempt
+          } else {
+            // Challenge not yet generated — mark as available so user can trigger generation
+            hasChallenge = true
+          }
+        }
+      }
+    } catch { /* daily_challenges table may not exist yet */ }
   }
 
   return (
@@ -62,6 +97,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         plan={plan}
         aiUsed={aiUsed}
         trialEndsAt={trialEndsAt}
+        hasChallenge={hasChallenge}
       />
       <div className="lg:pl-64 pb-16 lg:pb-0">
         <div className="pt-14 lg:pt-0">{children}</div>

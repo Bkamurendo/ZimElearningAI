@@ -13,7 +13,7 @@ import {
   MapPin,
   Phone,
   Mail,
-  Image,
+  Image as ImageIcon,
   Globe,
   CreditCard,
   ChevronRight,
@@ -378,7 +378,7 @@ export default function SchoolAdminSettingsPage() {
                   Logo URL
                 </label>
                 <div className="relative">
-                  <Image
+                  <ImageIcon
                     size={15}
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                   />

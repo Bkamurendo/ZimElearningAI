@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { UserRole } from '@/types/database'
+import { sendSMS } from '@/lib/sms'
+import { SMS_TEMPLATES } from '@/lib/sms-templates'
 
 export async function login(formData: FormData): Promise<void> {
   const supabase = createClient()
@@ -107,6 +109,27 @@ export async function register(formData: FormData): Promise<void> {
       .from('profiles')
       .update({ role, full_name: fullName, ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}) })
       .eq('id', user.id)
+  }
+
+  // Send welcome SMS for parents (who supply a phone number during registration)
+  // For students and teachers the phone is collected at onboarding, so we skip here.
+  if (user && role === 'parent') {
+    try {
+      const { data: parentProfile } = await supabase
+        .from('parent_profiles')
+        .select('phone_number')
+        .eq('id', user.id)
+        .single()
+
+      if (parentProfile?.phone_number) {
+        await sendSMS(
+          parentProfile.phone_number as string,
+          SMS_TEMPLATES.welcomeStudent(fullName)
+        )
+      }
+    } catch {
+      // SMS failure must never break registration
+    }
   }
 
   revalidatePath('/', 'layout')

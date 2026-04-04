@@ -27,14 +27,14 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    let body: { planId: PlanId; method?: 'web' | MobileMethod; phone?: string }
+    let body: { planId: PlanId; method?: 'web' | MobileMethod; phone?: string; couponCode?: string }
     try {
       body = await req.json()
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const { planId, method = 'ecocash', phone } = body
+    const { planId, method = 'ecocash', phone, couponCode } = body
 
     const plan = PLANS[planId]
     if (!plan) {
@@ -64,6 +64,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Validate coupon if provided
+    let finalAmountUsd = plan.amountUsd
+    let couponId: string | null = null
+    let couponSavings = 0
+
+    if (couponCode) {
+      const couponValidateRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/coupons/validate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Cookie: req.headers.get('cookie') ?? '' },
+          body: JSON.stringify({ code: couponCode, planId, amountUsd: plan.amountUsd }),
+        }
+      )
+      const couponData = await couponValidateRes.json()
+      if (couponData.valid) {
+        finalAmountUsd = couponData.discountedAmount
+        couponId = couponData.couponId
+        couponSavings = couponData.savings
+      }
+      // If coupon is invalid we proceed with full price (client-side already validated)
+    }
+
     const reference = `zimlearn-${planId}-${user.id.slice(0, 8)}-${Date.now()}`
 
     // Create payment row in DB (status: pending)
@@ -72,10 +95,11 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: user.id,
         plan_id: planId,
-        amount_usd: plan.amountUsd,
+        amount_usd: finalAmountUsd,
         method,
         phone: phone ?? null,
         status: 'pending',
+        coupon_id: couponId,
       })
       .select('id')
       .single()
@@ -95,7 +119,7 @@ export async function POST(req: NextRequest) {
     const result = await createPaynowPayment({
       reference: fullRef,
       email: user.email ?? 'customer@zimlearn.co.zw',
-      amountUsd: plan.amountUsd,
+      amountUsd: finalAmountUsd,
       description: plan.description,
       method,
       phone,
@@ -120,11 +144,43 @@ export async function POST(req: NextRequest) {
         .eq('id', payment.id)
     }
 
+    // Record coupon use and increment uses_count
+    if (couponId) {
+      // Insert use record (ignore duplicate — unique constraint handles repeated attempts)
+      await supabase.from('coupon_uses').upsert({
+        coupon_id: couponId,
+        user_id: user.id,
+        plan_id: planId,
+        amount_saved_usd: couponSavings,
+      }, { onConflict: 'coupon_id,user_id', ignoreDuplicates: true })
+
+      // Increment uses_count via raw SQL so there's no race condition
+      await supabase.rpc('increment_coupon_uses_count', { p_coupon_id: couponId })
+        .then(({ error }) => {
+          if (error) {
+            // RPC may not exist yet — fall back to a safe read-then-write
+            return supabase
+              .from('coupons')
+              .select('uses_count')
+              .eq('id', couponId)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  return supabase
+                    .from('coupons')
+                    .update({ uses_count: (data as { uses_count: number }).uses_count + 1 })
+                    .eq('id', couponId)
+                }
+              })
+          }
+        })
+    }
+
     return NextResponse.json({
       paymentId: payment.id,
       method,
       planId,
-      amountUsd: plan.amountUsd,
+      amountUsd: finalAmountUsd,
       redirectUrl: result.redirectUrl,
       pollUrl: result.pollUrl,
       message: method !== 'web'

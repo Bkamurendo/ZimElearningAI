@@ -3,7 +3,15 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Building2, Users, CreditCard, Calendar, ArrowLeft, Plus, Search, Filter, Download, CheckCircle, AlertTriangle, Activity, MapPin, Phone, Mail } from 'lucide-react'
 
+<<<<<<< HEAD
 export const metadata = { title: 'School Management — Admin' }
+=======
+import { useState, useEffect } from 'react'
+import {
+  Building2, Plus, CheckCircle2, XCircle, Loader2,
+  Users, Calendar, MapPin, Phone, X,
+} from 'lucide-react'
+>>>>>>> f4ce9480f3f65bb8d4b586f333b68ef6b9571e05
 
 export default async function AdminSchoolsPage() {
   const supabase = createClient()

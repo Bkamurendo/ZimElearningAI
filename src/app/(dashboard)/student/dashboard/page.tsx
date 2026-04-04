@@ -207,6 +207,33 @@ export default async function StudentDashboard() {
     }
   }
 
+  // Daily challenge status
+  let dailyChallengeCompleted = false
+  let dailyChallengeScore: number | null = null
+  try {
+    const todayStr = new Date().toISOString().split('T')[0]
+    const { data: todayChallenge } = await supabase
+      .from('daily_challenges')
+      .select('id')
+      .eq('challenge_date', todayStr)
+      .eq('zimsec_level', studentProfile?.zimsec_level ?? 'olevel')
+      .single()
+
+    if (todayChallenge) {
+      const { data: challengeAttempt } = await supabase
+        .from('daily_challenge_attempts')
+        .select('score')
+        .eq('challenge_id', todayChallenge.id)
+        .eq('user_id', user.id)
+        .single() as { data: { score: number } | null; error: unknown }
+
+      if (challengeAttempt) {
+        dailyChallengeCompleted = true
+        dailyChallengeScore = challengeAttempt.score
+      }
+    }
+  } catch { /* daily_challenges table may not exist yet */ }
+
   // Upcoming ZIMSEC exams from timetable
   const todayStr = new Date().toISOString().split('T')[0]
   type ExamRow = { id: string; exam_date: string; paper_number: string; subjects: { name: string; code: string } | null }
@@ -459,6 +486,50 @@ export default async function StudentDashboard() {
             </div>
           </div>
         )}
+
+        {/* Daily Challenge card */}
+        <Link
+          href="/student/challenges"
+          className="group relative overflow-hidden rounded-2xl p-5 hover:shadow-lg hover:scale-[1.01] transition-all duration-200 shadow-sm"
+          style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706, #b45309)' }}
+        >
+          {/* background glow */}
+          <div className="absolute top-0 right-0 w-40 h-40 rounded-full translate-x-1/4 -translate-y-1/4"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)' }} />
+          <div className="relative flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center shadow-sm">
+                  <Zap size={18} className="text-yellow-200" />
+                </div>
+                <div>
+                  <p className="text-white/80 text-[11px] font-medium leading-tight">Daily Challenge</p>
+                  <p className="text-white font-bold text-sm leading-tight">
+                    {dailyChallengeCompleted
+                      ? `Completed — ${dailyChallengeScore}/5`
+                      : "Today's challenge ready!"}
+                  </p>
+                </div>
+              </div>
+              <p className="text-white/70 text-xs mt-1">
+                {dailyChallengeCompleted
+                  ? 'View leaderboard and results'
+                  : '5 questions · 50 XP + bonus'}
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              {dailyChallengeCompleted ? (
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <CheckCircle2 size={20} className="text-white" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 bg-white/20 hover:bg-white/30 transition text-white text-xs font-semibold px-3 py-2 rounded-xl">
+                  Play <ChevronRight size={13} />
+                </div>
+              )}
+            </div>
+          </div>
+        </Link>
 
         {/* Quick Actions */}
         <div>

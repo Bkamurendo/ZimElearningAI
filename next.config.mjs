@@ -72,6 +72,7 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // Security headers for all routes
       {
         source: '/(.*)',
         headers: [
@@ -80,6 +81,23 @@ const nextConfig = {
           { key: 'X-XSS-Protection',           value: '1; mode=block' },
           { key: 'Referrer-Policy',            value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy',         value: 'camera=(), microphone=(), geolocation=()' },
+        ],
+      },
+      // Service worker must never be served from cache — browsers must always
+      // fetch the latest copy so they can detect SW updates on every page load.
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type',  value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+      // Web App Manifest — short cache so icon/shortcut changes propagate quickly
+      {
+        source: '/manifest.json',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+          { key: 'Content-Type',  value: 'application/manifest+json' },
         ],
       },
     ]
