@@ -21,13 +21,13 @@ export async function GET(): Promise<NextResponse> {
     // Categorize users with detailed logging
     const allUsers = trialUsers || []
     const activeTrials = allUsers.filter(user => {
-      const isActive = user.plan === 'free' && new Date(user.trial_ends_at) > now
+      const isActive = new Date(user.trial_ends_at) > now
       console.log(`User ${user.email}: plan=${user.plan}, trial_ends=${user.trial_ends_at}, active=${isActive}`)
       return isActive
     })
     
     const expiredTrials = allUsers.filter(user => 
-      user.plan === 'free' && new Date(user.trial_ends_at) <= now
+      new Date(user.trial_ends_at) <= now
     )
     
     const paidUsers = allUsers.filter(user => 
