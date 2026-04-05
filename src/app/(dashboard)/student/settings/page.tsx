@@ -18,6 +18,7 @@ interface ProfileData {
   pro_expires_at: string | null
   zimsec_level: string | null
   grade: string | null
+  phone_number: string | null
 }
 
 export default function ProfileSettingsPage() {
@@ -27,6 +28,7 @@ export default function ProfileSettingsPage() {
   const [profile, setProfile]       = useState<ProfileData | null>(null)
   const [editingName, setEditingName] = useState(false)
   const [newName, setNewName]       = useState('')
+  const [newPhone, setNewPhone]     = useState('')
   const [saved, setSaved]           = useState(false)
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function ProfileSettingsPage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, plan, pro_expires_at')
+        .select('full_name, plan, pro_expires_at, phone_number')
         .eq('id', user.id)
         .single()
 
@@ -53,20 +55,26 @@ export default function ProfileSettingsPage() {
         pro_expires_at: p?.pro_expires_at ?? null,
         zimsec_level:  sp?.zimsec_level ?? null,
         grade:         sp?.grade        ?? null,
+        phone_number:  p?.phone_number  ?? null,
       })
       setNewName(p?.full_name ?? '')
+      setNewPhone(p?.phone_number ?? '')
       setLoading(false)
     }
     load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function saveName() {
+  async function saveProfile() {
     if (!newName.trim()) return
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from('profiles').update({ full_name: newName.trim() }).eq('id', user.id)
-      setProfile(prev => prev ? { ...prev, full_name: newName.trim() } : prev)
+      const updates = {
+        full_name: newName.trim(),
+        phone_number: newPhone.trim() || null,
+      }
+      await supabase.from('profiles').update(updates).eq('id', user.id)
+      setProfile(prev => prev ? { ...prev, ...updates } : prev)
     }
     setSaving(false)
     setEditingName(false)
@@ -116,32 +124,57 @@ export default function ProfileSettingsPage() {
             <span className="text-white text-2xl font-bold">{initials}</span>
           </div>
 
-          {/* Editable name */}
+          {/* Editable settings (Name & Phone) */}
           {editingName ? (
-            <div className="flex items-center gap-2 max-w-xs mx-auto mt-2">
-              <input
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && saveName()}
-                placeholder="Your full name"
-                className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
-                autoFocus
-              />
-              <button
-                onClick={saveName}
-                disabled={saving}
-                className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl disabled:opacity-50 transition"
-              >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              </button>
+            <div className="space-y-3 max-w-xs mx-auto mt-4 text-left">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1">Full Name</label>
+                <input
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1">Phone Number</label>
+                <input
+                  value={newPhone}
+                  onChange={e => setNewPhone(e.target.value)}
+                  placeholder="e.g. 0771234567"
+                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 ml-1">Used for 2FA and Ready Pulse alerts</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingName(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-500 rounded-xl text-sm hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveProfile}
+                  disabled={saving}
+                  className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl disabled:opacity-50 transition text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                  Save Changes
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 mt-1">
               <h1 className="text-lg font-bold text-slate-900">{profile?.full_name}</h1>
               <button
-                onClick={() => setEditingName(true)}
+                onClick={() => {
+                  setNewName(profile?.full_name ?? '')
+                  setNewPhone(profile?.phone_number ?? '')
+                  setEditingName(true)
+                }}
                 className="p-1 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
-                title="Edit name"
+                title="Edit profile"
               >
                 <Edit2 size={14} />
               </button>

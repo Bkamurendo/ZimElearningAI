@@ -86,11 +86,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Future: look up profiles.phone if that column is added
-    // const { data: profilePhones } = await supabase
-    //   .from('profiles')
-    //   .select('phone')
-    //   .in('id', userIds)
+    // Look up profiles for phone numbers (students/teachers)
+    const { data: profilePhones } = await supabase
+      .from('profiles')
+      .select('phone_number')
+      .in('id', userIds)
+
+    if (profilePhones) {
+      for (const row of profilePhones) {
+        if (row.phone_number) {
+          resolvedPhones.push(row.phone_number as string)
+        }
+      }
+    }
   }
 
   if (resolvedPhones.length === 0) {

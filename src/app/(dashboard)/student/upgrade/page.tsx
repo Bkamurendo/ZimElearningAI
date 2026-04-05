@@ -120,7 +120,12 @@ const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: stri
   parent_monitoring_monthly: { perMonth: '$3.00', period: 'per month' },
   ai_grade_report:      { perMonth: '$2.00', period: 'one-time purchase' },
   subject_pack:         { perMonth: '$1.50', period: 'lifetime access' },
+  teacher_pro:          { perMonth: '$5.00', period: 'per month' },
+  school_elite_basic:   { perMonth: '$100.00', period: 'per month' },
+  school_elite_unlimited: { perMonth: '$83.33', period: 'per month, billed $1,000 yearly' },
+  corporate_gold:       { perMonth: '$41.67', period: 'per month, billed $500 yearly' },
 }
+
 
 type PaymentMethod = 'ecocash' | 'onemoney' | 'innbucks' | 'web'
 type Gateway = 'local' | 'international'
