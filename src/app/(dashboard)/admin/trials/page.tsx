@@ -334,20 +334,34 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
                           <DaysChip days={daysLeft(row.trial_ends_at)} />
                         </td>
                         <td className="px-5 py-3.5 text-right">
-                          {remindedUserIds.has(row.id) ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg px-3 py-1.5 border border-emerald-200">
-                              <CheckCircle size={12} />
-                              Sent Recently
-                            </span>
-                          ) : (
-                            <a
-                              href={`/api/admin/send-sms?userId=${row.id}`}
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 rounded-lg px-3 py-1.5 transition"
-                            >
-                              <Mail size={12} />
-                              Send Reminder (SMS/Email)
-                            </a>
-                          )}
+                          <div className="flex items-center justify-end gap-2">
+                            {remindedUserIds.has(row.id) ? (
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg px-3 py-1.5 border border-emerald-200">
+                                <CheckCircle size={12} />
+                                Sent Recently
+                              </span>
+                            ) : (
+                              <a
+                                href={`/api/admin/send-sms?userId=${row.id}`}
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 rounded-lg px-3 py-1.5 transition"
+                              >
+                                <Mail size={12} />
+                                Send Reminder
+                              </a>
+                            )}
+                            {row.phone && (
+                              <a
+                                href={`https://wa.me/${row.phone.replace(/\D/g, '').replace(/^0/, '263')}?text=${encodeURIComponent(`Hi ${row.full_name?.split(' ')[0] ?? 'there'}, your ZimLearn AI free trial is ending soon! Don't lose access to AI tutoring and ZIMSEC past papers. Upgrade now from just $2/month: https://zim-elearningai.co.zw/student/upgrade`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-800 border border-green-200 hover:border-green-400 rounded-lg px-3 py-1.5 transition"
+                                title="Send WhatsApp message"
+                              >
+                                <span className="text-base leading-none">📱</span>
+                                WhatsApp
+                              </a>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

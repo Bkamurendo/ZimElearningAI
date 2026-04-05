@@ -10,7 +10,7 @@ import {
   Flame, Menu, X, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
-  Accessibility,
+  Accessibility, Gift,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
@@ -39,6 +39,7 @@ const NAV = [
   { href: '/student/ai-workspace',      label: 'AI Workspace',    icon: Sparkles,        badge: null },
   { href: '/student/exam-timetable',    label: 'Exam Timetable',  icon: CalendarCheck,   badge: null },
   { href: '/student/settings/security', label: 'Security',        icon: Settings,        badge: null },
+  { href: '/student/referral',          label: 'Refer & Earn 🎁', icon: Gift,             badge: null },
 ]
 
 interface Props {
@@ -228,6 +229,23 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
                 <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
+              </div>
+            </Link>
+          )}
+
+          {/* Referral nudge (show for free/starter only) */}
+          {(plan === 'free' || plan === 'starter') && (
+            <Link
+              href="/student/referral"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 transition-all"
+            >
+              <div className="w-7 h-7 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Gift size={14} className="text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-amber-300 leading-tight">Refer & Earn</div>
+                <div className="text-[10px] text-amber-500 leading-tight">Get 1 free month per referral</div>
               </div>
             </Link>
           )}
