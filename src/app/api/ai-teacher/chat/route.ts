@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { retrievePlatformKnowledge } from '@/lib/ai/retriever'
 import { extractTextFromPDF, classifyZimsecDocument } from '@/lib/ai/doc-processor'
+import { NATIVE_LEXICON, LexiconLanguage } from '@/lib/ai/lexicon'
+
 
 export const maxDuration = 60
 
@@ -25,9 +27,21 @@ You MUST respect the "Solution Mode" provided in the student context:
 ## THE ZIMSEC RECIPE FOR SUCCESS (THREE-CYCLE MASTERY)
 You MUST advocate for and enforce this proven preparation method:
 1. **100% Syllabus Coverage**: DO NOT "spot" (predict) topics. Cover everything in the curriculum at least once before doing past papers.
-2. **Three-Cycle Read-Through**: Encourage students to read the entire material a minimum of 2 times, ideally 3 times. Explain that consistent exposure transfers info from short-term to long-term memory (Repetition Priming).
+2. **Three-Cycle Read-Through (The Rule of 3)**: Encourage students to read the entire material a minimum of 2 times, ideally 3 times. 
+   - **Pass 1 (Initial)**: Understanding concepts.
+   - **Pass 2 (Review)**: Consolidation and memory retrieval.
+   - **Pass 3 (Diagnostic)**: Past paper drills and weak area recovery.
+   Explain that consistent exposure transfers info from short-term to long-term memory (Repetition Priming).
 3. **Diagnostic Past Papers**: Use papers to find "Gaps in Knowledge," not as a shortcut to skip studying. If a student fails a past paper question, they MUST go back to the material and read it again.
-4. **Discipline over Intelligence**: Remind students that passing is about thorough preparation, not just being "born smart."
+4. **Discipline over Intelligence**: Remind students that passing is about thorough preparation, not just being "born smart." Passing ZIMSEC is a result of **Discipline + Repetition**.
+
+## NATIVE VOICE & MOTHER TONGUE (ZIMSEC HBC COMPLIANCE)
+For ECD to Grade 7, prioritize a warm, native-sounding teacher persona.
+- If the student chooses **Shona** or **Ndebele**:
+  - Explain core concepts in the chosen tongue.
+  - Use **English in brackets** for technical ZIMSEC terms (e.g. "Zvikamu (Fractions)", "Kumera (Germination)").
+  - Avoid literal "machine translation". Use natural pedagogical phrases.
+- Use the **Native Teacher Lexicon** logic provided in the context to ensure accuracy.
 
 ## Zimbabwe Heritage-Based Curriculum (HBC) 2024–2030 — Official Curriculum
 You fully know and teach according to the official Zimbabwe Heritage-Based Curriculum Framework for Primary and Secondary Education 2024–2030, developed by the Ministry of Primary and Secondary Education. This curriculum is built on the philosophy of Ubuntu/Unhu/Vumunhu, Heritage-Based Education, and a STEAM bias for innovation and a knowledge-driven economy aligned with Vision 2030.
@@ -528,6 +542,7 @@ export async function POST(req: NextRequest) {
       image_base64,
       file_base64,
       file_type,
+      preferred_language = 'english',
     } = await req.json() as {
       conversation_id?: string
       message: string
@@ -537,7 +552,9 @@ export async function POST(req: NextRequest) {
       image_base64?: string
       file_base64?: string
       file_type?: string
+      preferred_language?: LexiconLanguage | 'english'
     }
+
 
     if (!message?.trim() && !image_base64) {
       return NextResponse.json({ error: 'message or image required' }, { status: 400 })
@@ -594,7 +611,9 @@ export async function POST(req: NextRequest) {
       // silently skip
     }
 
-    // NEW: Handle PDF/Document text extraction
+    // ── GATHER ALL CONTEXT ──
+
+    // 1. Handle PDF/Document text extraction
     let docContext = ""
     let docType = "none"
     let suggestedActions: string[] = []
@@ -614,7 +633,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // NEW: Retrieve platform resources (search internal knowledge base)
+    // 2. Retrieve platform resources (search internal knowledge base)
     let resourcesContext = "No specific platform resources found for this exact topic. Use your general ZIMSEC Heritage-Based Curriculum knowledge."
     try {
       const internalKnowledge = await retrievePlatformKnowledge(
@@ -629,17 +648,18 @@ export async function POST(req: NextRequest) {
       console.error('Retriever error:', err)
     }
 
-    // Build system prompt
-    const solLabel = solution_mode === 'direct' ? '🎯 DIRECT (Expert Solver Mode)' : '💡 SCAFFOLDED (Coach Mode - HINTS ONLY)'
-    const levelLabel = {
+    // ── Build Final System Prompt ──
+    const levelLabelFull = {
       primary: 'Primary school',
       olevel: 'O-Level (Form 1–4)',
       alevel: 'A-Level (Lower/Upper 6)',
     }[studentProfile.zimsec_level] ?? 'secondary school'
     const gradeInfo = studentProfile.grade ? ` in ${studentProfile.grade}` : ''
     const subjectInfo = subject_name ? ` studying ${subject_name}` : ''
+    const solLabel = solution_mode === 'direct' ? '🎯 DIRECT (Expert Solver Mode)' : '💡 SCAFFOLDED (Coach Mode - HINTS ONLY)'
 
-    const systemPrompt = `${MAFUNDI_CORE}
+    let systemPrompt = `
+${MAFUNDI_CORE}
 
 ${ZIMSEC_INTELLIGENCE}
 
@@ -647,21 +667,39 @@ ${HBC_CURRICULUM_DETAIL}
 
 ${MODE_PROMPTS[mode] ?? MODE_PROMPTS.normal}
 
-
-
-
 ${studentContextSection}
 
 ## PLATFORM RESOURCES (ZimLearn Official Knowledge)
 The following snippets were retrieved from official platform books and lessons. Prioritize these in your explanation:
 ${resourcesContext}
 
-## Current Student
-Level: ${levelLabel}${gradeInfo}${subjectInfo}
+## CURRENT STUDENT CONTEXT
+Level: ${levelLabelFull}${gradeInfo}${subjectInfo}
 Solution Mode: ${solLabel}
-
-${docContext ? `\n## UPLOADED DOCUMENT CONTEXT\n${docContext}` : ''}
+Language Preference: ${preferred_language?.toUpperCase() ?? 'ENGLISH'}
 `
+
+
+    // Add Language Specific Lexicon if needed
+    if (preferred_language && preferred_language !== 'english') {
+      const lexicon = NATIVE_LEXICON[preferred_language as LexiconLanguage]
+      systemPrompt += `\n\n## NATIVE TEACHER LEXICON (${preferred_language.toUpperCase()})\n`
+      systemPrompt += `Use these expressions for natural teaching:\n`
+      systemPrompt += JSON.stringify(lexicon, null, 2)
+      systemPrompt += `\n\nINSTRUCTION: You are speaking to the student in ${preferred_language.toUpperCase()}. Follow the Pedagogical Mother-Tongue rules: explain core concepts in ${preferred_language.toUpperCase()}, keep technical ZIMSEC terms in English brackets.`
+    }
+
+    // Add level-specific persona tweaks
+    if (studentProfile.zimsec_level === 'primary') {
+      systemPrompt += "\n\n## PRIMARY STUDENT PERSONA: Be extremely warm, use simple words, and focus on 'Discovery Missions'. Mention Ubuntu values regularly."
+    } else if (studentProfile.zimsec_level === 'olevel') {
+      systemPrompt += "\n\n## O-LEVEL PERSONA: Be technical, exam-focused, and bridge the gap between primary concepts and academic rigor."
+    }
+
+    if (docContext) {
+      systemPrompt += `\n\n## UPLOADED DOCUMENT CONTEXT\n${docContext}`
+    }
+
 
     // Build message content (support vision)
     type ContentBlock =

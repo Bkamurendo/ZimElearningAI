@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { markAllNotificationsRead } from '@/app/actions/notifications'
+import { SmsSummaryButton } from './sms-button'
+import { Zap, Phone, BarChart3, CheckCircle2 } from 'lucide-react'
+
 
 export default async function ParentDashboard() {
   const supabase = createClient()
@@ -10,9 +13,10 @@ export default async function ParentDashboard() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role')
+    .select('full_name, role, phone_number')
     .eq('id', user.id)
     .single()
+
 
   if (profile?.role !== 'parent') redirect(`/${profile?.role}/dashboard`)
 
@@ -56,6 +60,8 @@ export default async function ParentDashboard() {
     totalXp: number
     recentBadges: string[]
     weakTopics: string[]
+    readyPulse: number
+    cycleProgress: { subject: string; pass_number: number }[]
   }
 
   const childStats: ChildStats[] = []
@@ -82,8 +88,30 @@ export default async function ParentDashboard() {
       totalXp: streak?.total_xp ?? 0,
       recentBadges: badges?.map((b) => b.badge_name) ?? [],
       weakTopics: weak?.map((m) => m.topic) ?? [],
+      readyPulse: 0,
+      cycleProgress: [],
     })
   }
+
+
+  // Fetch cycles and calculate pulse
+  for (const stats of childStats) {
+    const { data: cycles } = await supabase
+      .from('syllabus_cycles')
+      .select('subject_name, pass_number')
+      .eq('student_id', stats.id)
+
+    if (cycles && cycles.length > 0) {
+      stats.cycleProgress = cycles.map((c: any) => ({ subject: c.subject_name, pass_number: c.pass_number }))
+      const avgPass = cycles.reduce((acc: number, c: any) => acc + c.pass_number, 0) / cycles.length
+      const masteryScore = (stats.topicsMastered / 30) * 100 // Assume 30 target topics
+      stats.readyPulse = Math.min(100, Math.round((masteryScore * 0.5) + ((avgPass / 3) * 50)))
+    } else {
+      stats.readyPulse = Math.min(100, Math.round((stats.topicsMastered / 30) * 100))
+    }
+
+  }
+
 
   // Notifications
   type NotifRow = { id: string; title: string; message: string; type: string; created_at: string; read: boolean }
@@ -152,7 +180,65 @@ export default async function ParentDashboard() {
                 )}
               </div>
 
+              {/* Ready Pulse & Syllabus Mastery */}
+              <div className="px-6 py-4 border-b border-gray-50 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <svg className="w-full h-full" viewBox="0 0 36 36">
+                      <path className="text-gray-100" strokeWidth="3" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                      <path className={`${child.readyPulse > 80 ? 'text-green-500' : 'text-amber-500'}`} strokeDasharray={`${child.readyPulse}, 100`} strokeWidth="3" strokeLinecap="round" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-sm font-bold text-gray-900">{child.readyPulse}%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                      <Zap size={14} className="text-yellow-500" /> Ready Pulse
+                    </h3>
+                    <p className="text-xs text-gray-400">Exam preparation score based on repetition cycles</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <SmsSummaryButton
+                    studentId={child.id}
+                    studentName={child.user?.full_name?.split(' ')[0] || 'Student'}
+                    phoneNumber={profile?.phone_number || ''}
+                    averagePulse={child.readyPulse}
+                  />
+                  {!profile?.phone_number && (
+                    <span className="text-[10px] text-red-400 font-medium italic">Add phone in profile to receive alerts</span>
+                  )}
+                </div>
+              </div>
+
               <div className="p-5 sm:p-6 space-y-4">
+                {/* Cycles Table (New ZIMSEC Style) */}
+                {child.cycleProgress.length > 0 && (
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <BarChart3 size={12} /> Three-Cycle Strategy Status
+                    </p>
+                    <div className="space-y-2">
+                      {child.cycleProgress.map((cp, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-100">
+                          <span className="text-xs font-semibold text-gray-700">{cp.subject}</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3].map(step => (
+                              <div key={step} className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                                cp.pass_number >= step ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-300'
+                              }`}>
+                                {step}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[

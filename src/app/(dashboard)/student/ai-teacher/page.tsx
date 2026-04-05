@@ -10,8 +10,9 @@ import {
   Send, Bot, User, Loader2, Plus, MessageCircle, BookOpen,
   Mic, MicOff, Image as ImageIcon, Save, Map, FlaskConical,
   FileText, X, CheckCircle2, XCircle, Trophy, ChevronRight,
-  Volume2, Lightbulb, AlignLeft, Zap,
+  Volume2, Lightbulb, AlignLeft, Zap, Globe, Languages, Settings2
 } from 'lucide-react'
+
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Message = {
@@ -180,6 +181,10 @@ export default function AITeacherPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubject, setSelectedSubject] = useState('')
   const [solutionMode, setSolutionMode] = useState<'scaffolded' | 'direct'>('scaffolded')
+  const [preferredLanguage, setPreferredLanguage] = useState<'english' | 'shona' | 'ndebele'>('english')
+  const [isPrimary, setIsPrimary] = useState(false)
+  const [showLanguageModal, setShowLanguageModal] = useState(false)
+
 
   // Upgrade modal (shown when quota exceeded)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -208,11 +213,31 @@ export default function AITeacherPage() {
     Promise.all([
       fetch('/api/ai-teacher/conversations').then(r => r.json()),
       fetch('/api/student/subjects').then(r => r.json()),
-    ]).then(([cd, sd]) => {
+      fetch('/api/auth/profile').then(r => r.json()),
+    ]).then(([cd, sd, pd]) => {
       setConversations(cd.conversations ?? [])
       setSubjects(sd.subjects ?? [])
+      if (pd.profile) {
+        setPreferredLanguage(pd.profile.preferred_language || 'english')
+        setIsPrimary(pd.student_profile?.zimsec_level === 'primary')
+        // Show language modal if primary and not set
+        if (pd.student_profile?.zimsec_level === 'primary' && !pd.profile.preferred_language) {
+          setShowLanguageModal(true)
+        }
+      }
     })
   }, [])
+
+  const updateLanguage = async (lang: 'english' | 'shona' | 'ndebele') => {
+    setPreferredLanguage(lang)
+    setShowLanguageModal(false)
+    await fetch('/api/auth/profile/update-language', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang }),
+    })
+  }
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -262,6 +287,12 @@ export default function AITeacherPage() {
       setImageBase64(result.split(',')[1])
     }
     reader.readAsDataURL(file)
+  }
+  
+  function clearImage() {
+    setImageFile(null)
+    setImagePreview(null)
+    setImageBase64(null)
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -359,11 +390,13 @@ export default function AITeacherPage() {
           subject_name: subjectName,
           mode,
           solution_mode: forceMode ?? solutionMode,
-          image_base64: imageBase64,
-          file_base64: currentFile?.base64,
-          file_type: currentFile?.type,
-        }),
-      })
+           image_base64: imageBase64,
+           file_base64: currentFile?.base64,
+           file_type: currentFile?.type,
+           preferred_language: preferredLanguage,
+         }),
+       })
+
       const data = await res.json()
 
       if (res.status === 429 || data.quota_exceeded) {
@@ -428,6 +461,38 @@ export default function AITeacherPage() {
 
   return (
     <div className="flex h-[calc(100vh-56px)] lg:h-screen overflow-hidden bg-gray-50">
+
+      {/* ── Language Selection Modal (Proactive) ── */}
+      {showLanguageModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <Languages size={40} className="text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Mhoro! Sawubona! 👋</h2>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              MaFundi wants to make sure you understand every lesson. Which language do you prefer for your explanations?
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { id: 'english', label: 'English (ZIMSEC Standard)', sub: 'Primary + Technical terms' },
+                { id: 'shona', label: 'ChiShona (Mudzidzisi)', sub: 'Explanations in mother tongue' },
+                { id: 'ndebele', label: 'IsiNdebele (Mfundisi)', sub: 'Inhlaziyo ngolimi lwakho' },
+              ].map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => updateLanguage(l.id as any)}
+                  className="group flex flex-col items-center p-4 rounded-2xl border-2 border-gray-100 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200"
+                >
+                  <span className="font-bold text-gray-900 text-lg group-hover:text-teal-700">{l.label}</span>
+                  <span className="text-xs text-gray-400 group-hover:text-teal-600">{l.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ── Quota Upgrade Modal ── */}
       {showUpgradeModal && (
@@ -538,12 +603,32 @@ export default function AITeacherPage() {
               <p className="text-xs text-teal-600">Expert in all ZIMSEC subjects · Primary, O-Level &amp; A-Level</p>
             </div>
           </div>
+          {/* Language Toggle */}
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+            {[
+              { id: 'english', label: 'EN' },
+              { id: 'shona', label: 'SH' },
+              { id: 'ndebele', label: 'ND' },
+            ].map((l) => (
+              <button
+                key={l.id}
+                onClick={() => updateLanguage(l.id as any)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${
+                  preferredLanguage === l.id ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
           {/* Active mode pill */}
           <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white ${modeConfig.color}`}>
             <ModeIcon size={12} />
             {modeConfig.label} Mode
           </div>
         </div>
+
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">

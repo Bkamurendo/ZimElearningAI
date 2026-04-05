@@ -78,4 +78,19 @@ export const SMS_TEMPLATES = {
   /** Bulk import complete */
   importComplete: (count: number) =>
     `ZimLearn: Bulk import complete. ${count} accounts created successfully.`,
+
+  // ── Cycle Mastery Alerts (Three-Cycle Pass) ──
+  cycleMilestone: (studentName: string, subject: string, passNumber: number) => {
+    const messages = [
+      '',
+      `MaFundi: Great news! ${studentName} has finished the FIRST PASS of the ${subject} syllabus. Understanding is building!`,
+      `MaFundi Milestone: ${studentName} completed the SECOND PASS of ${subject}. One more pass for 100% ZIMSEC mastery!`,
+      `ZimLearn Mastery: ${studentName} has finished the THIRD PASS of ${subject}. 100% Ready for ZIMSEC!`,
+    ];
+    return messages[passNumber] || messages[1];
+  },
+
+  readyPulse: (studentName: string, averagePulse: number) => 
+    `MaFundi Parent Alert: ${studentName}'s Ready Pulse is at ${averagePulse}%. Based on repetition cycles, they are ${averagePulse > 80 ? 'READY' : 'PROCEEDING WELL'} for exams.`,
 } as const
+
