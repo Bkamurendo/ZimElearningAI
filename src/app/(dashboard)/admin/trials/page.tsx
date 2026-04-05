@@ -112,10 +112,12 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
   ])
 
   // Ending today (full rows for the list)
-  type TrialRow = { id: string; full_name: string | null; email: string | null; trial_ends_at: string; zimsec_level?: string | null }
+  type TrialRow = { id: string; full_name: string | null; email: string | null; trial_ends_at: string; zimsec_level?: string | null; phone_number?: string | null }
+
   const { data: endingToday } = await supabase
     .from('profiles')
-    .select('id, full_name, email, trial_ends_at')
+    .select('id, full_name, email, trial_ends_at, phone_number')
+
     .not('trial_ends_at', 'is', null)
     .gt('trial_ends_at', now)
     .lt('trial_ends_at', todayEnd.toISOString())
@@ -124,7 +126,8 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
   // Ending within 7 days
   const { data: endingSoon } = await supabase
     .from('profiles')
-    .select('id, full_name, email, trial_ends_at')
+    .select('id, full_name, email, trial_ends_at, phone_number')
+
     .not('trial_ends_at', 'is', null)
     .gt('trial_ends_at', now)
     .lt('trial_ends_at', sevenDaysEnd.toISOString())
@@ -349,9 +352,9 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
                                 Send Reminder
                               </a>
                             )}
-                            {row.phone && (
+                            {row.phone_number && (
                               <a
-                                href={`https://wa.me/${row.phone.replace(/\D/g, '').replace(/^0/, '263')}?text=${encodeURIComponent(`Hi ${row.full_name?.split(' ')[0] ?? 'there'}, your ZimLearn AI free trial is ending soon! Don't lose access to AI tutoring and ZIMSEC past papers. Upgrade now from just $2/month: https://zim-elearningai.co.zw/student/upgrade`)}`}
+                                href={`https://wa.me/${row.phone_number.replace(/\D/g, '').replace(/^0/, '263')}?text=${encodeURIComponent(`Hi ${row.full_name?.split(' ')[0] ?? 'there'}, your ZimLearn AI free trial is ending soon! Don't lose access to AI tutoring and ZIMSEC past papers. Upgrade now from just $2/month: https://zim-elearningai.co.zw/student/upgrade`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-800 border border-green-200 hover:border-green-400 rounded-lg px-3 py-1.5 transition"

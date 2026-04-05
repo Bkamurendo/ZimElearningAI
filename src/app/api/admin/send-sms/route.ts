@@ -71,13 +71,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // ── Resolve contacts by audience ──────────────────────────────────────────
 
-    type ValidRecipient = { phone?: string; email?: string; full_name?: string }
+    type ValidRecipient = { phone_number?: string; email?: string; full_name?: string }
+
     const targets: ValidRecipient[] = []
 
     if (audience === 'all' || audience === 'students' || audience === 'teachers') {
       const query = supabase
         .from('profiles')
-        .select('phone, email, full_name')
+        .select('phone_number, email, full_name')
+
         .eq('suspended', false)
 
       if (audience === 'students') {
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           .select('phone_number')
           .not('phone_number', 'is', null) as { data: { phone_number: string }[] | null }
         if (parentRows) {
-          targets.push(...parentRows.map(r => ({ phone: r.phone_number })))
+          targets.push(...parentRows.map(r => ({ phone_number: r.phone_number })))
         }
       }
     }
@@ -109,7 +111,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       const { data } = await supabase
         .from('profiles')
-        .select('phone, email, full_name')
+        .select('phone_number, email, full_name')
+
         .eq('role', 'student')
         .eq('suspended', false)
         .not('trial_ends_at', 'is', null)
@@ -122,7 +125,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (audience === 'schools') {
       const { data } = await supabase
         .from('profiles')
-        .select('phone, email, full_name')
+        .select('phone_number, email, full_name')
+
         .eq('role', 'school_admin')
         .eq('suspended', false) as { data: ValidRecipient[] | null }
 
@@ -132,11 +136,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Filter valid contacts and Deduplicate by email/phone
     const sentSet = new Set()
     const validTargets = targets.filter(t => {
-      const id = t.phone || t.email
+      const id = t.phone_number || t.email
       if (!id || sentSet.has(id)) return false
       sentSet.add(id)
       return true
     })
+
 
     if (validTargets.length === 0) {
       return NextResponse.json(
@@ -153,9 +158,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const errorsList: string[] = []
 
     // SMS batch
-    const smsTargets = validTargets.filter(t => t.phone)
+    const smsTargets = validTargets.filter(t => t.phone_number)
     if (smsTargets.length > 0) {
-      const recipients = smsTargets.map(t => ({ phone: t.phone!, message: message.trim() }))
+      const recipients = smsTargets.map(t => ({ phone: t.phone_number!, message: message.trim() }))
       const smsResult = await sendBulkSMS(recipients)
       totalSent += smsResult.sent
       totalFailed += smsResult.failed
@@ -163,7 +168,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Email batch (fallback for those without phone numbers)
-    const emailTargets = validTargets.filter(t => !t.phone && t.email)
+    const emailTargets = validTargets.filter(t => !t.phone_number && t.email)
+
     if (emailTargets.length > 0) {
       for (const t of emailTargets) {
         const firstName = t.full_name?.split(' ')[0] || 'User'
@@ -236,17 +242,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     // Fetch the target user's contact details
     const { data: targetProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('phone, email, full_name')
+      .select('phone_number, email, full_name')
+
       .eq('id', userId)
       .single()
 
     console.log('[REMINDER] Target profile:', JSON.stringify(targetProfile))
     if (profileError) console.error('[REMINDER] Profile fetch error:', profileError)
 
-    if (!targetProfile?.phone && !targetProfile?.email) {
+    if (!targetProfile?.phone_number && !targetProfile?.email) {
       console.error('[REMINDER] No contact found for userId:', userId)
       return NextResponse.redirect(new URL('/admin/trials?error=no_contact', req.url))
     }
+
 
     // Default message template
     const firstName = targetProfile.full_name?.split(' ')[0] || 'Student'
@@ -255,11 +263,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     let sentResult = { sent: 0 }
     let actionType = 'single_sms_reminder'
 
-    if (targetProfile.phone) {
-      console.log('[REMINDER] Sending SMS to:', targetProfile.phone)
-      sentResult = await sendBulkSMS([{ phone: targetProfile.phone, message: defaultMessage }])
+    if (targetProfile.phone_number) {
+      console.log('[REMINDER] Sending SMS to:', targetProfile.phone_number)
+      sentResult = await sendBulkSMS([{ phone: targetProfile.phone_number, message: defaultMessage }])
       console.log('[REMINDER] SMS result:', JSON.stringify(sentResult))
     } else if (targetProfile.email) {
+
       console.log('[REMINDER] Sending email to:', targetProfile.email)
       const { sendEmail } = await import('@/lib/email')
       const htmlMsg = `
@@ -289,8 +298,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       new_values: {
         target_user: userId,
         sent: sentResult.sent,
-        method: targetProfile.phone ? 'sms' : 'email'
+        method: targetProfile.phone_number ? 'sms' : 'email'
       },
+
     }).then(({ error }) => {
       if (error) console.error('[REMINDER] Audit log failed:', error)
     })

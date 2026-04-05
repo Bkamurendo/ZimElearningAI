@@ -17,8 +17,9 @@ export default async function AdminTrialsTestPage() {
       id,
       full_name,
       email,
-      phone,
+      phone_number,
       plan,
+
       trial_ends_at,
       subscription_expires_at,
       created_at,
