@@ -18,6 +18,7 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react'
+import PassPulseRings from './PassPulseRings'
 
 const SUBJECT_COLORS = [
   'from-emerald-400 to-emerald-600',
@@ -385,6 +386,11 @@ export default async function StudentDashboard() {
             </div>
           )
         })()}
+
+        {/* ZIMSEC Pass Pulse (Mission Hub) */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+          <PassPulseRings />
+        </div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

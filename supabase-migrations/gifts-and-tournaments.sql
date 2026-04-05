@@ -31,10 +31,12 @@ CREATE TABLE IF NOT EXISTS gift_codes (
 ALTER TABLE gift_codes ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can redeem a gift code (checked by code lookup)
+DROP POLICY IF EXISTS "Anyone can read gift codes by code" ON gift_codes;
 CREATE POLICY "Anyone can read gift codes by code"
 ON gift_codes FOR SELECT USING (true);
 
 -- Service role manages everything
+DROP POLICY IF EXISTS "Service role manages gift codes" ON gift_codes;
 CREATE POLICY "Service role manages gift codes"
 ON gift_codes FOR ALL USING (true);
 
@@ -75,16 +77,20 @@ CREATE TABLE IF NOT EXISTS tournament_entries (
 ALTER TABLE tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_entries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view tournaments" ON tournaments;
 CREATE POLICY "Anyone can view tournaments"
 ON tournaments FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Users can view their own entries" ON tournament_entries;
 CREATE POLICY "Users can view their own entries"
 ON tournament_entries FOR SELECT USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Admins can manage tournaments" ON tournaments;
 CREATE POLICY "Admins can manage tournaments"
 ON tournaments FOR ALL USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
+DROP POLICY IF EXISTS "Service role manages tournament entries" ON tournament_entries;
 CREATE POLICY "Service role manages tournament entries"
 ON tournament_entries FOR ALL USING (true);

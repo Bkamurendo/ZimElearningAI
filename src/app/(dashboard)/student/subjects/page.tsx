@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { BookOpen, ChevronRight } from 'lucide-react'
+import { BookOpen, ChevronRight, Sparkles } from 'lucide-react'
 
 const LEVEL_BADGES: Record<string, { bg: string; text: string; border: string; label: string }> = {
   primary: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Primary'  },
@@ -101,9 +101,12 @@ export default async function StudentSubjectsPage() {
             <div>
               <h1 className="text-2xl font-bold">My Subjects</h1>
               <p className="text-emerald-100 text-sm mt-0.5">
-                {sp?.grade ? `${sp.grade} · ` : ''}{levelLabel} · {subjects.length} enrolled subject{subjects.length !== 1 ? 's' : ''}
+                {sp?.grade ? `${sp.grade} · ` : ''}{levelLabel} · {subjects.length} enrolled 
               </p>
             </div>
+            <Link href="/student/subjects/marketplace" className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-4 rounded-xl text-xs backdrop-blur-sm border border-white/20 transition flex items-center gap-1.5">
+              <Sparkles size={14} className="text-yellow-300" fill="currentColor" /> Marketplace
+            </Link>
           </div>
         </div>
 

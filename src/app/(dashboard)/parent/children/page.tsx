@@ -12,8 +12,12 @@ export default async function ParentChildrenPage() {
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
-    .from('profiles').select('role, full_name').eq('id', user.id).single()
+    .from('profiles').select('role, full_name, monitoring_expires_at').eq('id', user.id).single()
   if (profile?.role !== 'parent') redirect(`/${profile?.role}/dashboard`)
+
+  const isPremiumMonitoring = profile.monitoring_expires_at 
+    ? new Date(profile.monitoring_expires_at) > new Date()
+    : false
 
   type ChildRow = {
     id: string
@@ -60,26 +64,58 @@ export default async function ParentChildrenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 text-white rounded-2xl p-6 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 text-white rounded-2xl p-6 overflow-hidden shadow-lg shadow-purple-200">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
-          <div className="relative flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center flex-shrink-0">
-              <Users size={24} className="text-white" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Users size={24} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">My Children</h1>
+                <p className="text-purple-200 text-sm mt-0.5">
+                  {stats.length === 0
+                    ? 'No children linked yet'
+                    : `${stats.length} child${stats.length !== 1 ? 'ren' : ''} linked to your account`}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">My Children</h1>
-              <p className="text-purple-200 text-sm mt-0.5">
-                {stats.length === 0
-                  ? 'No children linked yet'
-                  : `${stats.length} child${stats.length !== 1 ? 'ren' : ''} linked to your account`}
-              </p>
-            </div>
+            {isPremiumMonitoring && (
+              <div className="bg-emerald-500/20 border border-emerald-500/30 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-sm">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /> Premium Monitoring Active
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Premium Upgrade Banner */}
+        {!isPremiumMonitoring && stats.length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-indigo-100 p-5 shadow-sm overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
+              <TrendingUp size={80} className="text-indigo-600" />
+            </div>
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                  <Star size={18} className="text-amber-500" fill="currentColor" /> Upgrade to Premium Monitoring
+                </h3>
+                <p className="text-sm text-gray-500 mt-1 max-w-md">
+                  Get weekly SMS progress reports, detailed activity logs for every quiz, and AI-powered performance insights for just <span className="font-bold text-indigo-600">$3/month</span>.
+                </p>
+              </div>
+              <Link
+                href="/parent/upgrade-monitoring"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition shadow-lg shadow-indigo-100 text-center"
+              >
+                Unlock Premium →
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Children list */}
         {stats.length === 0 ? (
@@ -113,7 +149,12 @@ export default async function ParentChildrenPage() {
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={18} className="text-gray-400 group-hover:text-purple-500 transition-colors flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    {isPremiumMonitoring && (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase tracking-wider">Reports Ready</span>
+                    )}
+                    <ChevronRight size={18} className="text-gray-400 group-hover:text-purple-500 transition-colors flex-shrink-0" />
+                  </div>
                 </div>
 
                 {/* Quick stats strip */}

@@ -1,7 +1,8 @@
-import { redirect } from 'next/navigation'
+import { Target, Users, Accessibility, Gift } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import SyllabusMasteryMap from './SyllabusMasteryMap'
 import { createClient } from '@/lib/supabase/server'
-import { Target } from 'lucide-react'
 
 const SUBJECT_GRADIENTS = [
   'from-emerald-500 to-teal-600',
@@ -161,8 +162,11 @@ export default async function ProgressPage() {
           </div>
         </Link>
 
-        {/* Per-subject knowledge profiles */}
-        <div className="space-y-4">
+        {/* Syllabus Mastery Map (ZIMSEC Diagnostic) */}
+        <SyllabusMasteryMap />
+
+        {/* Per-subject knowledge profiles (Fallback/Legacy) */}
+        <div className="space-y-4 opacity-50">
           <h2 className="text-base font-semibold text-gray-900">Subject Knowledge Profiles</h2>
           {subjects.length === 0 ? (
             <p className="text-gray-400 text-sm">No subjects enrolled.</p>

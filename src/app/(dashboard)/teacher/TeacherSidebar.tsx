@@ -9,6 +9,7 @@ import {
   LayoutDashboard, BookOpen, ClipboardList, LogOut, Menu, X,
   Library, MessageSquare, Sparkles, Users, BookMarked,
   HelpCircle, FlaskConical, CalendarCheck, BarChart3,
+  Award, Star,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -29,6 +30,11 @@ const NAV = [
 const TOOLS = [
   { href: '/teacher/lesson-planner', label: 'Lesson Planner',         icon: CalendarCheck },
   { href: '/teacher/resources',      label: 'AI Materials Generator',  icon: Sparkles },
+  { href: '/teacher/cpd',            label: 'CPD Certificates',       icon: Award },
+]
+
+const PREMIUM = [
+  { href: '/teacher/upgrade',        label: 'Upgrade to Pro',         icon: Star },
 ]
 
 interface Props {
@@ -107,7 +113,7 @@ export default function TeacherSidebar({ userName, unreadMessages = 0 }: Props) 
 
           {/* AI Tools section */}
           <div>
-            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-3">AI Tools</p>
+            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-3">Professional Tools</p>
             <div className="space-y-0.5">
               {TOOLS.map(({ href, label, icon: Icon }) => {
                 const active = isActive(href)
@@ -124,9 +130,33 @@ export default function TeacherSidebar({ userName, unreadMessages = 0 }: Props) 
                   >
                     <Icon size={16} className={active ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'} />
                     <span className="flex-1 truncate">{label}</span>
-                    {active && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Premium section */}
+          <div>
+            <p className="text-[10px] font-semibold text-amber-500 uppercase tracking-widest px-3 mb-3 flex items-center gap-1.5">
+              <Star size={10} fill="currentColor" /> Premium Features
+            </p>
+            <div className="space-y-0.5">
+              {PREMIUM.map(({ href, label, icon: Icon }) => {
+                const active = isActive(href)
+                return (
+                  <Link
+                    key={`premium-${href}`}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
+                      active
+                        ? 'bg-amber-500/15 text-amber-500 border-l-2 border-amber-500 pl-[10px]'
+                        : 'text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 border-l-2 border-transparent pl-[10px]'
+                    }`}
+                  >
+                    <Icon size={16} className={active ? 'text-amber-500' : 'text-slate-500 group-hover:text-amber-400'} />
+                    <span className="flex-1 truncate">{label}</span>
                   </Link>
                 )
               })}

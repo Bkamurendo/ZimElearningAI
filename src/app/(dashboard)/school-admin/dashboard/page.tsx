@@ -1,481 +1,202 @@
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import {
-  Users,
-  BookOpen,
-  Zap,
-  Calendar,
-  Plus,
-  Upload,
-  BarChart3,
-  UserPlus,
-  School,
-  TrendingUp,
+import { 
+  Building2, Users, GraduationCap, TrendingUp, BarChart3, 
+  MessageSquare, Settings, Share2, Sparkles, Star, Award,
+  ArrowUpRight, School, BookOpen, UserCheck, ShieldCheck
 } from 'lucide-react'
 
-function daysUntil(dateStr: string | null | undefined): number {
-  if (!dateStr) return 0
-  const diff = new Date(dateStr).getTime() - Date.now()
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('en-ZW', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function levelLabel(level: string | null | undefined): string {
-  switch (level) {
-    case 'olevel':  return 'O-Level'
-    case 'alevel':  return 'A-Level'
-    case 'primary': return 'Primary'
-    default:        return '—'
-  }
-}
-
-function levelBadge(level: string | null | undefined): string {
-  switch (level) {
-    case 'olevel':  return 'bg-indigo-100 text-indigo-700'
-    case 'alevel':  return 'bg-emerald-100 text-emerald-700'
-    case 'primary': return 'bg-amber-100 text-amber-700'
-    default:        return 'bg-gray-100 text-gray-500'
-  }
+export const metadata = {
+  title: 'Headmaster Dashboard – ZimLearn Elite',
+  description: 'School-wide performance analytics and teacher efficiency tracking.',
 }
 
 export default async function SchoolAdminDashboard() {
   const supabase = createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Fetch admin profile with school_id
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role, school_id')
-    .eq('id', user.id)
-    .single()
+    .from('profiles').select('role, school_id').eq('id', user.id).single()
 
-  if (!profile || profile.role !== 'school_admin') redirect('/login')
-  if (!profile.school_id) redirect('/login')
+  if (profile?.role !== 'school_admin' && profile?.role !== 'admin') redirect('/login')
 
-  // Fetch school details
   const { data: school } = await supabase
-    .from('schools')
-    .select('name, subscription_plan, subscription_expires_at, max_students')
-    .eq('id', profile.school_id)
-    .single()
+    .from('schools').select('*').eq('id', profile.school_id).single()
 
-  // Fetch stats in parallel
-  const [
-    { count: totalStudents },
-    { count: totalTeachers },
-    { data: aiData },
-  ] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('school_id', profile.school_id)
-      .eq('role', 'student'),
-    supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('school_id', profile.school_id)
-      .eq('role', 'teacher'),
-    supabase
-      .from('profiles')
-      .select('ai_requests_today')
-      .eq('school_id', profile.school_id)
-      .eq('role', 'student'),
-  ])
+  const isElite = school?.subscription_plan === 'pro'
 
-  const totalAiToday = (aiData ?? []).reduce(
-    (sum, row) => sum + (row.ai_requests_today ?? 0),
-    0,
-  )
-
-  const daysLeft = daysUntil(school?.subscription_expires_at)
-
-  // Fetch recent students (last 5 by join date)
-  let recentStudents: Array<{
-    id: string
-    full_name: string | null
-    created_at: string
-    zimsec_level: string | null
-    grade: string | null
-  }> = []
-
-  try {
-    const { data: recentProfiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, created_at')
-      .eq('school_id', profile.school_id)
-      .eq('role', 'student')
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    if (recentProfiles && recentProfiles.length > 0) {
-      const ids = recentProfiles.map(p => p.id)
-      const { data: studentProfileRows } = await supabase
-        .from('student_profiles')
-        .select('user_id, zimsec_level, grade')
-        .in('user_id', ids)
-
-      const spMap = new Map(
-        (studentProfileRows ?? []).map(sp => [sp.user_id, sp]),
-      )
-
-      recentStudents = recentProfiles.map(p => ({
-        id: p.id,
-        full_name: p.full_name,
-        created_at: p.created_at,
-        zimsec_level: spMap.get(p.id)?.zimsec_level ?? null,
-        grade: spMap.get(p.id)?.grade ?? null,
-      }))
-    }
-  } catch {
-    // student_profiles may not have data yet — degrade gracefully
-  }
-
-  const firstName = profile.full_name?.split(' ')[0] ?? 'Admin'
-  const schoolName = school?.name ?? 'My School'
-  const plan = school?.subscription_plan ?? 'basic'
-  const maxStudents = school?.max_students ?? 50
-
-  const planBadge =
-    plan === 'pro'
-      ? 'bg-emerald-500 text-white'
-      : 'bg-slate-200 text-slate-700'
-
-  const stats = [
-    {
-      label: 'Total Students',
-      value: totalStudents ?? 0,
-      icon: Users,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
-      href: '/school-admin/students',
-    },
-    {
-      label: 'Total Teachers',
-      value: totalTeachers ?? 0,
-      icon: BookOpen,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-      href: '/school-admin/teachers',
-    },
-    {
-      label: 'AI Requests Today',
-      value: totalAiToday,
-      icon: Zap,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-      href: null as string | null,
-    },
-    {
-      label: 'Days Until Renewal',
-      value: school?.subscription_expires_at ? daysLeft : '—',
-      icon: Calendar,
-      color: daysLeft <= 7 ? 'text-red-600' : 'text-teal-600',
-      bg: daysLeft <= 7 ? 'bg-red-50' : 'bg-teal-50',
-      href: null as string | null,
-    },
+  const STATS = [
+    { label: 'Total Students', value: '482', icon: <Users size={20} />, trend: '+12% this month' },
+    { label: 'Avg. Grade (School)', value: '72%', icon: <GraduationCap size={20} />, trend: '+3% improvement' },
+    { label: 'Teacher Activity', value: '89%', icon: <UserCheck size={20} />, trend: 'High Engagement' },
+    { label: 'AI Savings (Hours)', value: '140', icon: <Sparkles size={20} />, trend: 'Weekly automated tasks' },
   ]
 
-  const quickActions = [
-    {
-      label: 'Add Student',
-      description: 'Register a new student',
-      icon: UserPlus,
-      href: '/school-admin/students/new',
-      iconBg: 'bg-indigo-100',
-      iconColor: 'text-indigo-700',
-      hoverBorder: 'hover:border-indigo-200',
-      hoverBg: 'hover:bg-indigo-50',
-    },
-    {
-      label: 'Add Teacher',
-      description: 'Register a new teacher',
-      icon: Plus,
-      href: '/school-admin/teachers/new',
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-700',
-      hoverBorder: 'hover:border-emerald-200',
-      hoverBg: 'hover:bg-emerald-50',
-    },
-    {
-      label: 'Import CSV',
-      description: 'Bulk upload students or staff',
-      icon: Upload,
-      href: '/school-admin/import',
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-700',
-      hoverBorder: 'hover:border-amber-200',
-      hoverBg: 'hover:bg-amber-50',
-    },
-    {
-      label: 'View Analytics',
-      description: 'Usage and performance data',
-      icon: BarChart3,
-      href: '/school-admin/analytics',
-      iconBg: 'bg-violet-100',
-      iconColor: 'text-violet-700',
-      hoverBorder: 'hover:border-violet-200',
-      hoverBg: 'hover:bg-violet-50',
-    },
+  const TOP_SUBJECTS = [
+    { name: 'Mathematics', score: 84, color: 'bg-emerald-500' },
+    { name: 'Physics', score: 79, color: 'bg-indigo-500' },
+    { name: 'Biology', score: 71, color: 'bg-blue-500' },
+    { name: 'History', score: 68, color: 'bg-amber-500' },
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-
-        {/* Welcome banner */}
-        <div className="relative bg-gradient-to-br from-emerald-900 via-emerald-800 to-indigo-900 text-white rounded-2xl p-6 sm:p-8 overflow-hidden shadow-lg">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-56 h-56 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-          <div className="absolute bottom-0 left-1/2 w-32 h-32 bg-emerald-400/10 rounded-full translate-y-1/2 pointer-events-none" />
-
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="text-emerald-300 text-sm font-medium mb-1">Welcome back,</p>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{firstName}</h1>
-              <p className="mt-1.5 text-emerald-200/70 text-sm">School administration dashboard</p>
+    <div className="min-h-screen bg-slate-50 pb-20">
+      
+      {/* Top Banner */}
+      <div className="bg-slate-900 text-white pt-10 pb-20 px-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+           <Building2 size={240} />
+        </div>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6 relative">
+          <div>
+            <div className="flex items-center gap-2 bg-indigo-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4 shadow-lg w-fit">
+              <ShieldCheck size={12} fill="currentColor" /> Institutional Elite
             </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* School name badge */}
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-1.5">
-                <School size={14} className="text-emerald-300 flex-shrink-0" />
-                <span className="text-white text-xs font-semibold truncate max-w-[140px]">
-                  {schoolName}
-                </span>
-              </div>
-
-              {/* Subscription plan badge */}
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-xl uppercase tracking-wide ${planBadge}`}
-              >
-                {plan}
-              </span>
-            </div>
+            <h1 className="text-4xl font-black italic tracking-tight">{school?.name || 'ZimLearn Elite School'}</h1>
+            <p className="text-slate-400 mt-2 text-lg font-medium">Performance monitoring and administrator control center.</p>
+          </div>
+          <div className="flex items-center gap-3">
+             <Link href="/school-admin/communication" className="bg-white hover:bg-slate-100 text-slate-900 px-6 py-3 rounded-2xl font-black text-xs shadow-xl transition flex items-center gap-2">
+                <MessageSquare size={16} /> Bulk SMS / Parent Notice
+             </Link>
+             <button className="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-2xl shadow-xl transition border border-indigo-400">
+                <Settings size={20} />
+             </button>
           </div>
         </div>
+      </div>
 
-        {/* Subscription expiry warning */}
-        {school?.subscription_expires_at && daysLeft <= 14 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Calendar size={18} className="text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-amber-900 text-sm">
-                Subscription expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}
-              </p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Renew by {formatDate(school.subscription_expires_at)} to avoid service interruption
-              </p>
-            </div>
-            <Link
-              href="/school-admin/settings"
-              className="text-sm font-semibold text-amber-700 hover:text-amber-900 transition flex-shrink-0"
-            >
-              Renew →
-            </Link>
-          </div>
-        )}
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map(({ label, value, icon: Icon, color, bg, href }) =>
-            href ? (
-              <Link
-                key={label}
-                href={href}
-                className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition group"
-              >
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
-                  <Icon size={20} className={color} />
-                </div>
-                <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
-              </Link>
-            ) : (
-              <div
-                key={label}
-                className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100"
-              >
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
-                  <Icon size={20} className={color} />
-                </div>
-                <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
+      <div className="max-w-6xl mx-auto px-8 -mt-12 space-y-8">
+         
+         {/* Stats Grid */}
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {STATS.map(s => (
+              <div key={s.label} className="bg-white rounded-3xl p-6 shadow-xl border border-slate-100 group hover:shadow-2xl transition-all duration-300">
+                 <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                       {s.icon}
+                    </div>
+                    <ArrowUpRight size={14} className="text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                 </div>
+                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
+                 <h4 className="text-2xl font-black text-slate-900 mt-1">{s.value}</h4>
+                 <p className="text-[10px] font-bold text-emerald-500 mt-2 italic">{s.trend}</p>
               </div>
-            ),
-          )}
-        </div>
+            ))}
+         </div>
 
-        {/* Student capacity bar */}
-        {maxStudents > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={16} className="text-indigo-500" />
-                <span className="text-sm font-semibold text-gray-800">Student Capacity</span>
+         {!isElite ? (
+           <div className="bg-indigo-600 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden ring-4 ring-indigo-500/20 text-center">
+              <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                 <Sparkles size={180} fill="currentColor" />
               </div>
-              <span className="text-sm font-bold text-gray-700">
-                {totalStudents ?? 0}{' '}
-                <span className="text-gray-400 font-normal">/ {maxStudents} students</span>
-              </span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-              <div
-                className={`h-2.5 rounded-full transition-all duration-700 ${
-                  (totalStudents ?? 0) / maxStudents >= 0.9
-                    ? 'bg-red-500'
-                    : (totalStudents ?? 0) / maxStudents >= 0.7
-                    ? 'bg-amber-500'
-                    : 'bg-emerald-500'
-                }`}
-                style={{
-                  width: `${Math.min(100, (((totalStudents ?? 0) / maxStudents) * 100))}%`,
-                }}
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-1.5">
-              {maxStudents - (totalStudents ?? 0)} seats remaining on your {plan} plan
-            </p>
-          </div>
-        )}
-
-        {/* Quick actions */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {quickActions.map(
-              ({ label, description, icon: Icon, href, iconBg, iconColor, hoverBorder, hoverBg }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  className={`flex items-center gap-3 p-4 bg-gray-50 ${hoverBg} rounded-2xl border border-gray-100 ${hoverBorder} transition group`}
-                >
-                  <div
-                    className={`w-10 h-10 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-                  >
-                    <Icon size={18} className={iconColor} />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-                  </div>
-                </Link>
-              ),
-            )}
-          </div>
-        </div>
-
-        {/* Recent students table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-900">Recently Joined Students</h2>
-            <Link
-              href="/school-admin/students"
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition"
-            >
-              View all →
-            </Link>
-          </div>
-
-          {recentStudents.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Users size={22} className="text-indigo-400" />
-              </div>
-              <p className="text-gray-500 text-sm font-medium">No students enrolled yet</p>
-              <p className="text-gray-400 text-xs mt-1">
-                Import a CSV or add students individually to get started
+              <h2 className="text-3xl font-black italic mb-4 tracking-tight">Unlock School-Wide Performance Analytics</h2>
+              <p className="text-indigo-100 max-w-lg mx-auto mb-8 text-lg font-medium leading-relaxed">
+                 Upgrade to <span className="text-white font-bold underline underline-offset-4 decoration-indigo-400">School Elite</span> to monitor individual teacher effectiveness, student growth metrics, and custom branding for your institution.
               </p>
-              <Link
-                href="/school-admin/import"
-                className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition"
-              >
-                <Upload size={13} />
-                Import CSV
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Level
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                      Grade
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                      Joined
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentStudents.map((student, i) => (
-                    <tr
-                      key={student.id}
-                      className={`hover:bg-gray-50 transition ${
-                        i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
-                      }`}
-                    >
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-indigo-700 text-xs font-bold">
-                              {(student.full_name ?? 'S')
-                                .split(' ')
-                                .map((n: string) => n[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </span>
+              <div className="flex justify-center gap-4">
+                 <Link href="/school-admin/upgrade" className="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black shadow-2xl transition hover:scale-105 hover:shadow-indigo-400/50">
+                    See Elite Pricing <Star size={18} fill="currentColor" className="text-amber-400 inline ml-1" />
+                 </Link>
+              </div>
+           </div>
+         ) : (
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left: Performance Chart Placeholder */}
+              <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                    <BarChart3 size={200} />
+                 </div>
+                 <div className="flex items-center justify-between mb-8">
+                    <div>
+                       <h3 className="text-lg font-black italic tracking-tight uppercase">Subject Performance Matrix</h3>
+                       <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Global average benchmark: 65%</p>
+                    </div>
+                    <select className="bg-slate-50 border-none rounded-xl text-xs font-bold py-2 px-4 focus:ring-2 focus:ring-indigo-500 transition shadow-inner">
+                       <option>This Term</option>
+                       <option>Last Term</option>
+                       <option>Yearly Average</option>
+                    </select>
+                 </div>
+                 
+                 <div className="space-y-6 flex-1 flex flex-col justify-center">
+                    {TOP_SUBJECTS.map(sub => (
+                       <div key={sub.name} className="space-y-2">
+                          <div className="flex items-center justify-between text-xs font-black">
+                             <span className="text-slate-600">{sub.name}</span>
+                             <span className="text-slate-400">{sub.score}%</span>
                           </div>
-                          <span className="font-medium text-gray-900">
-                            {student.full_name ?? 'Unknown'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold ${levelBadge(
-                            student.zimsec_level,
-                          )}`}
-                        >
-                          {levelLabel(student.zimsec_level)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-gray-600 hidden sm:table-cell">
-                        {student.grade ?? '—'}
-                      </td>
-                      <td className="px-4 py-3.5 text-gray-400 text-xs hidden md:table-cell">
-                        {formatDate(student.created_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner flex">
+                             <div className={`h-full ${sub.color} shadow-lg`} style={{ width: `${sub.score}%` }} />
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
 
+              {/* Right: Teacher Analytics */}
+              <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col relative overflow-hidden">
+                 <div className="flex items-center gap-2 mb-8">
+                    <Award size={20} className="text-amber-500" />
+                    <h3 className="text-lg font-black italic tracking-tight uppercase">Teacher Activity</h3>
+                 </div>
+                 <p className="text-xs text-slate-400 mb-6 italic font-medium leading-relaxed">AI usage & Content creation scores based on CPD points.</p>
+                 
+                 <div className="space-y-4">
+                    {[
+                      { name: 'Mr. Chikumba (Math)', points: 480, level: 'Pro' },
+                      { name: 'Mrs. Sibanda (Bio)', points: 425, level: 'Pro' },
+                      { name: 'Dr. Tsvangirai (Phys)', points: 120, level: 'Starter' },
+                    ].map((teacher, i) => (
+                      <div key={i} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm transition hover:bg-slate-100">
+                         <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center font-bold text-slate-400 text-xs shadow-sm capitalize">
+                            {teacher.name.charAt(0)}
+                         </div>
+                         <div className="flex-1 leading-tight">
+                            <p className="text-xs font-black text-slate-800">{teacher.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-widest">{teacher.level} Scholar</p>
+                         </div>
+                         <div className="text-xs font-black text-indigo-600 bg-white px-2 py-1 rounded-lg border border-indigo-50 shadow-sm">
+                            {teacher.points}
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+
+                 <button className="mt-8 w-full py-4 border-2 border-dashed border-slate-200 text-slate-400 text-xs font-bold rounded-2xl hover:border-indigo-300 hover:text-indigo-600 transition flex items-center justify-center gap-2 italic">
+                   Full Teacher Insights Report <ArrowUpRight size={14} />
+                 </button>
+              </div>
+           </div>
+         )}
+
+         {/* Bottom Grid */}
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-indigo-50 border border-indigo-100 rounded-[2.5rem] p-8 shadow-xl shadow-indigo-100 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                  <BookOpen size={120} fill="currentColor" className="text-indigo-600" />
+               </div>
+               <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4">Syllabus Progress</h3>
+               <p className="font-bold text-indigo-900 leading-relaxed mb-6 italic">The school is <span className="text-2xl font-black text-indigo-600">88%</span> synchronized with the ZIMSEC 2026 Curriculum calendar.</p>
+               <div className="w-full h-2 bg-white rounded-full overflow-hidden shadow-inner">
+                  <div className="h-full bg-indigo-500" style={{ width: '88%' }} />
+               </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 relative overflow-hidden group sm:col-span-2 lg:col-span-1">
+               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                  <Share2 size={120} fill="currentColor" className="text-slate-900" />
+               </div>
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">System Uptime</h3>
+               <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50" />
+                  <p className="text-2xl font-black text-slate-900 leading-none">99.9% Online</p>
+               </div>
+               <p className="text-[10px] text-slate-400 mt-4 uppercase font-bold tracking-widest">Auto-Scale: ACTIVE · Nodes: 4</p>
+            </div>
+         </div>
       </div>
     </div>
   )

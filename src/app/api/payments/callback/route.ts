@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   // Look up payment row
   const { data: payment } = await supabase
     .from('payments')
-    .select('id, user_id, plan_id, status')
+    .select('id, user_id, plan_id, status, item_type, item_id, amount_usd')
     .eq('id', paymentId)
     .single()
 
@@ -66,21 +66,52 @@ export async function POST(req: NextRequest) {
     .eq('id', payment.id)
 
   if (isPaid) {
-    // Upgrade user to the correct plan tier based on what they purchased
     const plan = PLANS[payment.plan_id as PlanId]
     const days = plan?.days ?? 30
-    const tierName = plan?.tier ?? 'pro'   // 'starter' | 'pro' | 'elite'
+    const now = new Date()
 
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + days)
-
-    await supabase
-      .from('profiles')
-      .update({
-        plan: tierName,
-        pro_expires_at: expiresAt.toISOString(),
+    // 1. Handle One-time Purchases (Reports, Subject Packs)
+    if (payment.item_type === 'ai_grade_report' || payment.item_type === 'subject_pack') {
+      await supabase.from('one_time_purchases').insert({
+        user_id: payment.user_id,
+        item_type: payment.item_type,
+        item_id: payment.item_id,
+        amount_usd: payment.amount_usd,
+        status: 'completed',
+        payment_id: payment.id,
       })
-      .eq('id', payment.user_id)
+
+      if (payment.item_type === 'subject_pack' && payment.item_id) {
+        // Unlock subject for student
+        await supabase.from('subject_access').upsert({
+          user_id: payment.user_id,
+          subject_id: payment.item_id,
+          expires_at: new Date(now.getFullYear(), 11, 31).toISOString(), // End of current year
+        })
+      }
+    } 
+    // 2. Handle Parent Monitoring
+    else if (payment.item_type === 'monitoring') {
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 30)
+      await supabase
+        .from('profiles')
+        .update({ monitoring_expires_at: expiresAt.toISOString() })
+        .eq('id', payment.user_id)
+    }
+    // 3. Handle Main Subscriptions (Pro/Elite)
+    else {
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + days)
+
+      await supabase
+        .from('profiles')
+        .update({
+          plan: plan?.tier ?? 'pro',
+          pro_expires_at: expiresAt.toISOString(),
+        })
+        .eq('id', payment.user_id)
+    }
 
     // Trigger referral reward if this user was referred
     try {

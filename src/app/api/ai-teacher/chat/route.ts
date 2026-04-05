@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { retrievePlatformKnowledge } from '@/lib/ai/retriever'
+import { extractTextFromPDF, classifyZimsecDocument } from '@/lib/ai/doc-processor'
 
 export const maxDuration = 60
 
@@ -8,6 +10,20 @@ const client = new Anthropic()
 
 // ── MaFundi core system prompt ────────────────────────────────────────────────
 const MAFUNDI_CORE = `You are MaFundi (meaning "teacher/expert" in Shona/Ndebele), the official AI Teacher for ZimLearn — Zimbabwe's premier e-learning platform. You are a deeply knowledgeable, warm, and encouraging educator who specialises in the full Zimbabwe Heritage-Based Curriculum (HBC) 2024–2030 and the ZIMSEC examination system.
+
+## PEDAGOGICAL LEVEL SENSITIVITY (CRITICAL)
+- **Primary (Grade 1–7)**: Simple language. Definition of concepts (e.g. Photosynthesis) should be descriptive (plants making food from sun).
+- **Secondary (Form 1–6)**: Technical precision. Use chemical equations ($CO_2 + H_2O \\rightarrow C_6H_{12}O_6 + O_2$). Match ZIMSEC "command words".
+
+## SOLUTION MODES (ORCHESTRATOR)
+You MUST respect the "Solution Mode" provided in the student context:
+- **💡 SCAFFOLDED (Default/Hints)**: Do NOT provide the final answer immediately. Instead, act as a guide. Identify the problem, explain the core concepts, provide a small hint, and ask a leading question to help the student solve it themselves. This is crucial for long-term ZIMSEC mastery.
+- **🎯 DIRECT (Premium/Fast)**: Provide the full, final solution immediately. Include the official ZIMSEC marking scheme style, all intermediate steps, and the final answer with units. Add a "Master Tip" for how to solve similar problems in under 2 minutes.
+
+## DYNAMIC TONE & MISSION PEAK
+Check the student's "Upcoming Exams" context:
+- **Nurturing Mode (Exams > 14 days away)**: Be patient, focus on deep conceptual understanding, encourage curiosity and "fun" facts about Zimbabwean heritage.
+- **Exam-Drill Mode (Exams < 14 days away)**: Be direct, intense, and exam-focused. Prioritize mark-point earning, timing, and common examiner traps. Switch to "ZIMSEC Coach" persona. Focus on helping them achieve a Grade C or better.
 
 ## Zimbabwe Heritage-Based Curriculum (HBC) 2024–2030 — Official Curriculum
 You fully know and teach according to the official Zimbabwe Heritage-Based Curriculum Framework for Primary and Secondary Education 2024–2030, developed by the Ministry of Primary and Secondary Education. This curriculum is built on the philosophy of Ubuntu/Unhu/Vumunhu, Heritage-Based Education, and a STEAM bias for innovation and a knowledge-driven economy aligned with Vision 2030.
@@ -151,11 +167,12 @@ const ZIMSEC_INTELLIGENCE = `
 **End of A-Level (Form 6)**: Specialised subject mastery; readiness for university/polytechnic; enterprise and leadership skills; research and innovation capacity; strong national identity
 
 ## PROACTIVE TEACHING BEHAVIOUR
-- If a student asks about a topic that appears in their weak areas, acknowledge it: "This is one of your weaker areas — let's make sure you master it today!"
-- If an exam is approaching (mentioned in student context), reference it: "With your Maths exam in X days, let's focus on exam technique."
-- After explaining a concept, always offer: "Would you like a practice question on this?" or "Shall I quiz you?"
 - Suggest related topics: "Now that you understand photosynthesis, you should also revise respiration — they're often compared in Paper 2."
-- Connect learning to Zimbabwean heritage and real economy: reference local industries, resources, culture.`
+- Connect learning to Zimbabwean heritage and real economy: reference local industries, resources, culture.
+
+## PLATFORM TRUTH (INTERNAL KNOWLEDGE)
+If a "PLATFORM RESOURCES" section is provided below, treat it as the **Primary Source of Truth**. Align your definitions and methods with these official ZimLearn resources before using generic internet knowledge.
+`
 
 // ── Detailed HBC Curriculum Knowledge (extracted from official MoPSE syllabuses) ──
 const HBC_CURRICULUM_DETAIL = `
@@ -498,13 +515,19 @@ export async function POST(req: NextRequest) {
       message,
       subject_name,
       mode = 'normal',
+      solution_mode = 'scaffolded',
       image_base64,
+      file_base64,
+      file_type,
     } = await req.json() as {
       conversation_id?: string
       message: string
       subject_name?: string
       mode?: string
+      solution_mode?: 'scaffolded' | 'direct'
       image_base64?: string
+      file_base64?: string
+      file_type?: string
     }
 
     if (!message?.trim() && !image_base64) {
@@ -559,10 +582,46 @@ export async function POST(req: NextRequest) {
         if (context) studentContextSection = buildStudentContextPrompt(context)
       }
     } catch {
-      // silently skip — don't block the response
+      // silently skip
+    }
+
+    // NEW: Handle PDF/Document text extraction
+    let docContext = ""
+    let docType = "none"
+    let suggestedActions: string[] = []
+
+    if (file_base64 && file_type?.includes('pdf')) {
+      try {
+        const buffer = Buffer.from(file_base64, 'base64')
+        const text = await extractTextFromPDF(buffer)
+        if (text) {
+          docContext = `\n[UPLOADED DOCUMENT TEXT]:\n${text.slice(0, 5000)}`
+          const analysis = classifyZimsecDocument(text)
+          docType = analysis.docType
+          suggestedActions = analysis.suggestedActions
+        }
+      } catch (err) {
+        console.error('PDF extraction error:', err)
+      }
+    }
+
+    // NEW: Retrieve platform resources (search internal knowledge base)
+    let resourcesContext = "No specific platform resources found for this exact topic. Use your general ZIMSEC Heritage-Based Curriculum knowledge."
+    try {
+      const internalKnowledge = await retrievePlatformKnowledge(
+        message || (docContext ? 'analyse document' : 'zimbabwe heritage based curriculum'),
+        studentProfile.grade || undefined,
+        studentProfile.zimsec_level
+      )
+      if (internalKnowledge.length > 0) {
+        resourcesContext = internalKnowledge.map(k => `[Source: ${k.source_type} - ${k.title}]\n${k.content}`).join('\n\n')
+      }
+    } catch (err) {
+      console.error('Retriever error:', err)
     }
 
     // Build system prompt
+    const solLabel = solution_mode === 'direct' ? '🎯 DIRECT (Expert Solver Mode)' : '💡 SCAFFOLDED (Coach Mode - HINTS ONLY)'
     const levelLabel = {
       primary: 'Primary school',
       olevel: 'O-Level (Form 1–4)',
@@ -579,11 +638,21 @@ ${HBC_CURRICULUM_DETAIL}
 
 ${MODE_PROMPTS[mode] ?? MODE_PROMPTS.normal}
 
+
+
+
+${studentContextSection}
+
+## PLATFORM RESOURCES (ZimLearn Official Knowledge)
+The following snippets were retrieved from official platform books and lessons. Prioritize these in your explanation:
+${resourcesContext}
+
 ## Current Student
 Level: ${levelLabel}${gradeInfo}${subjectInfo}
-Tailor language, examples, and exam format to this level.
+Solution Mode: ${solLabel}
 
-${studentContextSection}`
+${docContext ? `\n## UPLOADED DOCUMENT CONTEXT\n${docContext}` : ''}
+`
 
     // Build message content (support vision)
     type ContentBlock =
@@ -658,7 +727,14 @@ ${studentContextSection}`
       .update({ updated_at: new Date().toISOString() })
       .eq('id', convId)
 
-    return NextResponse.json({ reply, quiz, roadmap, conversation_id: convId })
+    return NextResponse.json({ 
+      reply, 
+      quiz, 
+      roadmap, 
+      doc_type: docType, 
+      suggested_actions: suggestedActions, 
+      conversation_id: convId 
+    })
   } catch (err) {
     console.error('AI Teacher error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 })

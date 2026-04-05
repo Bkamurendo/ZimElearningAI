@@ -231,25 +231,49 @@ export default function GradePredictorClient({
                     </div>
 
                     {/* Quick links */}
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex flex-wrap gap-2 pt-1">
                       <Link
                         href={`/student/quiz/${subject.code}`}
-                        className="flex-1 text-center py-2 text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 rounded-lg hover:bg-violet-100 transition"
+                        className="flex-1 min-w-[120px] text-center py-2 text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 rounded-lg hover:bg-violet-100 transition"
                       >
                         Practice Quiz
                       </Link>
                       <Link
                         href={`/student/past-papers/${subject.code}`}
-                        className="flex-1 text-center py-2 text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
+                        className="flex-1 min-w-[120px] text-center py-2 text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
                       >
                         Past Papers
                       </Link>
                       <Link
                         href={`/student/ai-tutor/${subject.code}`}
-                        className="flex-1 text-center py-2 text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition"
+                        className="flex-1 min-w-[120px] text-center py-2 text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition"
                       >
                         AI Tutor
                       </Link>
+                    </div>
+
+                    {/* Premium Report CTA */}
+                    <div className="mt-4 pt-4 border-t border-gray-50">
+                      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <span className="text-xl">📄</span>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900">Comprehensive AI Performance Report</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">10-page deep-dive analysis, predicted grade, and custom 4-week study plan.</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            // Redirect to checkout for ai_grade_report
+                            window.location.href = `/student/upgrade?plan=ai_grade_report&subject=${subject.id}`
+                          }}
+                          className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg transition shadow-md shadow-indigo-100"
+                        >
+                          Get for $2
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

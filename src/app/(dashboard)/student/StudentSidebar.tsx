@@ -10,7 +10,7 @@ import {
   Flame, Menu, X, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
-  Accessibility, Gift,
+  Accessibility, Gift, Users,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
@@ -25,6 +25,7 @@ const NAV = [
   { href: '/student/bookmarks',         label: 'Bookmarks',       icon: Bookmark,        badge: null },
   { href: '/student/leaderboard',       label: 'Leaderboard',     icon: Trophy,          badge: null },
   { href: '/student/tournaments',        label: 'Tournaments 🏆',  icon: Trophy,          badge: null },
+  { href: '/student/squads',             label: 'Study Squads 👥', icon: Users,           badge: null },
   { href: '/student/notifications',     label: 'Notifications',   icon: Bell,            badge: 'notifications' as const },
   { href: '/student/messages',          label: 'Messages',        icon: MessageSquare,   badge: 'messages' as const },
   { href: '/student/grade-predictor',   label: 'Grade Predictor', icon: Target,          badge: null },

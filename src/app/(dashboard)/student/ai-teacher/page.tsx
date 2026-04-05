@@ -21,6 +21,8 @@ type Message = {
   quizData?: QuizQuestion[]
   roadmapData?: RoadmapData
   savedToNotes?: boolean
+  docType?: string
+  suggestedActions?: string[]
 }
 type Conversation = { id: string; title: string; updated_at: string }
 type Subject = { id: string; name: string }
@@ -177,6 +179,7 @@ export default function AITeacherPage() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubject, setSelectedSubject] = useState('')
+  const [solutionMode, setSolutionMode] = useState<'scaffolded' | 'direct'>('scaffolded')
 
   // Upgrade modal (shown when quota exceeded)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -190,6 +193,9 @@ export default function AITeacherPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageBase64, setImageBase64] = useState<string | null>(null)
+  
+  // PDF/File upload
+  const [activeFile, setActiveFile] = useState<{ base64: string; name: string; type: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // TTS
@@ -258,10 +264,30 @@ export default function AITeacherPage() {
     reader.readAsDataURL(file)
   }
 
-  function clearImage() {
-    setImageFile(null)
-    setImagePreview(null)
-    setImageBase64(null)
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.type.startsWith('image/')) {
+      handleImageSelect(e)
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const result = ev.target?.result as string
+      setActiveFile({
+        base64: result.split(',')[1],
+        name: file.name,
+        type: file.type
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function clearUploads() {
+    clearImage()
+    setActiveFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -307,18 +333,19 @@ export default function AITeacherPage() {
   }
 
   // ── Send Message ──────────────────────────────────────────────────────────────
-  const sendMessage = useCallback(async (text?: string) => {
+  const sendMessage = useCallback(async (text?: string, forceMode?: 'scaffolded' | 'direct') => {
     const msg = (text ?? input).trim()
-    if ((!msg && !imageBase64) || loading) return
+    if ((!msg && !imageBase64 && !activeFile) || loading) return
 
     setInput('')
     const userMsg: Message = {
       role: 'user',
-      content: msg || '📷 [Image attached]',
+      content: msg || (activeFile ? `📄 [File: ${activeFile.name}]` : '📷 [Image attached]'),
       imagePreview: imagePreview ?? undefined,
     }
     setMessages(prev => [...prev, userMsg])
-    clearImage()
+    const currentFile = activeFile
+    clearUploads()
     setLoading(true)
 
     const subjectName = subjects.find(s => s.id === selectedSubject)?.name
@@ -328,11 +355,13 @@ export default function AITeacherPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversation_id: activeConvId,
-          message: msg || 'Please analyse this image and explain what you see in an educational context.',
+          message: msg || (currentFile ? `Please analyse this document: ${currentFile.name}` : 'Please analyse this image and explain what you see in an educational context.'),
           subject_name: subjectName,
           mode,
+          solution_mode: forceMode ?? solutionMode,
           image_base64: imageBase64,
+          file_base64: currentFile?.base64,
+          file_type: currentFile?.type,
         }),
       })
       const data = await res.json()
@@ -365,6 +394,8 @@ export default function AITeacherPage() {
           content: replyText,
           quizData,
           roadmapData,
+          docType: data.doc_type,
+          suggestedActions: data.suggested_actions,
         }])
 
         if (!activeConvId && data.conversation_id) {
@@ -386,7 +417,7 @@ export default function AITeacherPage() {
     }
 
     setLoading(false)
-  }, [input, imageBase64, imagePreview, loading, activeConvId, mode, selectedSubject, subjects])
+  }, [input, imageBase64, imagePreview, activeFile, loading, activeConvId, mode, solutionMode, selectedSubject, subjects])
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
@@ -622,6 +653,21 @@ export default function AITeacherPage() {
                         </button>
                       </div>
                     )}
+
+                    {/* Action Pills */}
+                    {msg.role === 'assistant' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50">
+                        {msg.suggestedActions.map((action, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => sendMessage(action)}
+                            className="bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-teal-100 transition shadow-sm"
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {msg.role === 'user' && (
@@ -663,11 +709,45 @@ export default function AITeacherPage() {
                   <p className="text-xs font-semibold text-blue-700 truncate">{imageFile?.name}</p>
                   <p className="text-[10px] text-blue-400">Image attached — ask MaFundi about it</p>
                 </div>
-                <button onClick={clearImage} className="p-1 rounded-lg hover:bg-blue-100 transition flex-shrink-0">
+                <button onClick={clearUploads} className="p-1 rounded-lg hover:bg-blue-100 transition flex-shrink-0">
                   <X size={14} className="text-blue-500" />
                 </button>
               </div>
             )}
+
+            {activeFile && (
+              <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
+                <FileText size={20} className="text-teal-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-teal-700 truncate">{activeFile.name}</p>
+                  <p className="text-[10px] text-teal-400">Document attached — ask MaFundi for help</p>
+                </div>
+                <button onClick={clearUploads} className="p-1 rounded-lg hover:bg-teal-100 transition flex-shrink-0">
+                  <X size={14} className="text-teal-500" />
+                </button>
+              </div>
+            )}
+
+            {/* Solution Mode Selector */}
+            <div className="flex items-center gap-1.5 p-1.5 bg-gray-100 rounded-xl w-fit mx-auto sm:mx-0">
+              <button
+                onClick={() => setSolutionMode('scaffolded')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                  solutionMode === 'scaffolded' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Lightbulb size={12} /> Scaffolded
+              </button>
+              <button
+                onClick={() => setSolutionMode('direct')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                  solutionMode === 'direct' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Zap size={12} className={solutionMode === 'direct' ? 'text-yellow-500' : ''} /> Direct Solution
+                {solutionMode !== 'direct' && <span className="ml-1 px-1 bg-indigo-100 text-indigo-600 rounded text-[9px] uppercase tracking-tighter">Pro</span>}
+              </button>
+            </div>
 
             <div className={`flex items-end gap-2 bg-gray-50 border rounded-2xl px-4 py-3 transition focus-within:ring-2 focus-within:ring-opacity-50 ${
               mode === 'quiz'       ? 'border-violet-200 focus-within:border-violet-400 focus-within:ring-violet-100' :
@@ -676,11 +756,11 @@ export default function AITeacherPage() {
                                      'border-gray-200   focus-within:border-teal-400   focus-within:ring-teal-100'
             }`}>
               {/* Image upload */}
-              <button onClick={() => fileInputRef.current?.click()} title="Upload homework photo"
+              <button onClick={() => fileInputRef.current?.click()} title="Upload photo or document (PDF/Doc)"
                 className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition">
-                <ImageIcon size={16} />
+                <Plus size={16} />
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileSelect} className="hidden" />
 
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
                 placeholder={

@@ -27,26 +27,39 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    let body: { planId: PlanId; method?: 'web' | MobileMethod; phone?: string; couponCode?: string }
+    let body: { 
+      planId: PlanId; 
+      method?: 'web' | MobileMethod; 
+      phone?: string; 
+      couponCode?: string;
+      itemId?: string; // e.g. subjectId
+    }
     try {
       body = await req.json()
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const { planId, method = 'ecocash', phone, couponCode } = body
+    const { planId, method = 'ecocash', phone, couponCode, itemId } = body
 
     const plan = PLANS[planId]
     if (!plan) {
       return NextResponse.json({ error: `Invalid plan: "${planId}"` }, { status: 400 })
     }
 
-    // Prevent buying a lower or equal tier (allow upgrades e.g. starter → pro/elite)
-    const currentPlan = profile?.plan ?? 'free'
-    const targetTier = plan.tier
-    const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, elite: 3 }
-    if (currentPlan !== 'free' && (tierRank[currentPlan] ?? 0) >= (tierRank[targetTier] ?? 0)) {
-      return NextResponse.json({ error: `You are already on the ${currentPlan} plan or higher` }, { status: 400 })
+    // Determine if this is a one-time purchase or a subscription upgrade
+    const isOneTime = planId === 'ai_grade_report' || planId === 'subject_pack'
+    const isMonitoring = planId === 'parent_monitoring_monthly'
+
+    // Only prevent buying a lower or equal tier if it's a MAIN subscription (pro/elite)
+    // One-time purchases and Monitoring are additive.
+    if (!isOneTime && !isMonitoring) {
+      const currentPlan = profile?.plan ?? 'free'
+      const targetTier = plan.tier
+      const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, elite: 3 }
+      if (currentPlan !== 'free' && (tierRank[currentPlan] ?? 0) >= (tierRank[targetTier] ?? 0)) {
+        return NextResponse.json({ error: `You are already on the ${currentPlan} plan or higher` }, { status: 400 })
+      }
     }
 
     if (method !== 'web' && !phone) {
@@ -100,6 +113,8 @@ export async function POST(req: NextRequest) {
         phone: phone ?? null,
         status: 'pending',
         coupon_id: couponId,
+        item_type: isOneTime ? planId : isMonitoring ? 'monitoring' : 'subscription',
+        item_id: itemId ?? null,
       })
       .select('id')
       .single()

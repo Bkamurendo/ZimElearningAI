@@ -7,12 +7,19 @@ import Image from 'next/image'
 import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, LogOut, Menu, X, ChevronRight, Users, MessageSquare,
+  Compass, BrainCircuit, Star
 } from 'lucide-react'
 
 const NAV = [
-  { href: '/parent/dashboard',  label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/parent/children',   label: 'My Children',  icon: Users },
-  { href: '/parent/messages',   label: 'Messages',     icon: MessageSquare },
+  { href: '/parent/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/parent/children',       label: 'My Children',     icon: Users },
+  { href: '/parent/career-planner',  label: 'Career Planner',  icon: Compass },
+  { href: '/parent/learning-gaps',   label: 'Learning Gaps',   icon: BrainCircuit },
+  { href: '/parent/messages',       label: 'Messages',        icon: MessageSquare },
+]
+
+const PREMIUM = [
+  { href: '/parent/upgrade-monitoring', label: 'Parent Pro',   icon: Star },
 ]
 
 interface Props {
@@ -43,7 +50,7 @@ export default function ParentSidebar({ userName }: Props) {
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">Navigation</p>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-3">Main Insights</p>
           <div className="space-y-0.5">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = isActive(href)
@@ -54,6 +61,22 @@ export default function ParentSidebar({ userName }: Props) {
                   <Icon size={17} className={active ? 'text-purple-600' : 'text-gray-400'} />
                   <span className="flex-1">{label}</span>
                   {active && <ChevronRight size={13} className="text-purple-400 flex-shrink-0" />}
+                </Link>
+              )
+            })}
+          </div>
+
+          <p className="text-[10px] font-semibold text-amber-500 uppercase tracking-widest px-3 mt-6 mb-3">Premium Features</p>
+          <div className="space-y-0.5">
+            {PREMIUM.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href)
+              return (
+                <Link key={href} href={href} onClick={() => setOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${active ? 'bg-amber-50 text-amber-600' : 'text-gray-600 hover:bg-amber-50 hover:text-amber-600'}`}
+                >
+                  <Icon size={17} className={active ? 'text-amber-500' : 'text-gray-400'} />
+                  <span className="flex-1">{label}</span>
+                  {active && <ChevronRight size={13} className="text-amber-600 flex-shrink-0" />}
                 </Link>
               )
             })}

@@ -117,6 +117,9 @@ const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: stri
   school_basic_monthly: { perMonth: '$50.00', period: 'per month (up to 50 students)' },
   school_pro_monthly:   { perMonth: '$120.00', period: 'per month (unlimited students)' },
   school_pro_yearly:    { perMonth: '$83.33', period: 'per month, billed $1,000 yearly', badge: 'Save 31%' },
+  parent_monitoring_monthly: { perMonth: '$3.00', period: 'per month' },
+  ai_grade_report:      { perMonth: '$2.00', period: 'one-time purchase' },
+  subject_pack:         { perMonth: '$1.50', period: 'lifetime access' },
 }
 
 type PaymentMethod = 'ecocash' | 'onemoney' | 'innbucks' | 'web'
@@ -208,6 +211,14 @@ export default function UpgradePage() {
   useEffect(() => {
     const status = searchParams.get('status')
     const flw    = searchParams.get('flw')
+    const planId = searchParams.get('plan') as PlanId
+    const itemId = searchParams.get('subject')
+
+    if (planId && PLANS[planId]) {
+      setSelectedPlan(planId)
+      // If it's a one-time item, we might want to hide the tier selector or just show a custom UI
+    }
+
     if (status === 'return') setPaymentStatus('waiting')
     else if (flw === 'paid') setPaymentStatus('paid')
     else if (flw === 'failed' || flw === 'cancelled' || flw === 'error') {
@@ -295,9 +306,18 @@ export default function UpgradePage() {
           <h1 className="text-2xl font-bold text-slate-900 mb-3">Welcome to {tier.name}! 🎉</h1>
           <p className="text-slate-500 mb-2">Payment confirmed. Your upgraded access is now active.</p>
           <p className="text-sm text-slate-400 mb-8">Your dashboard will reflect the upgrade immediately.</p>
-          <button onClick={() => { window.location.href = '/student/dashboard' }}
+          <button onClick={() => { 
+              if (selectedPlan === 'ai_grade_report') {
+                const subjectId = searchParams.get('subject')
+                window.location.href = `/student/grade-report/${subjectId}`
+              } else if (selectedPlan === 'subject_pack') {
+                window.location.href = `/student/subjects`
+              } else {
+                window.location.href = '/student/dashboard'
+              }
+            }}
             className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-bold rounded-2xl transition shadow-md shadow-green-200">
-            Go to Dashboard →
+            {selectedPlan === 'ai_grade_report' ? 'View My Report →' : 'Continue to Dashboard →'}
           </button>
         </div>
       </div>
@@ -390,6 +410,32 @@ export default function UpgradePage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 pb-12 space-y-6">
+
+        {/* ── One-time Item Summary (if applicable) ─────────────────────────── */}
+        {(selectedPlan === 'ai_grade_report' || selectedPlan === 'subject_pack') && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 border-2 border-indigo-400 animate-fade-in-up">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0">
+                {selectedPlan === 'ai_grade_report' ? '📄' : '📚'}
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 leading-tight">One-Time Addition</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  You are purchasing <strong>{PLANS[selectedPlan].label}</strong>
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedPlan('pro_monthly')}
+                className="text-xs text-indigo-600 font-bold hover:underline"
+              >
+                Cancel ✕
+              </button>
+            </div>
+            <div className="mt-4 bg-indigo-50 rounded-xl p-3 text-xs text-indigo-700 flex items-center gap-2">
+              <Star size={14} fill="currentColor" /> No monthly commitment. This is a one-time purchase.
+            </div>
+          </div>
+        )}
 
         {/* ── Tier comparison cards ─────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

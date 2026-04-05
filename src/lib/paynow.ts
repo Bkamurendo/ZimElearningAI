@@ -265,6 +265,70 @@ export const PLANS = {
     days: 365,
     description: 'ZimLearn School Pro — Unlimited Students (1 Year)',
   },
+  // ── Parent Monitoring (NEW) ────────────────────────────────────────────────
+  parent_monitoring_monthly: {
+    id: 'parent_monitoring_monthly',
+    label: 'Premium Parent Monitoring',
+    tier: 'pro' as const,
+    amountUsd: 3.00,
+    days: 30,
+    description: 'ZimLearn Parent — Weekly Reports & Detailed Student Activity',
+  },
+  // ── One-time Purchases (NEW) ───────────────────────────────────────────────
+  ai_grade_report: {
+    id: 'ai_grade_report',
+    label: 'Comprehensive AI Grade Report',
+    tier: 'pro' as const,
+    amountUsd: 2.00,
+    days: 0,
+    description: 'Full AI-generated study action plan & predicted grade report (PDF)',
+  },
+  subject_pack: {
+    id: 'subject_pack',
+    label: 'Single Subject Study Pack',
+    amountUsd: 1.50,
+    days: 365,
+    tier: 'pro' as const,
+    description: 'Lifetime access to one ZIMSEC subject for a single year.',
+  },
+  
+  // TEACHER PREMIUM
+  teacher_pro: {
+    id: 'teacher_pro',
+    label: 'Teacher Pro Scholar',
+    amountUsd: 5.00,
+    days: 30,
+    tier: 'pro' as const,
+    description: 'Unlock AI Auto-Grader, Bulk Test Generator, and CPD Certificates.',
+  },
+
+  // SCHOOL INSTITUTIONAL
+  school_elite_basic: {
+    id: 'school_elite_basic',
+    label: 'School Elite (Starter)',
+    amountUsd: 100.00,
+    days: 30,
+    tier: 'pro' as const,
+    description: 'Full school dashboard for up to 10 teachers and 100 students.',
+  },
+  school_elite_unlimited: {
+    id: 'school_elite_unlimited',
+    label: 'School Elite (Unlimited)',
+    amountUsd: 1000.00,
+    days: 365,
+    tier: 'elite' as const,
+    description: 'Unlimited access for all teachers and students + custom branding.',
+  },
+
+  // CORPORATE CSR
+  corporate_gold: {
+    id: 'corporate_gold',
+    label: 'Corporate Scholarship Partner',
+    amountUsd: 500.00,
+    days: 365,
+    tier: 'elite' as const,
+    description: 'Fund a pool of 50 student scholarships for 1 year + branding.',
+  },
 } as const
 
 export type PlanId = keyof typeof PLANS
