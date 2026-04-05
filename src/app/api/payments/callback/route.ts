@@ -81,6 +81,65 @@ export async function POST(req: NextRequest) {
         pro_expires_at: expiresAt.toISOString(),
       })
       .eq('id', payment.user_id)
+
+    // Trigger referral reward if this user was referred
+    try {
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('id, referrer_id, reward_granted')
+        .eq('referred_id', payment.user_id)
+        .single()
+
+      if (referral && !referral.reward_granted) {
+        const now = new Date().toISOString()
+        await supabase.from('referrals').update({
+          converted_at: now,
+          reward_granted: true,
+          reward_granted_at: now,
+        }).eq('id', referral.id)
+
+        // Increment referral_credits for the referrer
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('referral_credits, email, full_name')
+          .eq('id', referral.referrer_id)
+          .single()
+
+        if (referrer) {
+          await supabase.from('profiles')
+            .update({ referral_credits: (referrer.referral_credits ?? 0) + 1 })
+            .eq('id', referral.referrer_id)
+
+          // Send thank-you email to referrer
+          if (referrer.email) {
+            const { sendEmail } = await import('@/lib/email')
+            const name = referrer.full_name?.split(' ')[0] ?? 'there'
+            await sendEmail(
+              referrer.email,
+              '🎉 You earned a free month on ZimLearn!',
+              `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+                <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:32px;text-align:center">
+                  <h1 style="color:#fff;margin:0;font-size:22px">You earned a free month! 🎉</h1>
+                </div>
+                <div style="padding:32px">
+                  <p style="font-size:16px;color:#374151">Hi ${name},</p>
+                  <p style="font-size:16px;color:#374151">Someone you referred just upgraded to a paid ZimLearn plan. As promised, <strong>1 free month</strong> has been credited to your account.</p>
+                  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin:20px 0;text-align:center">
+                    <p style="font-size:32px;font-weight:900;color:#15803d;margin:0">+1 Month FREE</p>
+                    <p style="font-size:13px;color:#374151;margin:8px 0 0">Applied to your next renewal</p>
+                  </div>
+                  <div style="text-align:center;margin:24px 0">
+                    <a href="https://zim-elearningai.co.zw/student/referral" style="background:#16a34a;color:#fff;padding:12px 28px;text-decoration:none;border-radius:8px;font-weight:700;display:inline-block">View My Referrals</a>
+                  </div>
+                </div>
+              </div>`
+            ).catch(() => { /* email failure non-critical */ })
+          }
+        }
+      }
+    } catch {
+      // Referral reward must never break payment processing
+    }
   }
 
   // Always respond 200 — Paynow retries on non-200

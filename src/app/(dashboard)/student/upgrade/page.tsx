@@ -374,9 +374,17 @@ export default function UpgradePage() {
                 ZIMSEC Potential
               </span>
             </h1>
-            <p className="text-slate-400 text-base max-w-xl mx-auto">
+            <p className="text-slate-400 text-base max-w-xl mx-auto mb-5">
               Choose the plan that fits your study goals. All plans include full AI tutoring access.
             </p>
+            {/* Annual savings callout */}
+            <div className="inline-flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-3 text-sm">
+              <span className="text-2xl">📅</span>
+              <div className="text-left">
+                <p className="text-emerald-300 font-bold text-sm">Save up to 42% with an annual plan</p>
+                <p className="text-slate-400 text-xs">Pro yearly = $2.92/mo · Elite yearly = $5/mo · Choose billing period below</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

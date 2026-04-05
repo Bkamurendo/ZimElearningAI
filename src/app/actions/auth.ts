@@ -109,6 +109,32 @@ export async function register(formData: FormData): Promise<void> {
       .from('profiles')
       .update({ role, full_name: fullName, ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}) })
       .eq('id', user.id)
+
+    // Track referral if a ref code was passed
+    const refCode = (formData.get('ref') as string | null)?.trim().toUpperCase()
+    if (refCode && role === 'student') {
+      try {
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('referral_code', refCode)
+          .single()
+
+        if (referrer && referrer.id !== user.id) {
+          // Record the referral
+          await supabase.from('referrals').insert({
+            referrer_id: referrer.id,
+            referred_id: user.id,
+          })
+          // Link referred_by on the new user's profile
+          await supabase.from('profiles')
+            .update({ referred_by: referrer.id })
+            .eq('id', user.id)
+        }
+      } catch {
+        // Referral tracking must never break registration
+      }
+    }
   }
 
   // Send welcome SMS for parents (who supply a phone number during registration)

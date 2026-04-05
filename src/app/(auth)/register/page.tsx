@@ -50,8 +50,9 @@ const ROLES: {
 export default function RegisterPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; ref?: string }
 }) {
+  const refCode = searchParams.ref ?? ''
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
 
@@ -139,7 +140,13 @@ export default function RegisterPage({
                 </span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-              <p className="text-gray-400 text-sm mt-1">Join ZimLearn today — it&apos;s free</p>
+              {refCode ? (
+                <p className="text-sm mt-1 text-emerald-600 font-medium bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5">
+                  🎁 You were invited! You&apos;ll start with a full 7-day Pro trial.
+                </p>
+              ) : (
+                <p className="text-gray-400 text-sm mt-1">Join ZimLearn today — it&apos;s free</p>
+              )}
             </div>
 
             {searchParams.error && (
@@ -261,6 +268,9 @@ export default function RegisterPage({
                   </Link>
                 </p>
               </div>
+
+              {/* Pass referral code through the form */}
+              {refCode && <input type="hidden" name="ref" value={refCode} />}
 
               <button
                 type="submit"
