@@ -1,4 +1,6 @@
-import pdf from 'pdf-parse'
+// Use lib path directly to avoid pdf-parse@1.1.1's test-runner firing during Next.js build
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse/lib/pdf-parse.js')
 
 /**
  * Extracts text from a student-uploaded PDF buffer.
@@ -6,7 +8,7 @@ import pdf from 'pdf-parse'
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const data = await pdf(buffer)
+    const data = await pdfParse(buffer)
     return data.text || ''
   } catch (err) {
     console.error('PDF Parse Error:', err)
