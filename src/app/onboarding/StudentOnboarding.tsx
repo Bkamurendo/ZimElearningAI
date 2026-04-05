@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { completeStudentOnboarding } from '@/app/actions/onboarding'
 import type { Subject, ZimsecLevel } from '@/types/database'
-import { GraduationCap, BookOpen, CheckCircle2 } from 'lucide-react'
+import {
+  GraduationCap, BookOpen, CheckCircle2, Zap, Star, Crown,
+  ArrowRight, Check, ChevronRight,
+} from 'lucide-react'
 
 const LEVELS: { value: ZimsecLevel; label: string; sublabel: string; grades: string[]; gradient: string; emoji: string }[] = [
   {
@@ -32,16 +35,62 @@ const LEVELS: { value: ZimsecLevel; label: string; sublabel: string; grades: str
   },
 ]
 
+const PLAN_CARDS = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: '$2',
+    period: '/month',
+    color: 'border-blue-300 hover:border-blue-400',
+    selectedColor: 'border-blue-500 bg-blue-50',
+    badgeBg: '',
+    badge: '',
+    icon: <Zap size={18} className="text-blue-500" />,
+    highlights: ['100 AI questions/day', 'Study planner', 'Download materials'],
+    cta: 'Start with Starter',
+    ctaBg: 'bg-blue-600 hover:bg-blue-700',
+  },
+  {
+    id: 'pro',
+    name: 'Pro Scholar',
+    price: '$5',
+    period: '/month',
+    color: 'border-indigo-300 hover:border-indigo-400',
+    selectedColor: 'border-indigo-600 bg-indigo-50',
+    badge: '⭐ Most Popular',
+    badgeBg: 'from-indigo-600 to-purple-600',
+    icon: <Star size={18} className="text-indigo-500" fill="currentColor" />,
+    highlights: ['Unlimited AI tutoring', 'Full ZIMSEC past papers', 'Mock exam generator'],
+    cta: 'Start with Pro',
+    ctaBg: 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700',
+  },
+  {
+    id: 'elite',
+    name: 'Elite',
+    price: '$8',
+    period: '/month',
+    color: 'border-amber-300 hover:border-amber-400',
+    selectedColor: 'border-amber-500 bg-amber-50',
+    badge: '👑 Best Value',
+    badgeBg: 'from-amber-500 to-orange-500',
+    icon: <Crown size={18} className="text-amber-500" />,
+    highlights: ['Advanced AI model', 'Parent dashboard', 'Priority support'],
+    cta: 'Start with Elite',
+    ctaBg: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600',
+  },
+]
+
 interface Props {
   fullName: string
   subjects: Subject[]
 }
 
 export default function StudentOnboarding({ fullName, subjects }: Props) {
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [level, setLevel] = useState<ZimsecLevel | null>(null)
   const [grade, setGrade] = useState('')
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
 
   const filteredSubjects = subjects.filter((s) => s.zimsec_level === level)
   const selectedLevel = LEVELS.find((l) => l.value === level)
@@ -50,6 +99,16 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
     setSelectedSubjects((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     )
+  }
+
+  // Step 2 submit: save profile, then go to Step 3
+  async function handleStep2Submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    // Run the actual onboarding action in background
+    await (completeStudentOnboarding as unknown as (fd: FormData) => Promise<void>)(formData)
+    // Then show the upgrade step
+    setStep(3)
   }
 
   return (
@@ -67,10 +126,10 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-          {/* Animated step progress bar */}
+          {/* Progress bar */}
           <div className="mb-8">
             <div className="flex items-center gap-0 mb-5">
-              {[1, 2].map((s) => (
+              {[1, 2, 3].map((s) => (
                 <div key={s} className="flex items-center flex-1">
                   <div className={`relative flex items-center justify-center w-10 h-10 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm ${
                     s < step
@@ -81,7 +140,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                   }`}>
                     {s < step ? <CheckCircle2 size={18} /> : s}
                   </div>
-                  {s < 2 && (
+                  {s < 3 && (
                     <div className="flex-1 h-1.5 mx-2 rounded-full overflow-hidden bg-gray-100">
                       <div
                         className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
@@ -95,17 +154,21 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
 
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {step === 1 ? `Welcome, ${fullName || 'Student'}! 👋` : 'Choose your subjects'}
+                {step === 1 ? `Welcome, ${fullName || 'Student'}! 👋` :
+                 step === 2 ? 'Choose your subjects' :
+                 '🚀 One last step — choose your plan'}
               </h1>
               <p className="text-gray-400 mt-1 text-sm">
                 {step === 1
                   ? 'Select your ZIMSEC level and grade to personalise your experience.'
-                  : `${selectedLevel?.label} — select the subjects you study.`}
+                  : step === 2
+                  ? `${selectedLevel?.label} — select the subjects you study.`
+                  : 'Start your 7-day free trial. No payment needed today.'}
               </p>
             </div>
           </div>
 
-          {/* Step 1 */}
+          {/* ── Step 1: Level & grade ─────────────────────────────────────── */}
           {step === 1 && (
             <div className="space-y-6">
               <div>
@@ -125,14 +188,9 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                         name="level"
                         value={l.value}
                         checked={level === l.value}
-                        onChange={() => {
-                          setLevel(l.value)
-                          setGrade('')
-                          setSelectedSubjects([])
-                        }}
+                        onChange={() => { setLevel(l.value); setGrade(''); setSelectedSubjects([]) }}
                         className="sr-only"
                       />
-                      {/* Gradient icon */}
                       <div className={`w-12 h-12 bg-gradient-to-br ${l.gradient} rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm`}>
                         {l.emoji}
                       </div>
@@ -140,7 +198,6 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                         <span className="font-bold text-gray-900 text-base">{l.label}</span>
                         <p className="text-xs text-gray-400 mt-0.5">{l.sublabel}</p>
                       </div>
-                      {/* Custom radio indicator */}
                       <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                         level === l.value ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
                       }`}>
@@ -181,9 +238,9 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
             </div>
           )}
 
-          {/* Step 2 */}
+          {/* ── Step 2: Subjects ──────────────────────────────────────────── */}
           {step === 2 && (
-            <form action={completeStudentOnboarding as unknown as (formData: FormData) => void}>
+            <form onSubmit={handleStep2Submit}>
               <input type="hidden" name="zimsec_level" value={level ?? ''} />
               <input type="hidden" name="grade" value={grade} />
 
@@ -216,7 +273,6 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                         onChange={() => toggleSubject(subject.id)}
                         className="sr-only"
                       />
-                      {/* Custom checkbox */}
                       <div className={`w-5 h-5 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                         checked ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
                       }`}>
@@ -249,10 +305,108 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                   className="flex-1 py-3 font-bold rounded-2xl transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01]"
                   style={{ background: selectedSubjects.length === 0 ? '#d1fae5' : 'linear-gradient(135deg, #059669, #10b981)' }}
                 >
-                  🚀 Start learning
+                  Next: Choose plan →
                 </button>
               </div>
             </form>
+          )}
+
+          {/* ── Step 3: Upgrade offer ─────────────────────────────────────── */}
+          {step === 3 && (
+            <div className="space-y-4">
+              {/* Social proof */}
+              <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                <div className="flex -space-x-2">
+                  {['🧑🏾‍🎓','👩🏽‍🎓','👦🏿','👧🏾'].map((e, i) => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center text-base border-2 border-white">{e}</div>
+                  ))}
+                </div>
+                <p className="text-sm text-emerald-800 font-medium">
+                  <strong>5,000+ Zimbabwean students</strong> already learning with ZimLearn
+                </p>
+              </div>
+
+              {/* Trial badge */}
+              <div className="text-center">
+                <span className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 text-xs font-bold px-4 py-1.5 rounded-full border border-amber-200">
+                  ✨ 7-day free trial included — start learning immediately, no card needed
+                </span>
+              </div>
+
+              {/* Plan cards */}
+              <div className="grid grid-cols-1 gap-3">
+                {PLAN_CARDS.map((plan) => {
+                  const isSelected = selectedPlan === plan.id
+                  return (
+                    <button
+                      key={plan.id}
+                      onClick={() => setSelectedPlan(plan.id)}
+                      className={`relative text-left p-4 border-2 rounded-2xl transition-all duration-150 ${
+                        isSelected ? plan.selectedColor : plan.color + ' bg-white'
+                      }`}
+                    >
+                      {plan.badge && (
+                        <span className={`absolute -top-3 left-4 bg-gradient-to-r ${plan.badgeBg} text-white text-[10px] font-bold px-3 py-0.5 rounded-full`}>
+                          {plan.badge}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3 mt-1">
+                        <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                          {plan.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-1">
+                            <span className="font-bold text-gray-900 text-base">{plan.name}</span>
+                            <span className="ml-auto font-black text-gray-900">{plan.price}<span className="text-xs font-normal text-gray-400">{plan.period}</span></span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                            {plan.highlights.map(h => (
+                              <span key={h} className="flex items-center gap-1 text-xs text-gray-600">
+                                <Check size={10} className="text-emerald-500" strokeWidth={3} />
+                                {h}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ml-2 transition-all ${
+                          isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Action buttons */}
+              <div className="pt-2 space-y-2">
+                {selectedPlan ? (
+                  <a
+                    href={`/student/upgrade?plan=${selectedPlan}`}
+                    className={`w-full py-3.5 font-bold rounded-2xl transition-all text-white text-sm text-center flex items-center justify-center gap-2 shadow-lg ${
+                      PLAN_CARDS.find(p => p.id === selectedPlan)?.ctaBg ?? 'bg-indigo-600'
+                    }`}
+                  >
+                    {PLAN_CARDS.find(p => p.id === selectedPlan)?.cta}
+                    <ChevronRight size={16} />
+                  </a>
+                ) : (
+                  <div className="text-center text-sm text-gray-400 py-2">← Select a plan above to continue</div>
+                )}
+
+                <a
+                  href="/student/dashboard"
+                  className="w-full py-3 text-gray-400 hover:text-gray-600 font-medium text-sm text-center block transition"
+                >
+                  Continue with free trial →
+                </a>
+
+                <p className="text-center text-xs text-gray-300">
+                  Free trial gives you 7 days of full access. Upgrade anytime.
+                </p>
+              </div>
+            </div>
           )}
         </div>
 
