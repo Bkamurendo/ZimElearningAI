@@ -185,17 +185,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Audit log
-    await supabase.from('audit_logs').insert({
+    // Audit log (non-blocking — don't let this crash the request)
+    supabase.from('admin_activity_log').insert({
       admin_id: user.id,
       action: 'bulk_contact',
       resource_type: 'reminder',
-      details: {
+      new_values: {
         audience,
         total: validTargets.length,
         sent: totalSent,
         failed: totalFailed,
       },
+    }).then(({ error }) => {
+      if (error) console.error('[AUDIT] bulk_contact log failed:', error)
     })
 
     return NextResponse.json({
@@ -280,11 +282,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // Audit log (non-blocking)
-    supabase.from('audit_logs').insert({
+    supabase.from('admin_activity_log').insert({
       admin_id: user.id,
       action: actionType,
       resource_type: 'reminder',
-      details: {
+      new_values: {
         target_user: userId,
         sent: sentResult.sent,
         method: targetProfile.phone ? 'sms' : 'email'

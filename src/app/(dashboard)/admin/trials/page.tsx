@@ -143,13 +143,13 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
   const fourteenDaysAgo = new Date(now)
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
   const { data: recentReminders } = await supabase
-    .from('audit_logs')
-    .select('details')
+    .from('admin_activity_log')
+    .select('new_values')
     .eq('resource_type', 'reminder')
     .gte('created_at', fourteenDaysAgo.toISOString())
     
   const remindedUserIds = new Set(
-    (recentReminders || []).map((log: any) => log.details?.target_user as string)
+    (recentReminders || []).map((log: any) => log.new_values?.target_user as string)
   )
 
   const planRows = [
