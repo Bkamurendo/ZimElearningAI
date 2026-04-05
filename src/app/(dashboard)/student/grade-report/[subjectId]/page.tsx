@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   FileText, Star, TrendingUp, Target, Award,
-  CheckCircle2, AlertCircle, Loader2, Download, Printer, Share2, ChevronLeft
+  CheckCircle2, AlertCircle, Loader2, Download, Printer, Share2, ChevronLeft, Lock
 } from 'lucide-react'
+
 import Link from 'next/link'
 
 export default function PremiumGradeReportPage({ params }: { params: { subjectId: string } }) {
