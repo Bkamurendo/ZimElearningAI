@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import StudentSidebar from './StudentSidebar'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import TrialStatusBanner from '@/components/TrialStatusBanner'
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -100,7 +101,10 @@ export default async function StudentLayout({ children }: { children: React.Reac
         hasChallenge={hasChallenge}
       />
       <div className="lg:pl-64 pb-16 lg:pb-0">
-        <div className="pt-14 lg:pt-0">{children}</div>
+        <div className="pt-14 lg:pt-0">
+          <TrialStatusBanner trialEndsAt={trialEndsAt} plan={plan} />
+          {children}
+        </div>
       </div>
       <MobileBottomNav role="student" />
     </div>
