@@ -24,7 +24,7 @@ function DaysChip({ days }: { days: number }) {
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
-export default async function TrialsRetentionPage() {
+export default async function TrialsRetentionPage({ searchParams }: { searchParams: { success?: string, error?: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -138,6 +138,19 @@ export default async function TrialsRetentionPage() {
 
   const estimatedMRR = (starterUsers ?? 0) * 2 + (proUsers ?? 0) * 5 + (eliteUsers ?? 0) * 8
   const total = totalUsers ?? 1
+  
+  // Get recent reminders sent (last 14 days)
+  const fourteenDaysAgo = new Date(now)
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+  const { data: recentReminders } = await supabase
+    .from('audit_logs')
+    .select('details')
+    .eq('resource_type', 'reminder')
+    .gte('created_at', fourteenDaysAgo.toISOString())
+    
+  const remindedUserIds = new Set(
+    (recentReminders || []).map((log: any) => log.details?.target_user as string)
+  )
 
   const planRows = [
     { label: 'Free',    count: freeUsers ?? 0,    bar: 'bg-gray-400',                                       price: 0 },
@@ -160,6 +173,24 @@ export default async function TrialsRetentionPage() {
             <p className="text-sm text-gray-500 mt-0.5">Monitor trial funnels, conversions, and churn risk</p>
           </div>
         </div>
+
+        {/* Status Messages */}
+        {searchParams.success && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+            <CheckCircle className="text-emerald-500 flex-shrink-0" size={20} />
+            <p className="font-semibold text-emerald-800">
+              Reminder was sent successfully!
+            </p>
+          </div>
+        )}
+        {searchParams.error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+            <XCircle className="text-red-500 flex-shrink-0" size={20} />
+            <p className="font-semibold text-red-800">
+              {searchParams.error === 'no_contact' ? "Could not send reminder: User has no valid phone or email." : "Failed to send reminder."}
+            </p>
+          </div>
+        )}
 
         {/* Urgent alert */}
         {(endingToday ?? []).length > 0 && (
@@ -303,13 +334,20 @@ export default async function TrialsRetentionPage() {
                           <DaysChip days={daysLeft(row.trial_ends_at)} />
                         </td>
                         <td className="px-5 py-3.5 text-right">
-                          <a
-                            href={`/api/admin/send-sms?userId=${row.id}`}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 rounded-lg px-3 py-1.5 transition"
-                          >
-                            <Mail size={12} />
-                            Send Reminder (SMS/Email)
-                          </a>
+                          {remindedUserIds.has(row.id) ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg px-3 py-1.5 border border-emerald-200">
+                              <CheckCircle size={12} />
+                              Sent Recently
+                            </span>
+                          ) : (
+                            <a
+                              href={`/api/admin/send-sms?userId=${row.id}`}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 rounded-lg px-3 py-1.5 transition"
+                            >
+                              <Mail size={12} />
+                              Send Reminder (SMS/Email)
+                            </a>
+                          )}
                         </td>
                       </tr>
                     ))}

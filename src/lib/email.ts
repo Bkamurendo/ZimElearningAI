@@ -9,7 +9,7 @@
  */
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? ''
-const FROM_EMAIL = 'ZimLearn <admin@zim-elearningai.co.zw>'
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'ZimLearn <admin@zim-elearningai.co.zw>'
 
 export interface EmailResult {
   success: boolean
@@ -41,6 +41,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
 
     if (!res.ok) {
       const text = await res.text()
+      console.error(`[EMAIL FATAL] Resend API rejected payload. Status: ${res.status}, Details:`, text)
       return { success: false, error: `HTTP ${res.status}: ${text}` }
     }
 

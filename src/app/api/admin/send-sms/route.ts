@@ -213,27 +213,36 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  console.log('[REMINDER] GET handler triggered')
   try {
     const { user, supabase } = await requireAdmin()
+    console.log('[REMINDER] Auth check - user:', user?.id ?? 'NO USER')
+
     if (!user) {
-      return NextResponse.json({ error: 'Forbidden — admin only' }, { status: 403 })
+      console.error('[REMINDER] Auth failed — no admin user found in session')
+      return NextResponse.redirect(new URL('/admin/trials?error=not_authenticated', req.url))
     }
 
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
+    console.log('[REMINDER] Target userId:', userId)
 
     if (!userId) {
       return NextResponse.redirect(new URL('/admin/trials', req.url))
     }
 
-    // Fetch the target user's phone number
-    const { data: targetProfile } = await supabase
+    // Fetch the target user's contact details
+    const { data: targetProfile, error: profileError } = await supabase
       .from('profiles')
       .select('phone, email, full_name')
       .eq('id', userId)
       .single()
 
+    console.log('[REMINDER] Target profile:', JSON.stringify(targetProfile))
+    if (profileError) console.error('[REMINDER] Profile fetch error:', profileError)
+
     if (!targetProfile?.phone && !targetProfile?.email) {
+      console.error('[REMINDER] No contact found for userId:', userId)
       return NextResponse.redirect(new URL('/admin/trials?error=no_contact', req.url))
     }
 
@@ -245,8 +254,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     let actionType = 'single_sms_reminder'
 
     if (targetProfile.phone) {
+      console.log('[REMINDER] Sending SMS to:', targetProfile.phone)
       sentResult = await sendBulkSMS([{ phone: targetProfile.phone, message: defaultMessage }])
+      console.log('[REMINDER] SMS result:', JSON.stringify(sentResult))
     } else if (targetProfile.email) {
+      console.log('[REMINDER] Sending email to:', targetProfile.email)
       const { sendEmail } = await import('@/lib/email')
       const htmlMsg = `
         <div style="font-family:sans-serif;max-width:500px;margin:0 auto">
@@ -255,19 +267,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           <p style="font-size:16px;">Your free trial for AI E-Learning Platform ZIM is nearing its end!</p>
           <p style="font-size:16px;">Don't lose your progress and access to all premium learning materials. Upgrade your plan now to continue your educational journey without any interruptions.</p>
           <div style="text-align:center;margin:30px 0">
-            <a href="https://zim-elearningai.co.zw/pricing" style="background-color:#16a34a;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px;">View Pro Plans & Upgrade</a>
+            <a href="https://zim-elearningai.co.zw/pricing" style="background-color:#16a34a;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px;">View Pro Plans &amp; Upgrade</a>
           </div>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
           <p style="color:#9ca3af;font-size:12px;text-align:center;">Zim E-Learning AI Team</p>
         </div>
       `
       const emailRes = await sendEmail(targetProfile.email, 'Action Required: Your Free Trial is Expiring', htmlMsg)
+      console.log('[REMINDER] Email result:', JSON.stringify(emailRes))
       sentResult = { sent: emailRes.success ? 1 : 0 }
       actionType = 'single_email_reminder'
     }
 
-    // Audit log
-    await supabase.from('audit_logs').insert({
+    // Audit log (non-blocking)
+    supabase.from('audit_logs').insert({
       admin_id: user.id,
       action: actionType,
       resource_type: 'reminder',
@@ -276,12 +289,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         sent: sentResult.sent,
         method: targetProfile.phone ? 'sms' : 'email'
       },
+    }).then(({ error }) => {
+      if (error) console.error('[REMINDER] Audit log failed:', error)
     })
 
-    // Redirect the admin smoothly back to the trials page
+    if (sentResult.sent === 0) {
+      console.error('[REMINDER] Delivery failed — sent count is 0')
+      return NextResponse.redirect(new URL('/admin/trials?error=delivery_failed', req.url))
+    }
+
+    console.log('[REMINDER] Success! Redirecting...')
     return NextResponse.redirect(new URL(`/admin/trials?success=${actionType}`, req.url))
   } catch (err) {
-    console.error('[/api/admin/send-sms GET]', err)
+    console.error('[/api/admin/send-sms GET] Unhandled error:', err)
     return NextResponse.redirect(new URL('/admin/trials?error=reminder_failed', req.url))
   }
 }
