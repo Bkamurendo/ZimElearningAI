@@ -24,6 +24,7 @@ const NAV = [
   { href: '/student/progress',          label: 'My Progress',     icon: TrendingUp,      badge: null },
   { href: '/student/bookmarks',         label: 'Bookmarks',       icon: Bookmark,        badge: null },
   { href: '/student/leaderboard',       label: 'Leaderboard',     icon: Trophy,          badge: null },
+  { href: '/student/tournaments',        label: 'Tournaments 🏆',  icon: Trophy,          badge: null },
   { href: '/student/notifications',     label: 'Notifications',   icon: Bell,            badge: 'notifications' as const },
   { href: '/student/messages',          label: 'Messages',        icon: MessageSquare,   badge: 'messages' as const },
   { href: '/student/grade-predictor',   label: 'Grade Predictor', icon: Target,          badge: null },
