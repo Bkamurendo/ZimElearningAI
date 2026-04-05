@@ -1,13 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, BookOpen, FileText, ClipboardList, X, ChevronRight, Sparkles } from 'lucide-react'
+import { Loader2, BookOpen, FileText, ClipboardList, X, ChevronRight, Sparkles, Zap } from 'lucide-react'
 import Link from 'next/link'
 
 type Subject = { id: string; name: string; code: string }
+type WeakTopic = { topic: string; subject_id: string; subject_name: string; mastery_level: string }
 
 interface Props {
   subjects: Subject[]
+  weakTopics: WeakTopic[]
 }
 
 type ModalType = 'notes' | 'mock_exam' | 'revision' | null
@@ -17,7 +19,7 @@ type Result =
   | { type: 'mock_exam'; note_id: string; title: string }
   | { type: 'revision'; note_id: string; title: string }
 
-export default function WorkspaceActions({ subjects }: Props) {
+export default function WorkspaceActions({ subjects, weakTopics }: Props) {
   const [modal, setModal] = useState<ModalType>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
@@ -84,12 +86,21 @@ export default function WorkspaceActions({ subjects }: Props) {
 
   async function generateRevision() {
     if (!revSubject || !revTopics.trim()) return
+    await generateQuickRevision(revSubject, revTopics.trim(), revType)
+  }
+
+  async function generateQuickRevision(subjectId: string, topicsStr: string, type: string = 'summary') {
     setLoading(true); setError(null)
-    const topics = revTopics.split(',').map(t => t.trim()).filter(Boolean)
+    if (modal !== 'revision') setModal('revision')
+    setRevSubject(subjectId)
+    setRevTopics(topicsStr)
+    setRevType(type)
+
+    const topics = topicsStr.split(',').map(t => t.trim()).filter(Boolean)
     const res = await fetch('/api/ai-teacher/generate-revision', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject_id: revSubject, topics, revision_type: revType }),
+      body: JSON.stringify({ subject_id: subjectId, topics, revision_type: type }),
     })
     const data = await res.json()
     setLoading(false)
@@ -124,6 +135,30 @@ export default function WorkspaceActions({ subjects }: Props) {
           <FileText size={15} /> Generate Revision Sheet
         </button>
       </div>
+
+      {/* Weak Topics / Remediation section */}
+      {weakTopics.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-6">
+          <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3">
+            <Sparkles size={16} className="text-amber-500" /> Improve Your Mastery
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {weakTopics.slice(0, 8).map((t, i) => (
+              <div key={i} className={`flex items-center gap-1.5 text-xs font-medium pl-2.5 pr-1.5 py-1 rounded-full border ${t.mastery_level === 'not_started' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                <span>{t.topic} <span className="opacity-60">· {t.subject_name}</span></span>
+                <button
+                  onClick={() => generateQuickRevision(t.subject_id, t.topic, 'key_concepts')}
+                  className="ml-1 p-1 hover:bg-white/50 rounded-full transition-colors group"
+                  title="Fix this topic with MaFundi"
+                >
+                  <Zap size={12} className="group-hover:fill-current" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-400 mt-3 italic">Click the lightning bolt to have MaFundi generate a targeted revision sheet for that topic.</p>
+        </div>
+      )}
 
       {/* Modal */}
       {modal && (

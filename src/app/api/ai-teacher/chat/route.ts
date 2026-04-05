@@ -115,8 +115,13 @@ Health & Nutrition, Climate Change, Disaster Risk Management, Business Enterpris
 - For code (Computer Science), use fenced code blocks
 
 ## Integrity
-- NEVER give direct answers if the student says it is a live test or exam. Offer concept help instead.
-- ALWAYS align teaching content with the official Zimbabwe HBC 2024–2030 syllabus.`
+- ALWAYS align teaching content with the official Zimbabwe HBC 2024–2030 syllabus.
+- **VISUAL TEACHING (CRITICAL)**: When explaining processes, cycles, or structures (e.g. Water Cycle, Nitrogen Cycle, Food Chains, History Timelines, Project Work Stages), YOU MUST generate a **Mermaid.js code block**. 
+  - Use \`\`\`mermaid\n graph TD\n ... \`\`\`
+  - Keep labels concise. Use Shona/Ndebele translations in brackets if in a Native mode.
+- **PROACTIVE FEEDBACK LOOP**: After providing a thorough explanation of a core concept, YOU MUST ask the student a single, simple 'Quick Check' question to verify their understanding before continuing.
+- **MEMORABLE TEACHING**: Reference specific analogies that have worked for this student previously (see STUDENT TEACHING MEMORY below).
+- **PEDAGOGICAL MEMORY UPDATES**: If the student shows clear mastery of a new topic, or if they struggle with a specific sub-concept, YOU MUST include a hidden update tag at the VERY END of your response in this format: <memory_update>{"topic": "Topic Name", "mastery_level": 80, "struggle": "optional struggle detail", "aha_moment": "optional analogy that worked"}</memory_update>. Only include this if there is a meaningful change to record.`
 
 // ── ZIMSEC Deep Intelligence ──────────────────────────────────────────────────
 const ZIMSEC_INTELLIGENCE = `
@@ -543,6 +548,7 @@ export async function POST(req: NextRequest) {
       file_base64,
       file_type,
       preferred_language = 'english',
+      library_resource_ids = [],
     } = await req.json() as {
       conversation_id?: string
       message: string
@@ -553,6 +559,7 @@ export async function POST(req: NextRequest) {
       file_base64?: string
       file_type?: string
       preferred_language?: LexiconLanguage | 'english'
+      library_resource_ids?: string[]
     }
 
 
@@ -590,6 +597,34 @@ export async function POST(req: NextRequest) {
       content: message?.trim() || '[Image submitted]',
     })
 
+    // Fetch user profile plan to determine extraction depth
+    const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+    const isPro = profile?.plan && profile.plan !== 'free'
+
+    // 0. Manual Library Resources
+    let libraryResourceContext = ''
+    if (library_resource_ids && library_resource_ids.length > 0) {
+      try {
+        const { data: docs } = await supabase
+          .from('uploaded_documents')
+          .select('id, title, ai_summary, extracted_text')
+          .in('id', library_resource_ids)
+
+        if (docs && docs.length > 0) {
+          libraryResourceContext = docs.map(doc => {
+            // Logic: Pro gets full text, Free gets summary (or truncated text if summary missing)
+            const content = isPro 
+              ? (doc.extracted_text || doc.ai_summary || "No text available.") 
+              : (doc.ai_summary || doc.extracted_text?.slice(0, 3000) || "No summary available.")
+            
+            return `### ATTACHED RESOURCE: ${doc.title}\n${content}\n`
+          }).join('\n---\n')
+        }
+      } catch (err) {
+        console.error('Manual resource fetch error:', err)
+      }
+    }
+
     // Fetch student context (non-blocking — if it fails we continue without it)
     // Use AbortController with 5s timeout to prevent hanging in serverless
     let studentContextSection = ''
@@ -610,6 +645,21 @@ export async function POST(req: NextRequest) {
     } catch {
       // silently skip
     }
+
+    // Fetch teaching memory (to understand what this student already knows/struggles with)
+    let teachingMemorySection = ''
+    try {
+      const { data: memory } = await supabase
+        .from('student_teaching_memory')
+        .select('*')
+        .eq('student_id', studentProfile.id)
+        .limit(10)
+      
+      if (memory && memory.length > 0) {
+        teachingMemorySection = `\n## STUDENT TEACHING MEMORY (PAST SESSIONS)\n`
+        teachingMemorySection += memory.map(m => `- ${m.topic}: Mastery ${m.mastery_level}%. Struggles: ${Array.isArray(m.common_mistakes) ? m.common_mistakes.join(', ') : 'None'}. Analogies that worked: ${Array.isArray(m.aha_moments) ? m.aha_moments.join(', ') : 'None'}.`).join('\n')
+      }
+    } catch { /* skip */ }
 
     // ── GATHER ALL CONTEXT ──
 
@@ -667,11 +717,17 @@ ${HBC_CURRICULUM_DETAIL}
 
 ${MODE_PROMPTS[mode] ?? MODE_PROMPTS.normal}
 
+${teachingMemorySection}
+
 ${studentContextSection}
 
 ## PLATFORM RESOURCES (ZimLearn Official Knowledge)
 The following snippets were retrieved from official platform books and lessons. Prioritize these in your explanation:
 ${resourcesContext}
+
+${libraryResourceContext ? `## SELECTED REFERENCE MATERIALS (Attached by Student)
+The student has explicitly attached these materials for you to refer to.
+${libraryResourceContext}` : ''}
 
 ## CURRENT STUDENT CONTEXT
 Level: ${levelLabelFull}${gradeInfo}${subjectInfo}
@@ -755,9 +811,29 @@ Language Preference: ${preferred_language?.toUpperCase() ?? 'ENGLISH'}
             roadmap = parsed.roadmap
             reply = parsed.reply ?? `Here's your study plan! 📅`
           }
-        } catch {
-          // If parsing fails, return the raw text
-        }
+        } catch { /* skip */ }
+      }
+    }
+
+    // Extract and process any memory updates
+    const memoryMatch = reply.match(/<memory_update>([\s\S]*?)<\/memory_update>/)
+    if (memoryMatch) {
+      try {
+        const update = JSON.parse(memoryMatch[1])
+        // Save to DB (upsert)
+        await supabase.from('student_teaching_memory').upsert({
+          student_id: studentProfile.id,
+          topic: update.topic,
+          mastery_level: update.mastery_level,
+          common_mistakes: update.struggle ? [update.struggle] : [],
+          aha_moments: update.aha_moment ? [update.aha_moment] : [],
+          last_explained_at: new Date().toISOString()
+        }, { onConflict: 'student_id, topic' })
+        
+        // Remove tag from reply so student doesn't see it (using [\s\S] and no /s flag)
+        reply = reply.replace(/<memory_update>[\s\S]*?<\/memory_update>/g, '').trim()
+      } catch (e) {
+        console.error('Pedagogical memory update failed:', e)
       }
     }
 

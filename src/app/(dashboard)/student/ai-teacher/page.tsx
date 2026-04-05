@@ -6,12 +6,15 @@ import remarkMath from 'remark-math'
 import remarkGfm from 'remark-gfm'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
+import mermaid from 'mermaid'
 import {
   Send, Bot, User, Loader2, Plus, MessageCircle, BookOpen,
   Mic, MicOff, Image as ImageIcon, Save, Map, FlaskConical,
   FileText, X, CheckCircle2, XCircle, Trophy, ChevronRight,
-  Volume2, Lightbulb, AlignLeft, Zap, Globe, Languages, Settings2
+  Volume2, Lightbulb, AlignLeft, Zap, Globe, Languages, Settings2,
+  Library
 } from 'lucide-react'
+import { ResourcePickerModal } from '@/components/ResourcePickerModal'
 
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -169,6 +172,37 @@ function StudyRoadmap({ data }: { data: RoadmapData }) {
   )
 }
 
+// ── Mermaid Diagram Component ────────────────────────────────────────────────
+function Mermaid({ chart }: { chart: string }) {
+  const [svg, setSvg] = useState('')
+  const id = useRef(`mermaid-${Math.random().toString(36).substring(2, 9)}`)
+
+  useEffect(() => {
+    const renderChart = async () => {
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'neutral',
+          securityLevel: 'loose',
+          fontFamily: 'Inter, sans-serif',
+        })
+        const { svg: renderedSvg } = await mermaid.render(id.current, chart)
+        setSvg(renderedSvg)
+      } catch (err) {
+        console.error('Mermaid render error:', err)
+      }
+    }
+    renderChart()
+  }, [chart])
+
+  return (
+    <div 
+      className="mermaid-chart my-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex justify-center overflow-x-auto"
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AITeacherPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -205,6 +239,11 @@ export default function AITeacherPage() {
 
   // TTS
   const [speaking, setSpeaking] = useState(false)
+
+  // Library Resources
+  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false)
+  const [selectedResources, setSelectedResources] = useState<any[]>([])
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -319,7 +358,12 @@ export default function AITeacherPage() {
   function clearUploads() {
     clearImage()
     setActiveFile(null)
+    setSelectedResources([])
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeResource = (id: string) => {
+    setSelectedResources(prev => prev.filter(r => r.id !== id))
   }
 
   // ── Text-to-Speech ────────────────────────────────────────────────────────────
@@ -366,16 +410,17 @@ export default function AITeacherPage() {
   // ── Send Message ──────────────────────────────────────────────────────────────
   const sendMessage = useCallback(async (text?: string, forceMode?: 'scaffolded' | 'direct') => {
     const msg = (text ?? input).trim()
-    if ((!msg && !imageBase64 && !activeFile) || loading) return
+    if ((!msg && !imageBase64 && !activeFile && selectedResources.length === 0) || loading) return
 
     setInput('')
     const userMsg: Message = {
       role: 'user',
-      content: msg || (activeFile ? `📄 [File: ${activeFile.name}]` : '📷 [Image attached]'),
+      content: msg || (activeFile ? `📄 [File: ${activeFile.name}]` : selectedResources.length > 0 ? `📚 [${selectedResources.length} Library Resources]` : '📷 [Image attached]'),
       imagePreview: imagePreview ?? undefined,
     }
     setMessages(prev => [...prev, userMsg])
     const currentFile = activeFile
+    const currentResources = [...selectedResources]
     clearUploads()
     setLoading(true)
 
@@ -386,16 +431,17 @@ export default function AITeacherPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: msg || (currentFile ? `Please analyse this document: ${currentFile.name}` : 'Please analyse this image and explain what you see in an educational context.'),
+          message: msg || (currentFile ? `Please analyse this document: ${currentFile.name}` : currentResources.length > 0 ? `Please synthesise information from these ${currentResources.length} platform resources to answer my question.` : 'Please analyse this image and explain what you see in an educational context.'),
           subject_name: subjectName,
           mode,
           solution_mode: forceMode ?? solutionMode,
-           image_base64: imageBase64,
-           file_base64: currentFile?.base64,
-           file_type: currentFile?.type,
-           preferred_language: preferredLanguage,
-         }),
-       })
+          image_base64: imageBase64,
+          file_base64: currentFile?.base64,
+          file_type: currentFile?.type,
+          preferred_language: preferredLanguage,
+          library_resource_ids: currentResources.map(r => r.id),
+        }),
+      })
 
       const data = await res.json()
 
@@ -450,7 +496,7 @@ export default function AITeacherPage() {
     }
 
     setLoading(false)
-  }, [input, imageBase64, imagePreview, activeFile, loading, activeConvId, mode, solutionMode, selectedSubject, subjects])
+  }, [input, imageBase64, imagePreview, activeFile, selectedResources, loading, activeConvId, mode, solutionMode, selectedSubject, subjects, preferredLanguage])
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
@@ -705,7 +751,23 @@ export default function AITeacherPage() {
                     }`}>
                       {msg.role === 'assistant' ? (
                         <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-strong:text-gray-900 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
-                          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm, remarkMath]} 
+                            rehypePlugins={[rehypeKatex]}
+                            components={{
+                              code({ inline, className, children, ...props }: any) {
+                                const match = /language-mermaid/.exec(className || '')
+                                if (!inline && match) {
+                                  return <Mermaid chart={String(children).replace(/\n$/, '')} />
+                                }
+                                return (
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                )
+                              }
+                            }}
+                          >
                             {msg.content}
                           </ReactMarkdown>
                         </div>
@@ -807,9 +869,26 @@ export default function AITeacherPage() {
                   <p className="text-xs font-semibold text-teal-700 truncate">{activeFile.name}</p>
                   <p className="text-[10px] text-teal-400">Document attached — ask MaFundi for help</p>
                 </div>
-                <button onClick={clearUploads} className="p-1 rounded-lg hover:bg-teal-100 transition flex-shrink-0">
+                <button onClick={() => setActiveFile(null)} className="p-1 rounded-lg hover:bg-teal-100 transition flex-shrink-0">
                   <X size={14} className="text-teal-500" />
                 </button>
+              </div>
+            )}
+
+            {selectedResources.length > 0 && (
+              <div className="flex gap-2 pb-1 overflow-x-auto no-scrollbar">
+                {selectedResources.map(res => (
+                  <div key={res.id} className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 flex-shrink-0 max-w-[200px]">
+                    <Library size={16} className="text-indigo-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold text-indigo-700 truncate tracking-tight">{res.title}</p>
+                      <p className="text-[9px] text-indigo-400 font-medium">Library Resource</p>
+                    </div>
+                    <button onClick={() => removeResource(res.id)} className="p-0.5 rounded-md hover:bg-indigo-100 transition flex-shrink-0">
+                      <X size={12} className="text-indigo-500" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -840,11 +919,45 @@ export default function AITeacherPage() {
               mode === 'past_paper'? 'border-rose-200   focus-within:border-rose-400   focus-within:ring-rose-100'   :
                                      'border-gray-200   focus-within:border-teal-400   focus-within:ring-teal-100'
             }`}>
-              {/* Image upload */}
-              <button onClick={() => fileInputRef.current?.click()} title="Upload photo or document (PDF/Doc)"
-                className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition">
-                <Plus size={16} />
-              </button>
+              {/* Attachment logic */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
+                  title="Add content"
+                  className={`flex-shrink-0 p-1.5 rounded-lg transition ${showAttachmentMenu ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`}
+                >
+                  <Plus size={16} className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`} />
+                </button>
+
+                {showAttachmentMenu && (
+                  <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5 animate-in slide-in-from-bottom-2 duration-200 z-10">
+                    <button 
+                      onClick={() => { fileInputRef.current?.click(); setShowAttachmentMenu(false) }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition text-sm text-gray-700"
+                    >
+                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <ImageIcon size={16} />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-xs">Device Files</p>
+                        <p className="text-[9px] text-gray-400">Images, PDFs, Docs</p>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => { setIsResourceModalOpen(true); setShowAttachmentMenu(false) }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition text-sm text-gray-700"
+                    >
+                      <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                        <Library size={16} />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-xs">Search Library</p>
+                        <p className="text-[9px] text-gray-400">Platform Resources</p>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
               <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileSelect} className="hidden" />
 
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
@@ -877,6 +990,12 @@ export default function AITeacherPage() {
           </div>
         </div>
       </div>
+
+      <ResourcePickerModal 
+        isOpen={isResourceModalOpen} 
+        onClose={() => setIsResourceModalOpen(false)}
+        onSelect={(resources) => setSelectedResources(resources)}
+      />
     </div>
   )
 }

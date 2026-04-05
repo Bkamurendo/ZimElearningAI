@@ -80,6 +80,7 @@ Rules:
 - Each question must have exactly one correct option (correct: true)`
 
     try {
+      console.log(`[daily-challenge] Generating for ${level}...`)
       const response = await anthropic.messages.create({
         model: 'claude-haiku-4-5',
         max_tokens: 2048,
@@ -107,25 +108,33 @@ Rules:
         .single()
 
       if (insertError) {
+        console.error('[daily-challenge] Insert error:', insertError)
         // Race condition: another request already inserted; fetch it
-        const { data: raceResult } = await supabase
+        const { data: raceResult, error: raceError } = await supabase
           .from('daily_challenges')
           .select('*')
           .eq('challenge_date', todayStr)
           .eq('zimsec_level', level)
           .single()
+        
+        if (raceError) {
+          console.error('[daily-challenge] Race fetch error:', raceError)
+          throw new Error('Could not find challenge after race condition.')
+        }
         challenge = raceResult
       } else {
         challenge = inserted
       }
     } catch (err) {
-      console.error('Daily challenge generation error:', err)
+      console.error('[daily-challenge] Generation/Save error:', err)
       const raw = err instanceof Error ? err.message : String(err)
       const friendly = raw.includes('credit') || raw.includes('credit balance')
         ? 'AI credits exhausted — please top up at console.anthropic.com.'
         : raw.includes('overloaded')
         ? 'AI service is busy. Please try again in a moment.'
-        : 'Failed to generate challenge. Please try again.'
+        : raw.includes('relation "daily_challenges" does not exist')
+        ? 'Database schema out of sync (missing daily_challenges table). Please run migrations.'
+        : `Failed to generate challenge: ${raw}`
       return NextResponse.json({ error: friendly }, { status: 500 })
     }
   }
@@ -232,19 +241,34 @@ export async function POST(req: NextRequest) {
       .single() as { data: { id: string } | null; error: unknown }
 
     if (sp) {
+      // Award XP to student_streaks (using upsert for robustness)
       const { data: streakRow } = await supabase
         .from('student_streaks')
         .select('id, total_xp')
         .eq('student_id', sp.id)
-        .single() as { data: { id: string; total_xp: number } | null; error: unknown }
+        .maybeSingle()
 
       if (streakRow) {
         const newTotal = (streakRow.total_xp ?? 0) + xpEarned
         await supabase
           .from('student_streaks')
-          .update({ total_xp: newTotal })
+          .update({ total_xp: newTotal, updated_at: new Date().toISOString() })
           .eq('id', streakRow.id)
         totalXp = newTotal
+      } else {
+        // Create new streak record
+        const { data: inserted } = await supabase
+          .from('student_streaks')
+          .insert({
+            student_id: sp.id,
+            total_xp: xpEarned,
+            current_streak: 1,
+            longest_streak: 1,
+            last_activity_date: new Date().toISOString().split('T')[0]
+          })
+          .select('total_xp')
+          .single()
+        totalXp = inserted?.total_xp ?? xpEarned
       }
     }
   } catch {

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import {
   Sparkles, BookOpen, ClipboardList, FileText, AlertTriangle,
   TrendingUp, CalendarCheck, ChevronRight, Brain, Target,
-  Clock, Zap,
+  Clock, Zap, Bot, Trophy,
 } from 'lucide-react'
 import WorkspaceActions from './WorkspaceActions'
 
@@ -13,9 +13,10 @@ type SubjectCtx = {
   progress_pct: number; lessons_done: number; lessons_total: number
   quiz_avg: number | null; assignment_avg: number | null
 }
-type WeakTopic = { topic: string; subject_name: string; mastery_level: string }
+type WeakTopic = { topic: string; subject_id: string; subject_name: string; mastery_level: string }
 type UpcomingExam = { subject_id: string; subject_name: string; paper_number: string; exam_date: string; days_until: number }
-type ContentLogRow = { id: string; content_type: string; content_id: string | null; topic: string | null; created_at: string; subjects: { name: string } | null }
+type ContentLogRow = { id: string; content_type: string; content_id: string | null; topic: string | null; created_at: string; subject_id: string | null; subjects: { name: string } | null }
+type SyllabusProgress = { subject_id: string; total_topics: number; mastered_topics: number; percentage: number }
 
 function daysChip(days: number) {
   if (days <= 0) return { label: 'Today!', cls: 'bg-red-100 text-red-700' }
@@ -40,10 +41,12 @@ export default async function AIWorkspacePage() {
   const sid = studentProfile.id
 
   // Fetch student context from API (reuse the aggregated data)
-  let subjects: SubjectCtx[] = []
+  let subjects: (SubjectCtx & { syllabus_pct: number })[] = []
   let weakTopics: WeakTopic[] = []
   let upcomingExams: UpcomingExam[] = []
+  let syllabusStats: SyllabusProgress[] = []
   let streak = 0
+  let xp = 0
 
   try {
     // Enrolled subjects
@@ -69,6 +72,7 @@ export default async function AIWorkspacePage() {
     }
     weakTopics = (topicMastery ?? []).map(t => ({
       topic: t.topic,
+      subject_id: t.subject_id,
       subject_name: rawSubjects.find(s => s.id === t.subject_id)?.name ?? '',
       mastery_level: t.mastery_level,
     }))
@@ -112,12 +116,21 @@ export default async function AIWorkspacePage() {
         }
         total = t ?? 0
       }
-      return { ...s, progress_pct: total > 0 ? Math.round((done / total) * 100) : 0, lessons_done: done, lessons_total: total, quiz_avg: null, assignment_avg: null }
+
+      // Syllabus progress calculation
+      const { count: totalTopics } = await supabase.from('subject_topics').select('id', { count: 'exact', head: true }).eq('subject_id', s.id)
+      const { count: masteredTopics } = await supabase.from('topic_mastery').select('id', { count: 'exact', head: true }).eq('student_id', sid).eq('subject_id', s.id).eq('mastery_level', 'mastered')
+      const syllPct = (totalTopics ?? 0) > 0 ? Math.round(((masteredTopics ?? 0) / (totalTopics ?? 0)) * 100) : 0
+      
+      syllabusStats.push({ subject_id: s.id, total_topics: totalTopics ?? 0, mastered_topics: masteredTopics ?? 0, percentage: syllPct })
+
+      return { ...s, progress_pct: total > 0 ? Math.round((done / total) * 100) : 0, lessons_done: done, lessons_total: total, quiz_avg: null, assignment_avg: null, syllabus_pct: syllPct }
     }))
 
-    const { data: streakData } = await supabase.from('student_streaks').select('current_streak').eq('student_id', sid).single() as { data: { current_streak: number } | null; error: unknown }
+    const { data: streakData } = await supabase.from('student_streaks').select('current_streak, total_xp').eq('student_id', sid).single() as { data: { current_streak: number, total_xp: number } | null; error: unknown }
     streak = streakData?.current_streak ?? 0
-  } catch { /* continue */ }
+    xp = streakData?.total_xp ?? 0
+  } catch (err) { console.error('[workspace] Context fetch error:', err) }
 
   // AI content log
   const { data: contentLog } = await supabase
@@ -153,16 +166,24 @@ export default async function AIWorkspacePage() {
               </div>
             </div>
             <p className="text-purple-100 text-sm mt-2">MaFundi creates personalised study materials based on your subjects, performance and upcoming exams.</p>
-            {streak > 0 && (
-              <span className="inline-flex items-center gap-1.5 mt-3 bg-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
-                <Zap size={12} className="text-yellow-300" /> {streak} day streak
+            <div className="flex flex-wrap gap-2 mt-3">
+              {streak > 0 && (
+                <span className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                  <Zap size={12} className="text-yellow-300" /> {streak} day streak
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                <Trophy size={12} className="text-blue-300" /> {xp.toLocaleString()} XP
               </span>
-            )}
+            </div>
           </div>
         </div>
 
         {/* Generate buttons */}
-        <WorkspaceActions subjects={subjects.map(s => ({ id: s.id, name: s.name, code: s.code }))} />
+        <WorkspaceActions 
+          subjects={subjects.map(s => ({ id: s.id, name: s.name, code: s.code }))} 
+          weakTopics={weakTopics}
+        />
 
         {/* Upcoming exams */}
         {upcomingExams.length > 0 && (
@@ -237,20 +258,28 @@ export default async function AIWorkspacePage() {
           </div>
         )}
 
-        {/* Weak topics */}
-        {weakTopics.length > 0 && (
+        {/* Syllabus Progress Tracking */}
+        {subjects.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3">
-              <AlertTriangle size={16} className="text-amber-500" /> Topics Needing Attention
+            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-4">
+              <BookOpen size={16} className="text-teal-600" /> ZIMSEC Syllabus Mastery
             </h2>
-            <div className="flex flex-wrap gap-2">
-              {weakTopics.slice(0, 12).map((t, i) => (
-                <span key={i} className={`text-xs font-medium px-2.5 py-1 rounded-full border ${t.mastery_level === 'not_started' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                  {t.topic} <span className="opacity-60">· {t.subject_name}</span>
-                </span>
+            <div className="space-y-4">
+              {subjects.map(s => (
+                <div key={s.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-gray-700">{s.name}</span>
+                    <span className="font-bold text-teal-600">{s.syllabus_pct}% mastered</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-teal-500 h-full rounded-full transition-all duration-1000" style={{ width: `${s.syllabus_pct}%` }} />
+                  </div>
+                </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-3">Use &ldquo;Generate Revision Sheet&rdquo; above to create targeted revision for these topics.</p>
+            <p className="text-[10px] text-gray-400 mt-4 leading-relaxed">
+              Mastery increases as you pass quizzes and MaFundi evaluates your understanding of specific syllabus topics.
+            </p>
           </div>
         )}
 
@@ -359,6 +388,15 @@ export default async function AIWorkspacePage() {
         </div>
 
       </div>
+
+      {/* MaFundi Mini Assistant Floating Button */}
+      <Link href="/student/ai-teacher"
+        className="fixed bottom-20 lg:bottom-8 right-6 w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all z-40 group">
+        <Bot size={24} className="group-hover:animate-bounce" />
+        <div className="absolute right-full mr-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Ask MaFundi anything
+        </div>
+      </Link>
     </div>
   )
 }
