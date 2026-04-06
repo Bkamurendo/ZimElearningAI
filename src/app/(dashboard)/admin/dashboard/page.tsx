@@ -3,12 +3,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/Button'
 import { Shield } from 'lucide-react'
+import { isRedirectError } from 'next/dist/client/components/redirect'
 import AdminDashboardClient from './AdminDashboardClient'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
   
-  // Safely check for user without crashing on null data
   const { data: authData, error: authError } = await supabase.auth.getUser()
   const user = authData?.user
   
@@ -26,6 +26,7 @@ export default async function AdminDashboard() {
       redirect(`/${safeRole === 'school_admin' ? 'school-admin' : safeRole}/dashboard`)
     }
 
+    console.log('[AdminDashboard] Fetching data for profile:', profile?.role)
     const [
       { count: totalUsers },
       { count: totalStudents },
@@ -99,24 +100,24 @@ export default async function AdminDashboard() {
       .eq('role', 'student')
 
     const now = new Date()
-    const trialUsers = trialStats?.filter(p => p.trial_ends_at) || []
-    const activeTrials = trialUsers.filter(p => new Date(p.trial_ends_at) > now)
-    const expiringSoon = trialUsers.filter(p => {
+    const trialUsers = trialStats?.filter((p: any) => p.trial_ends_at) || []
+    const activeTrials = trialUsers.filter((p: any) => new Date(p.trial_ends_at) > now)
+    const expiringSoon = trialUsers.filter((p: any) => {
       const daysLeft = Math.ceil((new Date(p.trial_ends_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       return daysLeft > 0 && daysLeft <= 3
     })
-
-    const paidUsers = paymentStats?.filter(p => p.plan !== 'free' && p.plan !== null) || []
-    const trulyActivePaidUsers = paidUsers.filter(p => !p.subscription_expires_at || new Date(p.subscription_expires_at) >= now)
+ 
+    const paidUsers = paymentStats?.filter((p: any) => p.plan !== 'free' && p.plan !== null) || []
+    const trulyActivePaidUsers = paidUsers.filter((p: any) => !p.subscription_expires_at || new Date(p.subscription_expires_at) >= now)
     
-    const eliteUsers = paidUsers.filter(p => p.plan === 'elite')
-    const proUsers = paidUsers.filter(p => p.plan === 'pro')
-    const starterUsers = paidUsers.filter(p => p.plan === 'starter')
+    const eliteUsers = paidUsers.filter((p: any) => p.plan === 'elite')
+    const proUsers = paidUsers.filter((p: any) => p.plan === 'pro')
+    const starterUsers = paidUsers.filter((p: any) => p.plan === 'starter')
     
     const currentMRR = (starterUsers.length * 2) + (proUsers.length * 5) + (eliteUsers.length * 8)
     const potentialMRR = currentMRR + (activeTrials.length * 2)
-
-    const cohortByMonth = cohortData?.reduce((acc, user) => {
+ 
+    const cohortByMonth = cohortData?.reduce((acc: any, user: any) => {
       const month = new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
       acc[month] = (acc[month] || 0) + 1
       return acc
@@ -156,7 +157,10 @@ export default async function AdminDashboard() {
         totalQuestions={totalQuestions || 0}
       />
     )
-  } catch (err) {
+  } catch (err: any) {
+    if (isRedirectError(err)) {
+      throw err;
+    }
     console.error('[AdminDashboard] Runtime error:', err)
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 px-4 text-center bg-gray-50 uppercase font-bold">
