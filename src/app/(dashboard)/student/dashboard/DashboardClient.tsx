@@ -109,18 +109,26 @@ export default function DashboardClient({
              {/* Dynamic Stats Pill */}
              <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-4 rounded-3xl text-center min-w-[100px]">
                 <Zap size={20} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
-                <p className="text-xl font-black text-white">{stats.find(s => s.label === 'Topics mastered')?.value ?? 0}</p>
+                <p className="text-xl font-black text-white">
+                  {stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0}
+                </p>
                 <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Mastered</p>
              </div>
              
              {/* Streak Pill */}
              <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-4 rounded-3xl text-center min-w-[100px]">
-                <p className="text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? 0}</p>
+                <p className="text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
                 <p className="text-[10px] uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
              </div>
 
              <Button 
-                onClick={() => fireConfetti()} 
+                onClick={() => {
+                  try {
+                    fireConfetti()
+                  } catch (e) {
+                    console.error('Confetti failed', e)
+                  }
+                }} 
                 variant="premium" 
                 size="icon" 
                 className="rounded-full w-12 h-12 shrink-0 animate-bounce"
@@ -153,7 +161,9 @@ export default function DashboardClient({
                   <Badge variant="blue">Real-time ZIMSEC Alignment</Badge>
                </CardHeader>
                <CardContent>
-                  <PassPulseRings />
+                  <div className="min-h-[100px]">
+                    <PassPulseRings />
+                  </div>
                </CardContent>
             </Card>
 
