@@ -15,15 +15,15 @@ export default function DashboardError({
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center max-w-md w-full">
         <div className="text-5xl mb-4">⚠️</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Page error</h2>
-        <p className="text-gray-500 text-sm mb-6">
+        <div className="text-gray-500 text-sm mb-6">
           This page encountered an error. Try refreshing or going back to your dashboard.
           <div className="mt-4 p-4 bg-red-50 text-red-700 text-xs font-mono rounded-lg text-left break-all">
-            {error.message || 'Unknown Error'}
+            {error.message || 'Error occurred on server component render'}
           </div>
           {error.digest && (
             <span className="block mt-1 text-xs text-gray-400">Ref: {error.digest}</span>
           )}
-        </p>
+        </div>
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
