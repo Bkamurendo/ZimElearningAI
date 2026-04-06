@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/Button'
 export default async function StudentDashboard() {
   const supabase = createClient()
   
-  // Safely check for user without crashing on null data
   const { data: authData, error: authError } = await supabase.auth.getUser()
   const user = authData?.user
   
@@ -86,25 +85,62 @@ export default async function StudentDashboard() {
       }
     }
 
-    // Continue Learning
+    // Continue Learning (Parallelized & Robust)
     const continueItems: any[] = []
     if (studentProfile && subjects.length > 0) {
-      const { data: subjectRows } = await supabase.from('student_subjects').select('subject_id, subjects(id, name, code)').eq('student_id', studentProfile.id).limit(3)
-      for (const row of (subjectRows ?? [])) {
-        const subj = (row as any).subjects
-        if (!subj) continue
-        const { data: courses } = await supabase.from('courses').select('id, title').eq('subject_id', subj.id).eq('published', true).limit(1)
-        for (const course of (courses ?? [])) {
-          const { data: lessons } = await supabase.from('lessons').select('id, title').eq('course_id', course.id).order('order_index')
-          if (!lessons?.length) continue
-          const { data: done } = await supabase.from('lesson_progress').select('lesson_id').eq('student_id', studentProfile.id).in('lesson_id', lessons.map(l => l.id))
-          const doneSet = new Set((done ?? []).map(d => d.lesson_id as string))
-          const nextLesson = lessons.find(l => !doneSet.has(l.id))
-          if (nextLesson) {
-            continueItems.push({ subjectName: subj.name, subjectCode: subj.code, courseId: course.id, courseTitle: course.title, lessonId: nextLesson.id, lessonTitle: nextLesson.title })
+      const { data: subjectRows } = await supabase
+        .from('student_subjects')
+        .select('subject_id, subjects(id, name, code)')
+        .eq('student_id', studentProfile.id)
+        .limit(3)
+      
+      const sessionTasks = (subjectRows ?? []).map(async (row: any) => {
+        const subj = row.subjects
+        if (!subj) return null
+        
+        const { data: courses } = await supabase
+          .from('courses')
+          .select('id, title')
+          .eq('subject_id', subj.id)
+          .eq('published', true)
+          .limit(1)
+        
+        const course = courses?.[0]
+        if (!course) return null
+        
+        const { data: lessons } = await supabase
+          .from('lessons')
+          .select('id, title')
+          .eq('course_id', course.id)
+          .order('order_index')
+          .limit(20)
+        
+        if (!lessons?.length) return null
+        
+        const { data: done } = await supabase
+          .from('lesson_progress')
+          .select('lesson_id')
+          .eq('student_id', studentProfile.id)
+          .in('lesson_id', lessons.map(l => l.id))
+        
+        const doneSet = new Set((done ?? []).map(d => d.lesson_id as string))
+        const nextLesson = lessons.find(l => !doneSet.has(l.id))
+        
+        if (nextLesson) {
+          return {
+            subjectName: subj.name,
+            subjectCode: subj.code,
+            courseId: course.id,
+            courseTitle: course.title,
+            lessonId: nextLesson.id,
+            lessonTitle: nextLesson.title
           }
         }
-      }
+        return null
+      })
+      
+      const results = await Promise.all(sessionTasks)
+      continueItems.push(...results.filter(Boolean))
     }
 
     // Daily challenge
@@ -150,7 +186,7 @@ export default async function StudentDashboard() {
         dailyChallengeScore={dailyChallengeScore || null}
       />
     )
-  } catch (err) {
+  } catch (err: any) {
     if (isRedirectError(err)) throw err
     console.error('[StudentDashboard] Runtime error:', err)
     return (

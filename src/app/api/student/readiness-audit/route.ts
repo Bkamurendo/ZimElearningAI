@@ -41,7 +41,9 @@ export async function GET() {
 
     const audit = enrollments.map((enr: any) => {
       const subj = enr.subjects
-      const isCore = CORE_SUBJECTS.some(cs => subj.name.toLowerCase().includes(cs.toLowerCase()))
+      if (!subj) return null
+      
+      const isCore = CORE_SUBJECTS.some(cs => (subj.name || '').toLowerCase().includes(cs.toLowerCase()))
       
       const subjectMastery = (masteryData ?? []).filter(m => m.subject_id === subj.id)
       const subjectQuizzes = (quizData ?? []).filter(q => q.subject_id === subj.id)
@@ -93,7 +95,7 @@ export async function GET() {
           ? `Priority: Redo ${subjectMastery.find(m => m.mastery_level !== 'mastered')?.topic || 'Foundational'} quizzes.`
           : 'Keep practicing past papers.'
       }
-    })
+    }).filter(Boolean) as any[]
 
     const certificateLikelihood = totalPasses >= 5 && corePasses === 3 ? 'High (On Track)' : totalPasses >= 3 ? 'Medium (Bridging)' : 'Critical (Needs Attention)'
 
@@ -101,7 +103,7 @@ export async function GET() {
       success: true,
       lastAudit: new Date().toISOString(),
       audit,
-      overallReadiness: Math.round(audit.reduce((acc, a) => acc + a.score, 0) / (audit.length || 1)),
+      overallReadiness: Math.round(audit.reduce((acc: number, a: any) => acc + (a?.score || 0), 0) / (audit.length || 1)),
       certificateLikelihood,
       corePasses,
       totalPasses
