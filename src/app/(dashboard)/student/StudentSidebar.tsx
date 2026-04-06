@@ -52,6 +52,7 @@ interface Props {
   plan?: 'free' | 'starter' | 'pro' | 'elite'
   aiUsed?: number
   trialEndsAt?: string | null
+  subscriptionExpiresAt?: string | null
   hasChallenge?: boolean
 }
 
@@ -64,7 +65,17 @@ const PLAN_COLORS: Record<string, string> = {
   elite: 'bg-amber-500 text-amber-100',
 }
 
-export default function StudentSidebar({ userName, streak, unreadNotifications = 0, unreadMessages = 0, plan = 'free', aiUsed = 0, trialEndsAt = null, hasChallenge = false }: Props) {
+export default function StudentSidebar({ 
+  userName, 
+  streak, 
+  unreadNotifications = 0, 
+  unreadMessages = 0, 
+  plan = 'free', 
+  aiUsed = 0, 
+  trialEndsAt = null, 
+  subscriptionExpiresAt = null,
+  hasChallenge = false 
+}: Props) {
   const [open, setOpen]       = useState(false)
   const [a11yOpen, setA11yOpen] = useState(false)
   const pathname = usePathname()
@@ -187,7 +198,7 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
           })()}
 
           {/* AI quota bar (free / starter only) */}
-          {plan !== 'pro' && plan !== 'elite' && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
+          {(plan === 'free' || plan === 'starter') && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
             const limit = PLAN_LIMITS[plan] ?? 25
             const pct = Math.min(100, Math.round((aiUsed / limit) * 100))
             const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
@@ -207,33 +218,61 @@ export default function StudentSidebar({ userName, streak, unreadNotifications =
             )
           })()}
 
-          {/* Upgrade banner (hide for pro/elite) */}
-          {plan === 'pro' || plan === 'elite' ? (
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800/60">
-              <Crown size={14} className="text-amber-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-slate-200 leading-tight">{PLAN_LABELS[plan]} Plan</div>
-                <div className="text-[10px] text-slate-500 leading-tight">Unlimited AI access</div>
-              </div>
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${PLAN_COLORS[plan]}`}>{PLAN_LABELS[plan].toUpperCase()}</span>
-            </div>
-          ) : (
-            <Link
-              href="/student/upgrade"
-              onClick={() => setOpen(false)}
-              className="relative overflow-hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.02] group"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)' }}
-            >
-              <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100" />
-              <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Zap size={14} className="text-yellow-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
-                <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
-              </div>
-            </Link>
-          )}
+          {/* Upgrade / Subscription Status banner */}
+          {(() => {
+            const now = new Date()
+            const subExpiresAt = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null
+            const isExpired = subExpiresAt ? subExpiresAt <= now : false
+
+            if (isExpired) {
+              return (
+                <Link
+                  href="/student/upgrade"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all group"
+                >
+                  <div className="w-7 h-7 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle size={14} className="text-red-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-red-300 leading-tight">Elite Expired</div>
+                    <div className="text-[10px] text-red-500 leading-tight underline group-hover:text-red-400">Renew Now to unlock AI</div>
+                  </div>
+                </Link>
+              )
+            }
+
+            if (plan === 'pro' || plan === 'elite') {
+              return (
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800/60">
+                  <Crown size={14} className="text-amber-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-200 leading-tight">{PLAN_LABELS[plan]} Plan</div>
+                    <div className="text-[10px] text-slate-500 leading-tight">Unlimited AI access</div>
+                  </div>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${PLAN_COLORS[plan]}`}>{PLAN_LABELS[plan].toUpperCase()}</span>
+                </div>
+              )
+            }
+
+            return (
+              <Link
+                href="/student/upgrade"
+                onClick={() => setOpen(false)}
+                className="relative overflow-hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.02] group"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)' }}
+              >
+                <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100" />
+                <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Zap size={14} className="text-yellow-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
+                  <div className="text-[10px] text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
+                </div>
+              </Link>
+            )
+          })()}
 
           {/* Referral nudge (show for free/starter only) */}
           {(plan === 'free' || plan === 'starter') && (

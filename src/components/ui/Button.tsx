@@ -59,7 +59,7 @@ export function Button({
         <span className="shrink-0">{leftIcon}</span>
       ) : null}
       
-      {size !== 'icon' && children}
+      {children}
       
       {!isLoading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
     </motion.button>

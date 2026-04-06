@@ -37,6 +37,10 @@ export const SMS_TEMPLATES = {
   trialExpired: (name: string) =>
     `Hi ${name}, your ZimLearn Pro trial has expired. Upgrade now to keep accessing premium features: zimlearn.ai/student/upgrade`,
 
+  /** Subscription expired message */
+  subscriptionExpired: (name: string) =>
+    `ZimLearn: Hi ${name}, your Premium access has expired. We've enjoyed learning with you! To keep your unlimited AI access, visit zimlearn.ai/student/upgrade`,
+
   // ── Academic ─────────────────────────────────────────────────────────────────
 
   /** Assignment due-date reminder */

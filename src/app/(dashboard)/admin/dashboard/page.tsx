@@ -97,6 +97,14 @@ export default async function AdminDashboard() {
     totalQuestions = count ?? 0
   } catch { /* table may not exist yet */ }
 
+  // Active Users calculation (seen in last 15 mins)
+  const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+  const { count: liveActiveUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .gt('last_sign_in_at', fifteenMinsAgo)
+    .eq('role', 'student')
+
   // Process trial and payment statistics
   const now = new Date()
   const trialUsers = trialStats?.filter(p => p.trial_ends_at) || []
@@ -106,10 +114,17 @@ export default async function AdminDashboard() {
     return daysLeft > 0 && daysLeft <= 3
   })
 
-  // Payment Tracking - FIX: correctly classify paying users
+  // Payment Tracking - REAL: calculate value based on current tiers
   const paidUsers = paymentStats?.filter(p => p.plan !== 'free' && p.plan !== null) || []
-  const premiumUsers = paidUsers.filter(p => p.plan === 'premium')
   const trulyActivePaidUsers = paidUsers.filter(p => !p.subscription_expires_at || new Date(p.subscription_expires_at) >= now)
+  
+  const eliteUsers = paidUsers.filter(p => p.plan === 'elite')
+  const proUsers = paidUsers.filter(p => p.plan === 'pro')
+  const starterUsers = paidUsers.filter(p => p.plan === 'starter')
+  
+  // Real potential monthly MRR (Matching lib/subscription.ts)
+  const currentMRR = (starterUsers.length * 2) + (proUsers.length * 5) + (eliteUsers.length * 8)
+  const potentialMRR = currentMRR + (activeTrials.length * 2) // Estimate conversion to $2 Starter min
 
   // Process cohort data
   const cohortByMonth = cohortData?.reduce((acc, user) => {
@@ -138,9 +153,12 @@ export default async function AdminDashboard() {
       expiringSoon={expiringSoon}
       cohortByMonth={cohortByMonth}
       totalUsers={totalUsers ?? 0}
+      liveActiveUsers={liveActiveUsers ?? 0}
+      currentMRR={currentMRR}
+      potentialMRR={potentialMRR}
       activeTrials={activeTrials}
       paidUsers={trulyActivePaidUsers}
-      premiumUsers={premiumUsers}
+      eliteUsers={eliteUsers}
       pendingModeration={pendingModeration ?? 0}
       totalDocuments={totalDocuments ?? 0}
       publishedDocuments={publishedDocuments ?? 0}

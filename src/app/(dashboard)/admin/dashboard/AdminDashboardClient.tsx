@@ -84,9 +84,12 @@ interface AdminDashboardClientProps {
   expiringSoon: any[]
   cohortByMonth: Record<string, number>
   totalUsers: number
+  liveActiveUsers: number
+  currentMRR: number
+  potentialMRR: number
   activeTrials: any[]
   paidUsers: any[]
-  premiumUsers: any[]
+  eliteUsers: any[]
   pendingModeration: number
   totalDocuments: number
   publishedDocuments: number
@@ -103,9 +106,12 @@ export default function AdminDashboardClient({
   expiringSoon = [],
   cohortByMonth = {},
   totalUsers = 0,
+  liveActiveUsers = 0,
+  currentMRR = 0,
+  potentialMRR = 0,
   activeTrials = [],
   paidUsers = [],
-  premiumUsers = [],
+  eliteUsers = [],
   pendingModeration = 0,
   totalDocuments = 0,
   publishedDocuments = 0,
@@ -137,12 +143,12 @@ export default function AdminDashboardClient({
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden sm:block text-right">
-              <p className="text-xs font-bold text-slate-900 dark:text-white leading-none">{profile?.full_name}</p>
+            <Link href="/admin/settings" className="hidden sm:block text-right group">
+              <p className="text-xs font-bold text-slate-900 dark:text-white leading-none group-hover:text-emerald-500 transition-colors">{profile?.full_name}</p>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Super Administrator</p>
-            </div>
+            </Link>
             <form action={logout}>
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10">
+              <Button type="submit" variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10">
                 <LogOut size={18} />
               </Button>
             </form>
@@ -262,23 +268,23 @@ export default function AdminDashboardClient({
                       <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Growth Insights</h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Trials</p>
-                            <p className="text-4xl font-black text-emerald-500 mt-1">{activeTrials.length}</p>
-                            <p className="text-[10px] text-slate-500 mt-2">Potential conversion value: $XX,XXX</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Active (15m)</p>
+                            <p className="text-4xl font-black text-emerald-500 mt-1">{liveActiveUsers}</p>
+                            <p className="text-[10px] text-slate-500 mt-2">Potential MRR: ${potentialMRR.toLocaleString()}</p>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paying Users</p>
-                            <p className="text-4xl font-black text-blue-500 mt-1">{paidUsers.length}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Real Monthly MRR</p>
+                            <p className="text-4xl font-black text-blue-500 mt-1">${currentMRR.toLocaleString()}</p>
                             <p className="text-[10px] text-slate-500 mt-2">
-                                {totalUsers > 0 ? ((paidUsers.length / totalUsers) * 100).toFixed(1) : 0}% Conversion Rate
+                                {totalUsers > 0 ? ((paidUsers.length / totalUsers) * 100).toFixed(1) : 0}% Real Conversion Rate
                             </p>
                         </div>
                       </div>
                   </div>
                   
-                  {/* Visual Cohort Bar Chart Simulation */}
+                  {/* Visual Cohort Bar Chart (Real Data) */}
                   <div className="w-full md:w-1/3 space-y-4">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last 3 Months Registration</h4>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registration Trends (Real)</h4>
                       <div className="flex items-end gap-3 h-32 pt-4">
                         {Object.entries(cohortByMonth).slice(-3).map(([month, count]) => (
                             <div key={month} className="flex-1 space-y-2 group">

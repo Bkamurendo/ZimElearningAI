@@ -51,11 +51,13 @@ export default async function AdminAnalyticsPage() {
     ? Math.round(attempts.reduce((sum, a) => sum + (a.total > 0 ? (a.score / a.total) * 100 : 0), 0) / attempts.length)
     : 0
 
-  // Revenue calculations
+  // Revenue calculations (Matching lib/subscription.ts)
   const paidUsers = revenueData?.filter(u => u.plan !== 'free') || []
-  const premiumUsers = paidUsers.filter(u => u.plan === 'premium')
-  const basicUsers = paidUsers.filter(u => u.plan === 'basic')
-  const monthlyRevenue = (basicUsers.length * 5) + (premiumUsers.length * 15)
+  const eliteUsers = paidUsers.filter(u => u.plan === 'elite')
+  const proUsers = paidUsers.filter(u => u.plan === 'pro')
+  const starterUsers = paidUsers.filter(u => u.plan === 'starter')
+  
+  const monthlyRevenue = (starterUsers.length * 2) + (proUsers.length * 5) + (eliteUsers.length * 8)
   const yearlyRevenue = monthlyRevenue * 12
 
   // Engagement metrics
@@ -143,14 +145,18 @@ export default async function AdminAnalyticsPage() {
                 <span className="text-sm text-gray-600">Yearly Projection</span>
                 <span className="text-lg font-semibold text-gray-900">${yearlyRevenue.toLocaleString()}</span>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-3">
-                  <p className="text-xs text-blue-600 font-medium">Basic Plans</p>
-                  <p className="text-lg font-bold text-blue-700">{basicUsers.length}</p>
+                  <p className="text-xs text-blue-600 font-medium">Starter Plans ($2)</p>
+                  <p className="text-lg font-bold text-blue-700">{starterUsers.length}</p>
+                </div>
+                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg p-3">
+                  <p className="text-xs text-indigo-600 font-medium">Pro Plans ($5)</p>
+                  <p className="text-lg font-bold text-indigo-700">{proUsers.length}</p>
                 </div>
                 <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3">
-                  <p className="text-xs text-purple-600 font-medium">Premium Plans</p>
-                  <p className="text-lg font-bold text-purple-700">{premiumUsers.length}</p>
+                  <p className="text-xs text-purple-600 font-medium">Elite Plans ($8)</p>
+                  <p className="text-lg font-bold text-purple-700">{eliteUsers.length}</p>
                 </div>
               </div>
             </div>

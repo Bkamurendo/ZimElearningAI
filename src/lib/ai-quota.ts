@@ -7,9 +7,10 @@
  * ELITE   users: unlimited
  *
  * Quota is tracked in the `profiles` table via:
- *   ai_requests_today  INTEGER   DEFAULT 0
- *   ai_quota_reset_at  TIMESTAMPTZ DEFAULT now()
- *   plan               TEXT DEFAULT 'free' CHECK (plan IN ('free','starter','pro','elite'))
+ *   ai_requests_today       INTEGER   DEFAULT 0
+ *   ai_quota_reset_at       TIMESTAMPTZ DEFAULT now()
+ *   plan                    TEXT DEFAULT 'free' CHECK (plan IN ('free','starter','pro','elite'))
+ *   subscription_expires_at TIMESTAMPTZ DEFAULT null
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,6 +36,7 @@ export interface QuotaResult {
   remaining: number
   resetsAt: string   // ISO string
   trialExpired?: boolean
+  subscriptionExpired?: boolean
 }
 
 /**
@@ -47,7 +49,7 @@ export async function checkAIQuota(
 ): Promise<QuotaResult> {
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('plan, ai_requests_today, ai_quota_reset_at, trial_ends_at')
+    .select('plan, ai_requests_today, ai_quota_reset_at, trial_ends_at, subscription_expires_at')
     .eq('id', userId)
     .single()
 
@@ -57,36 +59,68 @@ export async function checkAIQuota(
     return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
-  // Check if 7-day free trial is still active — treat as 'pro' while on trial
-  const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null
-  const isTrialActive = trialEndsAt ? trialEndsAt > new Date() : false
-  const isTrialExpired = trialEndsAt ? trialEndsAt <= new Date() : false
+  const now = new Date()
 
-  const plan: PlanTier = profile.plan ?? 'free'
-  // Effective plan for quota purposes: trial users get pro limits
-  const effectivePlan: PlanTier = isTrialActive ? 'pro' : plan
+  // 1. Check 7-day Free Trial (MaFundi Trial)
+  const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null
+  const isTrialActive = trialEndsAt ? trialEndsAt > now : false
+  const isTrialExpired = trialEndsAt ? trialEndsAt <= now : false
+
+  // 2. Check Paid Subscription Expiration
+  const subExpiresAt = profile.subscription_expires_at ? new Date(profile.subscription_expires_at) : null
+  const isSubscriptionExpired = subExpiresAt ? subExpiresAt <= now : false
+
+  const plan: PlanTier = (profile.plan as PlanTier) ?? 'free'
+
+  // ENFORCEMENT: If subscription is expired AND user is not on trial, they fallback to 'free'
+  // even if the 'plan' column still says 'pro' or 'elite'.
+  let effectivePlan: PlanTier = plan
+  if (isSubscriptionExpired && !isTrialActive) {
+    effectivePlan = 'free'
+  } else if (isTrialActive) {
+    // Trial users get Pro limits
+    effectivePlan = 'pro'
+  }
+
   const limit = getDailyLimit(effectivePlan)
 
   // Reset counter if it's a new day (UTC)
-  const now = new Date()
   const resetAt = new Date(profile.ai_quota_reset_at ?? now)
   const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000
 
   const used: number = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
 
   if (effectivePlan === 'pro' || effectivePlan === 'elite') {
-    // Unlimited plans (and trial users) — increment for analytics, never block
+    // Unlimited plans — increment for analytics, never block
     await supabase.from('profiles').update({
       ai_requests_today: used + 1,
       ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),
     }).eq('id', userId)
 
-    return { allowed: true, plan, used, limit, remaining: limit - used, resetsAt: tomorrowMidnightUTC(), trialExpired: isTrialExpired }
+    return { 
+      allowed: true, 
+      plan, 
+      used, 
+      limit, 
+      remaining: limit - used, 
+      resetsAt: tomorrowMidnightUTC(), 
+      trialExpired: isTrialExpired,
+      subscriptionExpired: isSubscriptionExpired
+    }
   }
 
   // Starter / Free — enforce daily limit
   if (used >= limit) {
-    return { allowed: false, plan, used, limit, remaining: 0, resetsAt: tomorrowMidnightUTC(), trialExpired: isTrialExpired }
+    return { 
+      allowed: false, 
+      plan, 
+      used, 
+      limit, 
+      remaining: 0, 
+      resetsAt: tomorrowMidnightUTC(), 
+      trialExpired: isTrialExpired,
+      subscriptionExpired: isSubscriptionExpired
+    }
   }
 
   await supabase.from('profiles').update({
@@ -102,6 +136,7 @@ export async function checkAIQuota(
     remaining: limit - (used + 1),
     resetsAt: tomorrowMidnightUTC(),
     trialExpired: isTrialExpired,
+    subscriptionExpired: isSubscriptionExpired,
   }
 }
 

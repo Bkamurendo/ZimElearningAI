@@ -14,14 +14,16 @@ export default async function StudentLayout({ children }: { children: React.Reac
   let plan: 'free' | 'starter' | 'pro' | 'elite' = 'free'
   let aiUsed = 0
   let trialEndsAt: string | null = null
+  let subscriptionExpiresAt: string | null = null
   let hasChallenge = false
 
   if (user) {
     const { data: profile } = await supabase
-      .from('profiles').select('full_name, plan, ai_requests_today, ai_quota_reset_at, trial_ends_at').eq('id', user.id).single()
+      .from('profiles').select('full_name, plan, ai_requests_today, ai_quota_reset_at, trial_ends_at, subscription_expires_at').eq('id', user.id).single()
     userName = profile?.full_name ?? 'Student'
     plan = (profile?.plan ?? 'free') as typeof plan
     trialEndsAt = profile?.trial_ends_at ?? null
+    subscriptionExpiresAt = profile?.subscription_expires_at ?? null
     // Calculate today's usage (reset if new day)
     const now = new Date()
     const resetAt = new Date(profile?.ai_quota_reset_at ?? now)
@@ -98,11 +100,12 @@ export default async function StudentLayout({ children }: { children: React.Reac
         plan={plan}
         aiUsed={aiUsed}
         trialEndsAt={trialEndsAt}
+        subscriptionExpiresAt={subscriptionExpiresAt}
         hasChallenge={hasChallenge}
       />
       <div className="lg:pl-64 pb-16 lg:pb-0">
         <div className="pt-14 lg:pt-0">
-          <TrialStatusBanner trialEndsAt={trialEndsAt} plan={plan} />
+          <TrialStatusBanner trialEndsAt={trialEndsAt} subscriptionExpiresAt={subscriptionExpiresAt} plan={plan} />
           {children}
         </div>
       </div>
