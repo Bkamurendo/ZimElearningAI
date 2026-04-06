@@ -4,6 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { Users, TrendingUp, MessageSquare, BookOpen, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
+function daysSince(dateStr: string | null) {
+  if (!dateStr) return null
+  const diff = (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24)
+  return Math.floor(diff)
+}
+
 type TeacherRow = { id: string; teacher_subjects: { subject_id: string; subjects: { id: string; name: string; code: string; zimsec_level: string } | null }[] | null }
 type EnrolledRow = {
   student_id: string
@@ -112,12 +118,6 @@ export default async function TeacherStudentsPage() {
       primary: 'bg-green-100 text-green-700',
       olevel: 'bg-blue-100 text-blue-700',
       alevel: 'bg-purple-100 text-purple-700',
-    }
-
-    function daysSince(dateStr: string | null) {
-      if (!dateStr) return null
-      const diff = (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24)
-      return Math.floor(diff)
     }
 
     return (
