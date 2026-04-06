@@ -10,7 +10,7 @@ import {
   Flame, Menu, X, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
-  Accessibility, Gift, Users,
+  Accessibility, Gift, Users, AlertTriangle,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
