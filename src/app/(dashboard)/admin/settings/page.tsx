@@ -241,9 +241,9 @@ export default function AdminSettingsPage() {
                             <div className="flex items-center gap-3">
                               <p className="font-bold text-slate-800 dark:text-white text-xs uppercase">{setting.label}</p>
                               {('danger' in setting) && setting.danger && (
-                                <Badge variant="destructive" className="text-[8px] font-black uppercase">CRITICAL</Badge>
+                                <Badge variant="rose" className="text-[8px] font-black uppercase">CRITICAL</Badge>
                               )}
-                              {isSaved && <Badge variant="secondary" className="bg-emerald-500 text-white text-[8px] font-black uppercase">SAVED</Badge>}
+                              {isSaved && <Badge variant="emerald" className="bg-emerald-500 text-white text-[8px] font-black uppercase">SAVED</Badge>}
                             </div>
                             <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 max-w-md italic">{setting.description}</p>
                           </div>
