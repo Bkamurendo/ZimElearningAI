@@ -81,8 +81,8 @@ export async function updateSession(request: NextRequest) {
   // 3. AUTHENTICATED on public path OR root -> DASHBOARD
   if (user && (isPublicPath || pathname === '/')) {
     try {
-      // If already on a dashboard path, let it pass to avoid re-fetching profile
-      if (lowerPath.includes('/dashboard')) return supabaseResponse
+      // If already on a dashboard path or debug page, let it pass
+      if (lowerPath.includes('/dashboard') || lowerPath === '/debug-elearning') return supabaseResponse
 
       const { data: profile } = await supabase
         .from('profiles')
