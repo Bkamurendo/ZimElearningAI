@@ -32,51 +32,66 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // --- Helper: Redirect while preserving session cookies ---
+  const redirectWithCookies = (path: string) => {
+    // Only redirect if we're not already there (infinite loop guard)
+    if (pathname === path) return supabaseResponse
+    
+    const url = request.nextUrl.clone()
+    url.pathname = path
+    const redirectResponse = NextResponse.redirect(url)
+    
+    // CRITICAL: Copy cookies set during getUser() (session refresh) to the new redirect response
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value)
+    })
+    
+    return redirectResponse
+  }
+
   const publicPaths = ['/login', '/register', '/auth/callback', '/schools', '/privacy', '/terms', '/forgot-password', '/reset-password', '/api/schools', '/api/debug', '/admin/trials-test']
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p))
 
-  if (!user && !isPublicPath) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  // 1. Not logged in -> Redirect to login (unless already on a public path)
+  if (!user && !isPublicPath && pathname !== '/') {
+    return redirectWithCookies('/login')
   }
 
-  if (user && isPublicPath) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, onboarding_completed')
-      .eq('id', user.id)
-      .single()
+  // 2. Logged in on a public path OR root -> Redirect to their respective home
+  if (user && (isPublicPath || pathname === '/')) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, onboarding_completed')
+        .eq('id', user.id)
+        .single()
 
-    if (profile) {
-      if (!profile.onboarding_completed) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/onboarding'
-        return NextResponse.redirect(url)
+      if (profile) {
+        if (!profile.onboarding_completed) {
+          return redirectWithCookies('/onboarding')
+        }
+        return redirectWithCookies(`/${profile.role}/dashboard`)
       }
-
-      const url = request.nextUrl.clone()
-      url.pathname = `/${profile.role}/dashboard`
-      return NextResponse.redirect(url)
+    } catch (err) {
+      console.error('[Middleware] Profile lookup failed:', err)
+      // Fall through to allow request if DB is busy, rather than crashing
     }
   }
 
+  // 3. Logged in on onboarding -> Redirect if already finished
   if (user && pathname === '/onboarding') {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_completed')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.onboarding_completed) {
-      const { data: fullProfile } = await supabase
+    try {
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('onboarding_completed, role')
         .eq('id', user.id)
         .single()
-      const url = request.nextUrl.clone()
-      url.pathname = `/${fullProfile?.role}/dashboard`
-      return NextResponse.redirect(url)
+
+      if (profile?.onboarding_completed) {
+        return redirectWithCookies(`/${profile.role}/dashboard`)
+      }
+    } catch (err) {
+       console.error('[Middleware] Onboarding check failed:', err)
     }
   }
 
