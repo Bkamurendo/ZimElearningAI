@@ -123,7 +123,7 @@ export function MasteryHeatmap({ subjectName, topics }: Props) {
                         <ul className="space-y-2">
                           <li className="flex items-start gap-2 text-xs text-slate-600">
                              <CheckCircle2 size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                             <span>Confidence Score: {(selectedTopic.confidence_score?.[1] || 0.5) * 10}%</span>
+                             <span>Confidence Score: {Math.round((selectedTopic.confidence_score || 0.5) * 100)}%</span>
                           </li>
                           {selectedTopic.common_mistakes && selectedTopic.common_mistakes.length > 0 && (
                             <li className="flex items-start gap-2 text-xs text-slate-600">
