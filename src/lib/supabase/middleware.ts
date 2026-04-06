@@ -31,7 +31,10 @@ export async function updateSession(request: NextRequest) {
   // OPTIMIZATION: Skip getUser() for public assets and the callback route itself
   // to avoid consuming one-time 'code' parameters or slowing down static files
   const isAuthCallback = pathname.startsWith('/auth/callback')
-  const isStaticFile = pathname.includes('.') // basic check for images, css, etc
+  
+  // Only skip for actual common static assets
+  const staticExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js', '.ico', '.woff', '.woff2']
+  const isStaticFile = staticExtensions.some(ext => pathname.toLowerCase().endsWith(ext))
   
   let user = null
   if (!isAuthCallback && !isStaticFile) {

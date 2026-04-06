@@ -19,10 +19,13 @@ export async function login(formData: FormData): Promise<void> {
     redirect(`/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login?error=Authentication+failed')
+  // Safely check for user without crashing on null data
+  const { data, error: userError } = await supabase.auth.getUser()
+  const user = data?.user
+  if (userError || !user) {
+    console.error('[Login] Auth check failed:', userError?.message)
+    redirect('/login?error=Authentication+failed')
+  }
 
   // Fetch profile — first try with mfa_method, fall back if column doesn't exist yet
   type ProfileShape = { role: string; onboarding_completed: boolean; mfa_method?: string }
@@ -76,44 +79,49 @@ export async function register(formData: FormData): Promise<void> {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const fullName = formData.get('full_name') as string
-  // Security: only allow public-facing roles; 'admin' must be assigned manually via DB
   const rawRole = formData.get('role') as string
+  
   const ALLOWED_REGISTRATION_ROLES: UserRole[] = ['student', 'teacher', 'parent']
   const role: UserRole = ALLOWED_REGISTRATION_ROLES.includes(rawRole as UserRole)
     ? (rawRole as UserRole)
     : 'student'
 
-  const { error } = await supabase.auth.signUp({
+  const { error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName, role },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://zim-elearningai.co.zw'}/auth/callback`,
     },
   })
 
-  if (error) {
-    redirect(`/register?error=${encodeURIComponent(error.message)}`)
+  if (signUpError) {
+    redirect(`/register?error=${encodeURIComponent(signUpError.message)}`)
   }
 
   // Set role on the profile row created by the trigger
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: authData, error: userError } = await supabase.auth.getUser()
+  const user = authData?.user
+  
   if (user) {
-    // Give every new student a 7-day free Pro trial
-    const trialEndsAt = role === 'student'
-      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      : null
-    await supabase
-      .from('profiles')
-      .update({ role, full_name: fullName, ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}) })
-      .eq('id', user.id)
+    try {
+      // 1. Core Profile Update
+      const trialEndsAt = role === 'student'
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        : null
 
-    // Track referral if a ref code was passed
-    const refCode = (formData.get('ref') as string | null)?.trim().toUpperCase()
-    if (refCode && role === 'student') {
-      try {
+      await supabase
+        .from('profiles')
+        .update({ 
+          role, 
+          full_name: fullName, 
+          ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}) 
+        })
+        .eq('id', user.id)
+
+      // 2. Referral Tracking (Student Only)
+      const refCode = (formData.get('ref') as string | null)?.trim().toUpperCase()
+      if (refCode && role === 'student') {
         const { data: referrer } = await supabase
           .from('profiles')
           .select('id')
@@ -121,40 +129,34 @@ export async function register(formData: FormData): Promise<void> {
           .single()
 
         if (referrer && referrer.id !== user.id) {
-          // Record the referral
           await supabase.from('referrals').insert({
             referrer_id: referrer.id,
             referred_id: user.id,
           })
-          // Link referred_by on the new user's profile
           await supabase.from('profiles')
             .update({ referred_by: referrer.id })
             .eq('id', user.id)
         }
-      } catch {
-        // Referral tracking must never break registration
       }
-    }
-  }
 
-  // Send welcome SMS for parents (who supply a phone number during registration)
-  // For students and teachers the phone is collected at onboarding, so we skip here.
-  if (user && role === 'parent') {
-    try {
-      const { data: parentProfile } = await supabase
-        .from('parent_profiles')
-        .select('phone_number')
-        .eq('id', user.id)
-        .single()
+      // 3. Welcome SMS (Parent Only)
+      if (role === 'parent') {
+        const { data: parentProfile } = await supabase
+          .from('parent_profiles')
+          .select('phone_number')
+          .eq('id', user.id)
+          .single()
 
-      if (parentProfile?.phone_number) {
-        await sendSMS(
-          parentProfile.phone_number as string,
-          SMS_TEMPLATES.welcomeStudent(fullName)
-        )
+        if (parentProfile?.phone_number) {
+          await sendSMS(
+            parentProfile.phone_number as string,
+            SMS_TEMPLATES.welcomeStudent(fullName)
+          )
+        }
       }
-    } catch {
-      // SMS failure must never break registration
+    } catch (err) {
+      console.error('[Register] Post-registration side-effects failed:', err)
+      // We continue anyway so the user isn't stuck half-registered
     }
   }
 
