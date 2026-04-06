@@ -149,24 +149,24 @@ export default async function AdminDashboard() {
     return (
       <AdminDashboardClient 
         user={user}
-        profile={profile}
-        stats={stats}
-        endingTodayCount={endingTodayCount}
-        expiringSoon={expiringSoon}
-        cohortByMonth={cohortByMonth}
+        profile={profile || {}}
+        stats={stats || []}
+        endingTodayCount={endingTodayCount || 0}
+        expiringSoon={expiringSoon || []}
+        cohortByMonth={cohortByMonth || {}}
         totalUsers={totalUsers ?? 0}
         liveActiveUsers={liveActiveUsers ?? 0}
-        currentMRR={currentMRR}
-        potentialMRR={potentialMRR}
-        activeTrials={activeTrials}
-        paidUsers={trulyActivePaidUsers}
-        eliteUsers={eliteUsers}
+        currentMRR={currentMRR || 0}
+        potentialMRR={potentialMRR || 0}
+        activeTrials={activeTrials || []}
+        paidUsers={trulyActivePaidUsers || []}
+        eliteUsers={eliteUsers || []}
         pendingModeration={pendingModeration ?? 0}
         totalDocuments={totalDocuments ?? 0}
         publishedDocuments={publishedDocuments ?? 0}
-        pendingTeachers={pendingTeachers}
-        activeAnnouncements={activeAnnouncements}
-        totalQuestions={totalQuestions}
+        pendingTeachers={pendingTeachers || 0}
+        activeAnnouncements={activeAnnouncements || 0}
+        totalQuestions={totalQuestions || 0}
       />
     )
   } catch (error) {

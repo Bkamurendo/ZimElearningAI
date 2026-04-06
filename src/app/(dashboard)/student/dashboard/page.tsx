@@ -309,18 +309,18 @@ export default async function StudentDashboard() {
     return (
       <DashboardClient 
         user={user}
-        profile={profile}
-        studentProfile={studentProfile}
-        subjects={subjects}
-        stats={stats}
-        notifications={notifications ?? []}
-        recentBadges={recentBadges ?? []}
-        continueItems={continueItems}
-        upcomingExams={upcomingExams ?? []}
-        studyPlan={studyPlan}
-        pendingAssignmentsCount={pendingAssignmentsCount}
-        dailyChallengeCompleted={dailyChallengeCompleted}
-        dailyChallengeScore={dailyChallengeScore}
+        profile={profile || {}}
+        studentProfile={studentProfile || {}}
+        subjects={subjects || []}
+        stats={stats || []}
+        notifications={notifications || []}
+        recentBadges={recentBadges || []}
+        continueItems={continueItems || []}
+        upcomingExams={upcomingExams || []}
+        studyPlan={studyPlan || null}
+        pendingAssignmentsCount={pendingAssignmentsCount || 0}
+        dailyChallengeCompleted={dailyChallengeCompleted || false}
+        dailyChallengeScore={dailyChallengeScore || null}
       />
     )
   } catch (error) {

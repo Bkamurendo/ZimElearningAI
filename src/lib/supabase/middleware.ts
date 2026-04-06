@@ -26,9 +26,9 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Safely check for user without crashing on null data
+  const { data, error: authError } = await supabase.auth.getUser()
+  const user = data?.user
 
   const { pathname } = request.nextUrl
 
