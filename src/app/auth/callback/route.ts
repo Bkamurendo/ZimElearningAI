@@ -66,7 +66,8 @@ export async function GET(request: Request) {
       // 3. Fall back to onboarding for new / incomplete users
       return redirectWithCookies('/onboarding')
     } else {
-      console.error('[auth-callback] Code exchange failed:', exchangeError.message)
+      console.error('[auth-callback] Code exchange failed:', exchangeError.message, exchangeError.status)
+      return NextResponse.redirect(`${origin}/login?error=auth_callback_failed&error_description=${encodeURIComponent(exchangeError.message)}`)
     }
   }
 

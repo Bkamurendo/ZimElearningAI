@@ -26,11 +26,19 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Safely check for user without crashing on null data
-  const { data, error: authError } = await supabase.auth.getUser()
-  const user = data?.user
-
   const { pathname } = request.nextUrl
+  
+  // OPTIMIZATION: Skip getUser() for public assets and the callback route itself
+  // to avoid consuming one-time 'code' parameters or slowing down static files
+  const isAuthCallback = pathname.startsWith('/auth/callback')
+  const isStaticFile = pathname.includes('.') // basic check for images, css, etc
+  
+  let user = null
+  if (!isAuthCallback && !isStaticFile) {
+    // Safely check for user without crashing on null data
+    const { data, error: authError } = await supabase.auth.getUser()
+    user = data?.user
+  }
 
   // --- Helper: Redirect while preserving session cookies ---
   const redirectWithCookies = (path: string) => {
