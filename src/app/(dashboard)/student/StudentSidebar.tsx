@@ -198,15 +198,16 @@ export default function StudentSidebar({
           })()}
 
           {/* AI quota bar (free / starter only) */}
-          {(plan === 'free' || plan === 'starter') && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
-            const limit = PLAN_LIMITS[plan] ?? 25
-            const pct = Math.min(100, Math.round((aiUsed / limit) * 100))
+          {((plan || 'free') === 'free' || plan === 'starter') && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
+            const limit = PLAN_LIMITS[plan || 'free'] ?? 25
+            const currentUsage = aiUsed || 0
+            const pct = Math.min(100, Math.round((currentUsage / limit) * 100))
             const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
             return (
               <div className="px-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-slate-500">AI Requests Today</span>
-                  <span className={`text-[10px] font-bold ${pct >= 90 ? 'text-red-400' : 'text-slate-400'}`}>{aiUsed}/{limit}</span>
+                  <span className={`text-[10px] font-bold ${pct >= 90 ? 'text-red-400' : 'text-slate-400'}`}>{currentUsage}/{limit}</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
