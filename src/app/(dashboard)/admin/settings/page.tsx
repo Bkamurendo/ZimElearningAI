@@ -347,7 +347,7 @@ export default function AdminSettingsPage() {
                         <label className="text-[10px] font-black text-slate-400 tracking-widest ml-1 opacity-50">Admin Email (Static)</label>
                         <div className="w-full bg-slate-100 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-5 py-3 text-[10px] font-bold text-slate-400 flex items-center justify-between uppercase">
                            {profile?.email}
-                           <Badge variant="outline" className="text-[8px] font-black tracking-widest">ENCRYPTED</Badge>
+                           <Badge variant="slate" className="text-[8px] font-black tracking-widest">ENCRYPTED</Badge>
                         </div>
                      </div>
                      
