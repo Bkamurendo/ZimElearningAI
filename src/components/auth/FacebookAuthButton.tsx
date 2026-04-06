@@ -9,7 +9,8 @@ export function FacebookAuthButton({ label = 'Continue with Facebook' }: { label
   async function handleFacebookLogin() {
     setLoading(true)
     const supabase = createClient()
-    const base = window.location.origin
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    const base = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl
 
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',

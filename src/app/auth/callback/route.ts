@@ -2,11 +2,23 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams, origin: requestOrigin } = new URL(request.url)
   const code = searchParams.get('code')
   const rawNext = searchParams.get('next') ?? ''
-  // Security: validate `next` is a safe relative path — prevent open redirect attacks
-  // Must start with / and must not be a protocol-relative URL (//evil.com) or absolute URL
+  const error = searchParams.get('error')
+  const errorCode = searchParams.get('error_code')
+  
+  // Use custom domain for redirects if set, otherwise fallback to request origin
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestOrigin
+  const origin = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl
+
+  // Handle incoming OAuth errors immediately
+  if (error || errorCode) {
+    console.error(`[auth-callback] OAuth Error: ${error} (${errorCode}): ${searchParams.get('error_description')}`)
+    return NextResponse.redirect(`${origin}/login?error=${errorCode || 'bad_oauth_state'}`)
+  }
+
+  // Security: validate `next` is a safe relative path
   const explicitNext =
     rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.includes('://')
       ? rawNext
