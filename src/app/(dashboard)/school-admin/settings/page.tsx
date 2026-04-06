@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import {
   Settings,
   ArrowLeft,
@@ -18,9 +19,9 @@ import {
   CreditCard,
   ChevronRight,
 } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 // ── Zimbabwe provinces ────────────────────────────────────────────────────────
-
 const PROVINCES = [
   'Bulawayo',
   'Harare',
@@ -35,7 +36,6 @@ const PROVINCES = [
 ]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
 interface SchoolData {
   id: string
   name: string
@@ -59,7 +59,6 @@ interface FormState {
 }
 
 // ── Toast component ───────────────────────────────────────────────────────────
-
 function Toast({
   type,
   message,
@@ -71,10 +70,10 @@ function Toast({
 }) {
   return (
     <div
-      className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-sm font-semibold transition-all duration-300 ${
+      className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-[10px] font-bold uppercase transition-all duration-300 border border-white/10 ${
         type === 'success'
-          ? 'bg-emerald-600 text-white'
-          : 'bg-red-600 text-white'
+          ? 'bg-emerald-600 text-white shadow-emerald-600/20'
+          : 'bg-red-600 text-white shadow-red-600/20'
       }`}
     >
       {type === 'success' ? (
@@ -83,19 +82,14 @@ function Toast({
         <XCircle size={16} className="flex-shrink-0" />
       )}
       <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="ml-2 opacity-75 hover:opacity-100 transition"
-      >
-        ×
-      </button>
+      <button onClick={onClose} className="ml-2 opacity-75 hover:opacity-100 transition text-lg leading-none">×</button>
     </div>
   )
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-
 export default function SchoolAdminSettingsPage() {
+  const supabase = createClient()
   const [school, setSchool] = useState<SchoolData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -113,11 +107,20 @@ export default function SchoolAdminSettingsPage() {
     logo_url: '',
   })
 
-  // ── Load school data ───────────────────────────────────────────────────────
   useEffect(() => {
-    fetch('/api/school-admin/school')
-      .then((r) => r.json())
-      .then((data: { school?: SchoolData; error?: string }) => {
+    async function loadData() {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.getUser()
+        const user = authData?.user
+        
+        if (authError || !user) {
+          window.location.href = '/login'
+          return
+        }
+
+        const res = await fetch('/api/school-admin/school')
+        const data = await res.json()
+        
         if (data.school) {
           const s = data.school
           setSchool(s)
@@ -130,12 +133,14 @@ export default function SchoolAdminSettingsPage() {
             logo_url: s.logo_url ?? '',
           })
         }
+      } catch (err) {
+        console.error('Error loading school data:', err)
+        showToast('error', 'Critical failure loading institutional data.')
+      } finally {
         setLoading(false)
-      })
-      .catch(() => {
-        setToast({ type: 'error', message: 'Failed to load school data.' })
-        setLoading(false)
-      })
+      }
+    }
+    loadData()
   }, [])
 
   function showToast(type: 'success' | 'error', message: string) {
@@ -143,11 +148,10 @@ export default function SchoolAdminSettingsPage() {
     setTimeout(() => setToast(null), 4000)
   }
 
-  // ── Save handler ───────────────────────────────────────────────────────────
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name.trim()) {
-      showToast('error', 'School name is required.')
+      showToast('error', 'INSTITUTION NAME IS REQUIRED.')
       return
     }
     setSaving(true)
@@ -166,15 +170,13 @@ export default function SchoolAdminSettingsPage() {
       })
       const json = await res.json()
       if (!res.ok) {
-        showToast('error', json.error ?? 'Failed to save settings.')
+        showToast('error', json.error ?? 'FAILED TO PERSIST SETTINGS.')
       } else {
-        showToast('success', 'School settings saved successfully.')
-        setSchool((prev) =>
-          prev ? { ...prev, ...form } : prev
-        )
+        showToast('success', 'INSTITUTION SETTINGS VERIFIED & SAVED.')
+        setSchool((prev) => prev ? { ...prev, ...form } : prev)
       }
     } catch {
-      showToast('error', 'Network error. Please try again.')
+      showToast('error', 'NETWORK PROTOCOL ERROR. RETRY.')
     } finally {
       setSaving(false)
     }
@@ -184,7 +186,6 @@ export default function SchoolAdminSettingsPage() {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  // ── Loading state ──────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -193,315 +194,172 @@ export default function SchoolAdminSettingsPage() {
     )
   }
 
-  // ── Plan display helpers ───────────────────────────────────────────────────
-  const planLabel =
-    school?.plan === 'pro'
-      ? 'Pro'
-      : school?.plan === 'elite'
-      ? 'Elite'
-      : 'Starter (Free)'
-
-  const planColor =
-    school?.plan === 'pro'
-      ? 'bg-blue-50 text-blue-700'
-      : school?.plan === 'elite'
-      ? 'bg-purple-50 text-purple-700'
-      : 'bg-slate-100 text-slate-600'
-
-  const expiryDate = school?.subscription_expires_at
-    ? new Date(school.subscription_expires_at).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : null
+  const planLabel = school?.plan?.toLowerCase() === 'pro' ? 'Pro' : school?.plan?.toLowerCase() === 'elite' ? 'Elite' : 'Starter'
+  const planColor = school?.plan?.toLowerCase() === 'pro' ? 'bg-blue-50 text-blue-700 border-blue-100' : school?.plan?.toLowerCase() === 'elite' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-slate-100 text-slate-600 border-slate-200'
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Toast */}
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div className="min-h-screen bg-slate-50/50">
+      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-8">
-        <div className="max-w-3xl mx-auto">
-          <Link
-            href="/school-admin/dashboard"
-            className="inline-flex items-center gap-1.5 text-emerald-200 hover:text-white text-sm mb-4 transition"
-          >
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-8 shadow-sm">
+        <div className="max-w-3xl mx-auto font-bold uppercase">
+          <Link href="/school-admin/dashboard" className="inline-flex items-center gap-1.5 text-emerald-200 hover:text-white text-[10px] mb-4 transition uppercase font-bold">
             <ArrowLeft size={14} /> Dashboard
           </Link>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/10 shadow-sm">
               <Settings size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">
-                School Settings
-              </h1>
-              <p className="text-emerald-200 text-sm">
-                Manage your school profile and contact details
-              </p>
+              <h1 className="text-2xl font-bold text-white uppercase tracking-tight">System Configuration</h1>
+              <p className="text-emerald-200 text-[10px] uppercase font-bold mt-0.5">Manage your institutional profile and core parameters</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        {/* ── School profile form ── */}
         <form onSubmit={handleSave}>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden font-bold uppercase">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2 uppercase">
               <School size={16} className="text-emerald-500" />
-              <h2 className="font-bold text-slate-800">School Profile</h2>
+              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Institutional Profile</h2>
             </div>
 
-            <div className="px-6 py-6 space-y-5">
-              {/* School Name */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  School Name{' '}
-                  <span className="text-red-400">*</span>
-                </label>
+            <div className="px-6 py-6 space-y-5 uppercase">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Institution Name *</label>
                 <div className="relative">
-                  <School
-                    size={15}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
+                  <School size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={form.name}
                     onChange={(e) => field('name', e.target.value)}
                     placeholder="e.g. Harare High School"
                     required
-                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Address
-                </label>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Physical Address</label>
                 <div className="relative">
-                  <MapPin
-                    size={15}
-                    className="absolute left-3.5 top-3 text-slate-400"
-                  />
+                  <MapPin size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <textarea
                     value={form.address}
                     onChange={(e) => field('address', e.target.value)}
                     placeholder="e.g. 12 Samora Machel Ave, Harare"
                     rows={2}
-                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent resize-none"
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all shadow-sm resize-none"
                   />
                 </div>
               </div>
 
-              {/* Province */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Province
-                </label>
-                <div className="relative">
-                  <Globe
-                    size={15}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                  />
-                  <select
-                    value={form.province}
-                    onChange={(e) => field('province', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent bg-white appearance-none"
-                  >
-                    <option value="">— Select province —</option>
-                    {PROVINCES.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Phone & Email in a grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Phone
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase">Province</label>
                   <div className="relative">
-                    <Phone
-                      size={15}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
+                    <Globe size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <select
+                      value={form.province}
+                      onChange={(e) => field('province', e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all shadow-sm appearance-none bg-white"
+                    >
+                      <option value="">— SELECT PROVINCE —</option>
+                      {PROVINCES.map((p) => <option key={p} value={p}>{p.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase">Institutional Phone</label>
+                  <div className="relative">
+                    <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="tel"
                       value={form.phone}
                       onChange={(e) => field('phone', e.target.value)}
                       placeholder="+263 77 123 4567"
-                      className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail
-                      size={15}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => field('email', e.target.value)}
-                      placeholder="admin@school.ac.zw"
-                      className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all shadow-sm"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Logo URL */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Logo URL
-                </label>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Public Identity Email</label>
                 <div className="relative">
-                  <ImageIcon
-                    size={15}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => field('email', e.target.value)}
+                    placeholder="admin@school.ac.zw"
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all shadow-sm"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Institutional Logo URL</label>
+                <div className="relative">
+                  <ImageIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="url"
                     value={form.logo_url}
                     onChange={(e) => field('logo_url', e.target.value)}
                     placeholder="https://..."
-                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all shadow-sm"
                   />
                 </div>
-                {form.logo_url && (
-                  <div className="mt-2 flex items-center gap-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={form.logo_url}
-                      alt="School logo preview"
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-slate-50"
-                      onError={(e) => {
-                        ;(e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
-                    <p className="text-xs text-slate-400">Logo preview</p>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Save button */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition shadow-sm"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  <>
-                    <Save size={15} />
-                    Save Settings
-                  </>
-                )}
-              </button>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase shadow-lg border-none tracking-widest px-8">
+                {saving ? 'Saving...' : 'COMMIT CHANGES'}
+              </Button>
             </div>
           </div>
         </form>
 
-        {/* ── Subscription info (read-only) ── */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+        {/* Subscription */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden font-bold uppercase">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
             <CreditCard size={16} className="text-emerald-500" />
-            <h2 className="font-bold text-slate-800">Subscription</h2>
+            <h2 className="font-bold text-slate-800 text-sm tracking-tight uppercase">License & Subscription</h2>
           </div>
 
-          <div className="px-6 py-6 space-y-4">
-            {/* Current plan */}
-            <div className="flex items-center justify-between py-3 border-b border-slate-100">
+          <div className="px-6 py-6 space-y-4 uppercase">
+            <div className="flex items-center justify-between py-3 border-b border-slate-100 uppercase">
               <div>
-                <p className="text-sm font-semibold text-slate-700">
-                  Current Plan
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Your active subscription tier
-                </p>
+                <p className="text-[10px] font-black text-slate-400 uppercase">Service Tier</p>
+                <p className="text-xs font-bold text-slate-800 uppercase mt-0.5 tracking-tight">Active Subscription Rank</p>
               </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-bold ${planColor}`}
-              >
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black border shadow-sm ${planColor}`}>
                 {planLabel}
               </span>
             </div>
 
-            {/* Max students */}
-            <div className="flex items-center justify-between py-3 border-b border-slate-100">
+            <div className="flex items-center justify-between py-3 border-b border-slate-100 uppercase">
               <div>
-                <p className="text-sm font-semibold text-slate-700">
-                  Student Limit
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Maximum students on this plan
-                </p>
+                <p className="text-[10px] font-black text-slate-400 uppercase">Enrollment Capacity</p>
+                <p className="text-xs font-bold text-slate-800 uppercase mt-0.5 tracking-tight">Authorized Student Slots</p>
               </div>
-              <span className="text-sm font-bold text-slate-800">
-                {school?.max_students != null
-                  ? school.max_students.toLocaleString()
-                  : 'Unlimited'}
-              </span>
-            </div>
-
-            {/* Expiry */}
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">
-                  Subscription Expires
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Your plan renews or expires on this date
-                </p>
-              </div>
-              <span className="text-sm font-medium text-slate-600">
-                {expiryDate ?? (
-                  <span className="text-slate-300">—</span>
-                )}
+              <span className="text-xs font-black text-slate-800 uppercase shadow-sm border border-slate-100 px-3 py-1 rounded-lg bg-slate-50">
+                {school?.max_students?.toLocaleString() ?? '50'} MAX
               </span>
             </div>
           </div>
 
-          {/* Upgrade CTA */}
-          {school?.plan !== 'elite' && (
+          {school?.plan?.toLowerCase() !== 'elite' && (
             <div className="px-6 pb-6">
-              <Link
-                href="/student/upgrade"
-                className="flex items-center justify-between w-full px-5 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-semibold hover:from-emerald-600 hover:to-teal-700 transition shadow-sm"
-              >
+              <Link href="/student/upgrade" className="flex items-center justify-between w-full px-5 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg hover:from-emerald-600 transition-all font-bold">
                 <div>
-                  <p>Upgrade to Pro</p>
-                  <p className="text-xs font-normal text-emerald-100 mt-0.5">
-                    Unlock more students, AI features &amp; analytics
-                  </p>
+                  <p className="text-[10px] uppercase font-black tracking-widest">Upgrade to Elite Rank</p>
+                  <p className="text-[9px] font-bold text-emerald-100 uppercase italic mt-0.5">Unlock custom branding & secondary storage</p>
                 </div>
                 <ChevronRight size={18} className="flex-shrink-0" />
               </Link>

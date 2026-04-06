@@ -2,18 +2,15 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Users, Upload, Plus, UserPlus, TrendingUp } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('en-ZW', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  return new Date(dateStr).toLocaleDateString('en-GB')
 }
 
 function levelLabel(level: string | null | undefined): string {
-  switch (level) {
+  switch (level?.toLowerCase()) {
     case 'olevel':  return 'O-Level'
     case 'alevel':  return 'A-Level'
     case 'primary': return 'Primary'
@@ -22,7 +19,7 @@ function levelLabel(level: string | null | undefined): string {
 }
 
 function levelBadge(level: string | null | undefined): string {
-  switch (level) {
+  switch (level?.toLowerCase()) {
     case 'olevel':  return 'bg-indigo-100 text-indigo-700'
     case 'alevel':  return 'bg-emerald-100 text-emerald-700'
     case 'primary': return 'bg-amber-100 text-amber-700'
@@ -42,279 +39,170 @@ function statusBadge(suspended: boolean | null | undefined): {
 
 export default async function SchoolAdminStudents() {
   const supabase = createClient()
+  
+  // Safely check for user without crashing on null data
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  const user = authData?.user
+  
+  if (authError || !user) redirect('/login')
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, role, school_id')
+      .eq('id', user.id)
+      .single()
 
-  if (!user) redirect('/login')
+    if (profile?.role?.toLowerCase() !== 'school_admin' || !profile?.school_id) {
+      const safeRole = profile?.role?.toLowerCase() || 'student'
+      redirect(`/${safeRole === 'school_admin' ? 'school-admin' : safeRole}/dashboard`)
+    }
 
-  // Fetch admin profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role, school_id')
-    .eq('id', user.id)
-    .single()
+    const { data: school } = await supabase
+      .from('schools')
+      .select('name, max_students, subscription_plan')
+      .eq('id', profile.school_id)
+      .single()
 
-  if (!profile || profile.role !== 'school_admin') redirect('/login')
-  if (!profile.school_id) redirect('/login')
+    const maxStudents = school?.max_students ?? 50
 
-  // Fetch school for capacity limit
-  const { data: school } = await supabase
-    .from('schools')
-    .select('name, max_students, subscription_plan')
-    .eq('id', profile.school_id)
-    .single()
+    const { data: studentProfiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, created_at, ai_requests_today, suspended')
+      .eq('school_id', profile.school_id)
+      .eq('role', 'student')
+      .order('created_at', { ascending: false })
 
-  const maxStudents = school?.max_students ?? 50
+    const students = studentProfiles ?? []
+    const ids = students.map(s => s.id)
+    let spMap = new Map<string, any>()
 
-  // Fetch all students for this school
-  const { data: studentProfiles } = await supabase
-    .from('profiles')
-    .select('id, full_name, email, created_at, ai_requests_today, suspended')
-    .eq('school_id', profile.school_id)
-    .eq('role', 'student')
-    .order('created_at', { ascending: false })
-
-  const students = studentProfiles ?? []
-
-  // Build a map of student_profile data (zimsec_level, grade) keyed by user_id
-  type StudentProfileRow = {
-    user_id: string
-    zimsec_level: string | null
-    grade: string | null
-  }
-  let spMap = new Map<string, StudentProfileRow>()
-
-  if (students.length > 0) {
-    try {
-      const ids = students.map(s => s.id)
+    if (ids.length > 0) {
       const { data: spRows } = await supabase
         .from('student_profiles')
         .select('user_id, zimsec_level, grade')
         .in('user_id', ids)
 
       spMap = new Map((spRows ?? []).map(sp => [sp.user_id, sp]))
-    } catch {
-      // student_profiles not yet populated — degrade gracefully
     }
-  }
 
-  const usedCount = students.length
-  const capacityPct = maxStudents > 0 ? (usedCount / maxStudents) * 100 : 0
-  const capacityBarColor =
-    capacityPct >= 90
-      ? 'bg-red-500'
-      : capacityPct >= 70
-      ? 'bg-amber-500'
-      : 'bg-emerald-500'
+    const usedCount = students.length
+    const capacityPct = maxStudents > 0 ? (usedCount / maxStudents) * 100 : 0
+    const capacityBarColor =
+      capacityPct >= 90
+        ? 'bg-red-500'
+        : capacityPct >= 70
+        ? 'bg-amber-500'
+        : 'bg-emerald-500'
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5">
+    return (
+      <div className="min-h-screen bg-slate-50/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 uppercase">
+                Student Body
+                <span className="ml-2 text-base font-bold text-indigo-600">
+                  ({usedCount})
+                </span>
+              </h1>
+              <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">{school?.name ?? 'Institutional Portal'}</p>
+            </div>
 
-        {/* Page header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Students
-              <span className="ml-2 text-base font-semibold text-indigo-600">
-                ({usedCount})
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                href="/school-admin/import"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 text-gray-700 text-[10px] font-bold rounded-xl border border-gray-200 shadow-sm transition uppercase"
+              >
+                <Upload size={15} />
+                Import Records
+              </Link>
+              <Link
+                href="/school-admin/import"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-xl transition shadow-lg uppercase"
+              >
+                <Plus size={15} />
+                New Student
+              </Link>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={15} className="text-indigo-500" />
+                <span className="text-[10px] font-bold text-gray-400 uppercase">Institutional Capacity</span>
+              </div>
+              <span className="text-[10px] font-bold text-gray-700 uppercase">
+                {usedCount}{' '}
+                <span className="text-gray-400 font-medium">/ {maxStudents} Seats</span>
               </span>
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">{school?.name ?? 'My School'}</p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Link
-              href="/school-admin/import"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:border-gray-300 transition shadow-sm"
-            >
-              <Upload size={15} />
-              Import CSV
-            </Link>
-            <Link
-              href="/school-admin/import"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition shadow-sm"
-            >
-              <Plus size={15} />
-              Add Student
-            </Link>
-          </div>
-        </div>
-
-        {/* Capacity bar */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp size={15} className="text-indigo-500" />
-              <span className="text-sm font-semibold text-gray-800">Student Capacity</span>
             </div>
-            <span className="text-sm font-bold text-gray-700">
-              {usedCount}{' '}
-              <span className="text-gray-400 font-normal">/ {maxStudents} students used</span>
-            </span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-            <div
-              className={`h-2.5 rounded-full transition-all duration-700 ${capacityBarColor}`}
-              style={{ width: `${Math.min(100, capacityPct)}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-400 mt-1.5">
-            {Math.max(0, maxStudents - usedCount)} seats remaining on your{' '}
-            <span className="font-medium capitalize">{school?.subscription_plan ?? 'basic'}</span>{' '}
-            plan
-          </p>
-        </div>
-
-        {/* Students table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {students.length === 0 ? (
-            /* Empty state */
-            <div className="px-6 py-16 text-center">
-              <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <UserPlus size={26} className="text-indigo-400" />
-              </div>
-              <p className="text-gray-700 font-semibold text-base">No students yet</p>
-              <p className="text-gray-400 text-sm mt-1.5 max-w-xs mx-auto">
-                Import a CSV or add students individually to get started
-              </p>
-              <div className="flex items-center justify-center gap-3 mt-5">
-                <Link
-                  href="/school-admin/import"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition"
-                >
-                  <Upload size={14} />
-                  Import CSV
-                </Link>
-                <Link
-                  href="/school-admin/import"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 transition"
-                >
-                  <Plus size={14} />
-                  Add Individually
-                </Link>
-              </div>
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden shadow-inner font-bold uppercase">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${capacityBarColor}`}
+                style={{ width: `${Math.min(100, capacityPct)}%` }}
+              />
             </div>
-          ) : (
-            <>
-              {/* Table header */}
-              <div className="px-6 py-3.5 border-b border-gray-100 bg-gray-50">
-                <div className="flex items-center gap-2">
-                  <Users size={15} className="text-gray-400" />
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {usedCount} student{usedCount !== 1 ? 's' : ''} enrolled
-                  </span>
+            <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase italic">
+              {Math.max(0, maxStudents - usedCount)} Seats remaining on {school?.subscription_plan ?? 'Basic'} Tier
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {students.length === 0 ? (
+              <div className="px-6 py-16 text-center uppercase">
+                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <UserPlus size={26} className="text-indigo-400" />
                 </div>
+                <p className="text-gray-700 font-bold text-sm">Empty enrollment</p>
+                <p className="text-gray-400 text-[10px] mt-1.5 max-w-xs mx-auto font-medium">
+                  Upload records or add students individually to begin.
+                </p>
               </div>
-
-              <div className="overflow-x-auto">
+            ) : (
+              <div className="overflow-x-auto uppercase">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                        Email
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Level
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                        Grade
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                        AI Used Today
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                        Joined
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
+                    <tr className="border-b border-gray-100 bg-gray-50/50 uppercase font-bold text-gray-400">
+                      <th className="text-left px-6 py-4 text-[10px]">Student Name</th>
+                      <th className="text-left px-4 py-4 text-[10px] hidden sm:table-cell">Identity</th>
+                      <th className="text-left px-4 py-4 text-[10px]">Level</th>
+                      <th className="text-left px-4 py-4 text-[10px] hidden md:table-cell">Grade</th>
+                      <th className="text-right px-6 py-4 text-[10px]">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {students.map((student, i) => {
+                  <tbody className="divide-y divide-gray-50 font-bold">
+                    {students.map((student) => {
                       const sp = spMap.get(student.id)
-                      const { label: statusLabel, className: statusClass } = statusBadge(
-                        student.suspended,
-                      )
+                      const { label: statusLabel, className: statusClass } = statusBadge(student.suspended)
+                      const initials = (student.full_name ?? 'S')
+                        .split(' ')
+                        .filter(Boolean)
+                        .map((n: string) => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2) || 'S'
+
                       return (
-                        <tr
-                          key={student.id}
-                          className={`hover:bg-slate-50 transition ${
-                            i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
-                          }`}
-                        >
-                          {/* Name + avatar */}
-                          <td className="px-6 py-3.5">
+                        <tr key={student.id} className="hover:bg-slate-50 transition-colors uppercase">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                <span className="text-indigo-700 text-xs font-bold">
-                                  {(student.full_name ?? 'S')
-                                    .split(' ')
-                                    .map((n: string) => n[0])
-                                    .join('')
-                                    .toUpperCase()
-                                    .slice(0, 2)}
-                                </span>
+                              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center border border-indigo-100 shadow-sm">
+                                <span className="text-indigo-700 text-[10px] font-bold">{initials}</span>
                               </div>
-                              <span className="font-medium text-gray-900 truncate max-w-[140px]">
-                                {student.full_name ?? 'Unknown'}
-                              </span>
+                              <span className="font-bold text-slate-800 text-[11px] truncate">{student.full_name ?? 'Unknown'}</span>
                             </div>
                           </td>
-
-                          {/* Email */}
-                          <td className="px-4 py-3.5 text-gray-500 hidden sm:table-cell truncate max-w-[180px]">
-                            {student.email ?? '—'}
-                          </td>
-
-                          {/* Level */}
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold ${levelBadge(
-                                sp?.zimsec_level,
-                              )}`}
-                            >
+                          <td className="px-4 py-4 text-gray-400 text-[10px] hidden sm:table-cell truncate">{student.email ?? '-'}</td>
+                          <td className="px-4 py-4">
+                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border ${levelBadge(sp?.zimsec_level)}`}>
                               {levelLabel(sp?.zimsec_level)}
                             </span>
                           </td>
-
-                          {/* Grade */}
-                          <td className="px-4 py-3.5 text-gray-600 hidden md:table-cell">
-                            {sp?.grade ?? '—'}
-                          </td>
-
-                          {/* AI Used Today */}
-                          <td className="px-4 py-3.5 hidden lg:table-cell">
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`text-sm font-semibold ${
-                                  (student.ai_requests_today ?? 0) > 0
-                                    ? 'text-amber-600'
-                                    : 'text-gray-400'
-                                }`}
-                              >
-                                {student.ai_requests_today ?? 0}
-                              </span>
-                              <span className="text-xs text-gray-400">reqs</span>
-                            </div>
-                          </td>
-
-                          {/* Joined */}
-                          <td className="px-4 py-3.5 text-gray-400 text-xs hidden lg:table-cell">
-                            {formatDate(student.created_at)}
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold ${statusClass}`}
-                            >
+                          <td className="px-4 py-4 text-gray-500 text-[10px] hidden md:table-cell">{sp?.grade ?? '-'}</td>
+                          <td className="px-6 py-4 text-right">
+                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold shadow-sm border ${statusClass}`}>
                               {statusLabel}
                             </span>
                           </td>
@@ -324,25 +212,24 @@ export default async function SchoolAdminStudents() {
                   </tbody>
                 </table>
               </div>
-
-              {/* Table footer */}
-              <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                <p className="text-xs text-gray-400">
-                  Showing {usedCount} of {maxStudents} max students
-                </p>
-                <Link
-                  href="/school-admin/import"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition"
-                >
-                  <UserPlus size={13} />
-                  Add more students
-                </Link>
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
-
       </div>
-    </div>
-  )
+    )
+  } catch (err) {
+    console.error('[SchoolAdminStudents] Runtime error:', err)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 px-4 text-center bg-gray-50">
+        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-2">
+          <Users size={32} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-800 uppercase">Institutional Error</h2>
+        <p className="text-slate-500 max-w-xs uppercase">We encountered an error while loading the student directory. Please try again.</p>
+        <Link href="/login">
+          <Button variant="outline">Back to Login</Button>
+        </Link>
+      </div>
+    )
+  }
 }

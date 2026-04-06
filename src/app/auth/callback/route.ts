@@ -27,47 +27,51 @@ export async function GET(request: Request) {
   // --- Helper: Redirect while preserving session cookies ---
   const redirectWithCookies = (path: string) => {
     const url = new URL(path, origin)
-    const redirectResponse = NextResponse.redirect(url.toString())
-    
-    // We don't have a 'supabaseResponse' variable here like in middleware,
-    // but the cookies are already in the current environment's request/response cycle.
-    // However, for consistency with our middleware fixes, we ensure the redirect
-    // is absolute to the custom domain.
-    return redirectResponse
+    return NextResponse.redirect(url.toString())
   }
 
   if (code) {
     const supabase = createClient()
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!exchangeError) {
-      // 1. If a specific destination was requested (e.g. /reset-password), honour it immediately
-      if (explicitNext) {
-        return redirectWithCookies(explicitNext)
-      }
-
-      // 2. Otherwise: smart redirect based on profile state
-      const { data, error: userError } = await supabase.auth.getUser()
-      const user = data?.user
+    try {
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
       
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role, onboarding_completed')
-          .eq('id', user.id)
-          .single()
-
-        if (profile?.onboarding_completed) {
-          const dest = profile.role === 'school_admin' ? '/school-admin/dashboard' : `/${profile.role}/dashboard`
-          return redirectWithCookies(dest)
+      if (!exchangeError) {
+        // 1. If a specific destination was requested (e.g. /reset-password), honour it immediately
+        if (explicitNext) {
+          return redirectWithCookies(explicitNext)
         }
-      }
 
-      // 3. Fall back to onboarding for new / incomplete users
-      return redirectWithCookies('/onboarding')
-    } else {
-      console.error('[auth-callback] Code exchange failed:', exchangeError.message, exchangeError.status)
-      return NextResponse.redirect(`${origin}/login?error=auth_callback_failed&error_description=${encodeURIComponent(exchangeError.message)}`)
+        // 2. Otherwise: smart redirect based on profile state
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        const user = userData?.user
+        
+        if (user && !userError) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, onboarding_completed')
+            .eq('id', user.id)
+            .single()
+
+          if (profile) {
+            if (!profile.onboarding_completed) {
+              return redirectWithCookies('/onboarding')
+            }
+            
+            const safeRole = profile.role?.toLowerCase() || 'student'
+            const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
+            return redirectWithCookies(dest)
+          }
+        }
+
+        // 3. Fall back to onboarding for new / incomplete users
+        return redirectWithCookies('/onboarding')
+      } else {
+        console.error('[auth-callback] Code exchange failed:', exchangeError.message)
+        return NextResponse.redirect(`${origin}/login?error=auth_callback_failed&error_description=${encodeURIComponent(exchangeError.message)}`)
+      }
+    } catch (err) {
+      console.error('[auth-callback] Critical route failure:', err)
+      return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
     }
   }
 

@@ -29,19 +29,23 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
   const lowerPath = pathname.toLowerCase()
   
-  // OPTIMIZATION: Skip getUser() for public assets and the callback route itself
-  // to avoid consuming one-time 'code' parameters or slowing down static files
+  // 1. SKIP AUTH FOR STATIC ASSETS & CALLBACKS
   const isAuthCallback = lowerPath.startsWith('/auth/callback')
-  
-  // Only skip for actual common static assets
-  const staticExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js', '.ico', '.woff', '.woff2']
-  const isStaticFile = staticExtensions.some(ext => lowerPath.endsWith(ext))
+  const staticExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js', '.ico', '.woff', '.woff2', '.map']
+  const isStaticFile = staticExtensions.some(ext => lowerPath.endsWith(ext)) || lowerPath.includes('/_next/')
   
   let user = null
   if (!isAuthCallback && !isStaticFile) {
-    // Safely check for user without crashing on null data
-    const { data, error: authError } = await supabase.auth.getUser()
-    user = data?.user
+    try {
+      // Safely check for user without crashing on null data or network failure
+      const { data, error: authError } = await supabase.auth.getUser()
+      if (!authError && data?.user) {
+        user = data.user
+      }
+    } catch (err) {
+      console.error('[Middleware] Global Auth Error:', err)
+      // Fallback: assume not logged in rather than crashing the whole site
+    }
   }
 
   // --- Helper: Redirect while preserving session cookies ---
@@ -61,18 +65,23 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse
   }
 
-  const publicPaths = ['/login', '/register', '/auth/callback', '/schools', '/privacy', '/terms', '/forgot-password', '/reset-password', '/api/schools', '/api/debug', '/admin/trials-test']
+  // Define public paths that DON'T require a valid session
+  const publicPaths = [
+    '/login', '/register', '/auth/callback', '/schools', 
+    '/privacy', '/terms', '/forgot-password', '/reset-password', 
+    '/api/schools', '/api/debug', '/admin/trials-test'
+  ]
   const isPublicPath = publicPaths.some((p) => lowerPath.startsWith(p))
 
-  // 1. Not logged in -> Redirect to login (unless already on a public path)
+  // 2. UNAUTHENTICATED -> LOGIN (Except public paths & root)
   if (!user && !isPublicPath && pathname !== '/') {
     return redirectWithCookies('/login')
   }
 
-  // 2. Logged in on a public path OR root -> Redirect to their respective home
+  // 3. AUTHENTICATED on public path OR root -> DASHBOARD
   if (user && (isPublicPath || pathname === '/')) {
     try {
-      // OPTIMIZATION: If already on a dashboard, don't re-fetch profile to redirect
+      // If already on a dashboard path, let it pass to avoid re-fetching profile
       if (lowerPath.includes('/dashboard')) return supabaseResponse
 
       const { data: profile } = await supabase
@@ -82,20 +91,24 @@ export async function updateSession(request: NextRequest) {
         .single()
 
       if (profile) {
-        if (!profile.onboarding_completed) {
+        if (!profile.onboarding_completed && pathname !== '/onboarding') {
           return redirectWithCookies('/onboarding')
         }
-        // Enforce lower-case role for URL consistency
+        
         const safeRole = profile.role?.toLowerCase() || 'student'
         const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
+        
+        // Prevent redirecting if we are already at the destination
+        if (pathname === dest) return supabaseResponse
         return redirectWithCookies(dest)
       }
     } catch (err) {
       console.error('[Middleware] Profile lookup failed:', err)
+      // If profile lookup fails, let them stay where they are or fall through
     }
   }
 
-  // 3. Logged in on onboarding -> Redirect if already finished
+  // 4. ONBOARDING GUARD: If finished, go to dashboard
   if (user && pathname === '/onboarding') {
     try {
       const { data: profile } = await supabase
@@ -106,7 +119,8 @@ export async function updateSession(request: NextRequest) {
 
       if (profile?.onboarding_completed) {
         const safeRole = profile.role?.toLowerCase() || 'student'
-        return redirectWithCookies(`/${safeRole}/dashboard`)
+        const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
+        return redirectWithCookies(dest)
       }
     } catch (err) {
        console.error('[Middleware] Onboarding check failed:', err)
