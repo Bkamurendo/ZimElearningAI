@@ -309,7 +309,7 @@ export default async function AIWorkspacePage() {
                     topic_name: t.topic_name,
                     importance: t.importance as any,
                     mastery_level: m ? m.mastery_level : 0,
-                    confidence_score: m ? [m.confidence_score] : [0.5],
+                    confidence_score: m ? m.confidence_score : 0.5,
                     common_mistakes: m ? m.common_mistakes : []
                   }
                 })
