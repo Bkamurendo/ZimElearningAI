@@ -33,18 +33,21 @@ const SUBJECT_COLORS = [
 
 export default async function StudentDashboard() {
   const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  
+  // Safely check for user without crashing on null data
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  const user = authData?.user
+  
+  if (authError || !user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single()
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, role')
+      .eq('id', user.id)
+      .single()
 
-  if (profile?.role !== 'student') redirect(`/${profile?.role}/dashboard`)
+    if (profile?.role !== 'student') redirect(`/${profile?.role || 'student'}/dashboard`)
 
   const { data: studentProfile } = (await supabase
     .from('student_profiles')
@@ -303,24 +306,38 @@ export default async function StudentDashboard() {
 
   const notifCount = notifications?.length ?? 0
 
-  return (
-    <DashboardClient 
-      user={user}
-      profile={profile}
-      studentProfile={studentProfile}
-      subjects={subjects}
-      stats={stats}
-      notifications={notifications ?? []}
-      recentBadges={recentBadges ?? []}
-      continueItems={continueItems}
-      upcomingExams={upcomingExams ?? []}
-      studyPlan={studyPlan}
-      pendingAssignmentsCount={pendingAssignmentsCount}
-      dailyChallengeCompleted={dailyChallengeCompleted}
-      dailyChallengeScore={dailyChallengeScore}
-    />
-  )
+    return (
+      <DashboardClient 
+        user={user}
+        profile={profile}
+        studentProfile={studentProfile}
+        subjects={subjects}
+        stats={stats}
+        notifications={notifications ?? []}
+        recentBadges={recentBadges ?? []}
+        continueItems={continueItems}
+        upcomingExams={upcomingExams ?? []}
+        studyPlan={studyPlan}
+        pendingAssignmentsCount={pendingAssignmentsCount}
+        dailyChallengeCompleted={dailyChallengeCompleted}
+        dailyChallengeScore={dailyChallengeScore}
+      />
+    )
+  } catch (error) {
+    console.error('[StudentDashboard] Runtime error:', error)
+    // Return a safe error UI or redirect to login
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <h2 className="text-2xl font-bold text-slate-800">Something went wrong</h2>
+        <p className="text-slate-500">We couldn't load your dashboard. Please try refreshing.</p>
+        <Link href="/login">
+          <Button>Back to Login</Button>
+        </Link>
+      </div>
+    )
+  }
 }
 
 import DashboardClient from './DashboardClient'
+import { Button } from '@/components/ui/Button'
 

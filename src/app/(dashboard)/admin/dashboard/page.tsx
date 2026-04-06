@@ -6,19 +6,21 @@ import AdminDashboardClient from './AdminDashboardClient'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  
+  // Safely check for user without crashing on null data
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  const user = authData?.user
+  
+  if (authError || !user) redirect('/login')
 
-  if (!user) redirect('/login')
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, role')
+      .eq('id', user.id)
+      .single()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') redirect(`/${profile?.role}/dashboard`)
+    if (profile?.role !== 'admin') redirect(`/${profile?.role || 'admin'}/dashboard`)
 
   const [
     { count: totalUsers },
@@ -144,27 +146,41 @@ export default async function AdminDashboard() {
     { label: 'Expirations Today', value: endingTodayCount,    iconId: 'AlertTriangle', color: endingTodayCount > 0 ? 'text-rose-600' : 'text-slate-400', bg: endingTodayCount > 0 ? 'bg-rose-50' : 'bg-slate-50', href: '/admin/trials', border: 'border-t-rose-500' },
   ]
 
-  return (
-    <AdminDashboardClient 
-      user={user}
-      profile={profile}
-      stats={stats}
-      endingTodayCount={endingTodayCount}
-      expiringSoon={expiringSoon}
-      cohortByMonth={cohortByMonth}
-      totalUsers={totalUsers ?? 0}
-      liveActiveUsers={liveActiveUsers ?? 0}
-      currentMRR={currentMRR}
-      potentialMRR={potentialMRR}
-      activeTrials={activeTrials}
-      paidUsers={trulyActivePaidUsers}
-      eliteUsers={eliteUsers}
-      pendingModeration={pendingModeration ?? 0}
-      totalDocuments={totalDocuments ?? 0}
-      publishedDocuments={publishedDocuments ?? 0}
-      pendingTeachers={pendingTeachers}
-      activeAnnouncements={activeAnnouncements}
-      totalQuestions={totalQuestions}
-    />
-  )
+    return (
+      <AdminDashboardClient 
+        user={user}
+        profile={profile}
+        stats={stats}
+        endingTodayCount={endingTodayCount}
+        expiringSoon={expiringSoon}
+        cohortByMonth={cohortByMonth}
+        totalUsers={totalUsers ?? 0}
+        liveActiveUsers={liveActiveUsers ?? 0}
+        currentMRR={currentMRR}
+        potentialMRR={potentialMRR}
+        activeTrials={activeTrials}
+        paidUsers={trulyActivePaidUsers}
+        eliteUsers={eliteUsers}
+        pendingModeration={pendingModeration ?? 0}
+        totalDocuments={totalDocuments ?? 0}
+        publishedDocuments={publishedDocuments ?? 0}
+        pendingTeachers={pendingTeachers}
+        activeAnnouncements={activeAnnouncements}
+        totalQuestions={totalQuestions}
+      />
+    )
+  } catch (error) {
+    console.error('[AdminDashboard] Runtime error:', error)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <h2 className="text-2xl font-bold text-slate-800">Something went wrong</h2>
+        <p className="text-slate-500">We couldn't load the admin dashboard. Please try refreshing.</p>
+        <Link href="/login">
+          <Button>Back to Login</Button>
+        </Link>
+      </div>
+    )
+  }
 }
+
+import { Button } from '@/components/ui/Button'

@@ -5,7 +5,10 @@ import TrialStatusBanner from '@/components/TrialStatusBanner'
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Safely check for user without crashing on null data
+  const { data, error: authError } = await supabase.auth.getUser()
+  const user = data?.user
 
   let userName = 'Student'
   let streak = 0
