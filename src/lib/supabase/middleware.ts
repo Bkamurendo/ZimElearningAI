@@ -96,9 +96,9 @@ export async function updateSession(request: NextRequest) {
         }
         
         const safeRole = profile.role?.toLowerCase() || 'student'
-        const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
+        const rolePart = safeRole === 'school_admin' ? 'school-admin' : safeRole
+        const dest = `/${rolePart}/dashboard`
         
-        // Prevent redirecting if we are already at the destination
         if (pathname === dest) return supabaseResponse
         return redirectWithCookies(dest)
       }

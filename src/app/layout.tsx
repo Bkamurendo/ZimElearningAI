@@ -57,7 +57,7 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         <OfflineBanner />
         <ThemeProvider>{children}</ThemeProvider>
-        <UpgradePopup />
+        {/* <UpgradePopup /> */}
       </body>
     </html>
   )
