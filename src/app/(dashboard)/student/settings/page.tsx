@@ -133,7 +133,7 @@ export default function ProfileSettingsPage() {
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="Your full name"
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                  className="w-full border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50 dark:bg-slate-800"
                   autoFocus
                 />
               </div>
@@ -143,7 +143,7 @@ export default function ProfileSettingsPage() {
                   value={newPhone}
                   onChange={e => setNewPhone(e.target.value)}
                   placeholder="e.g. 0771234567"
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                  className="w-full border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50 dark:bg-slate-800"
                 />
                 <p className="text-[10px] text-slate-400 mt-1 ml-1">Used for 2FA and Ready Pulse alerts</p>
               </div>

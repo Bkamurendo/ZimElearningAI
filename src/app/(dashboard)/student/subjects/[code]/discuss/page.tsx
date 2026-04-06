@@ -172,10 +172,10 @@ export default function SubjectDiscussPage() {
             </div>
             <input type="text" placeholder="What's your question? (title)" value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 outline-none" />
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-400 outline-none" />
             <textarea rows={4} placeholder="Describe your question in detail…" value={newBody}
               onChange={e => setNewBody(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 outline-none resize-none" />
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-400 outline-none resize-none" />
             <div className="flex gap-3">
               <button onClick={postQuestion} disabled={posting}
                 className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50">
@@ -274,7 +274,7 @@ export default function SubjectDiscussPage() {
                           value={replyBodies[d.id] ?? ''}
                           onChange={e => setReplyBodies(prev => ({ ...prev, [d.id]: e.target.value }))}
                           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postReply(d.id) } }}
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 outline-none"
+                          className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-400 outline-none"
                         />
                         <button onClick={() => postReply(d.id)} disabled={replyPosting === d.id}
                           className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition disabled:opacity-50">

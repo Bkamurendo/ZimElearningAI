@@ -364,7 +364,7 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                 onKeyDown={handleKeyDown}
                 disabled={isStreaming}
                 rows={6}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition disabled:opacity-50 placeholder:text-gray-400"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition disabled:opacity-50 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder={currentMode.placeholder}
               />
               <div className="flex items-center justify-between mt-3">
@@ -461,7 +461,7 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                           if (e.key === 'Enter') { e.preventDefault(); handleSolve() }
                         }}
                         placeholder="Ask a follow-up…"
-                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                        className="flex-1 px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
                       />
                       <button
                         onClick={() => handleSolve()}

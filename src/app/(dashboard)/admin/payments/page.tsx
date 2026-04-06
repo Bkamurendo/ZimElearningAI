@@ -20,7 +20,7 @@ export default async function AdminPaymentsPage() {
 
   if (profile?.role !== 'admin') redirect(`/${profile?.role}/dashboard`)
 
-  // Fetch all users with payment information
+  // Fetch all users with profile and subscription info
   const { data: users, error } = await supabase
     .from('profiles')
     .select(`
@@ -34,31 +34,53 @@ export default async function AdminPaymentsPage() {
       last_sign_in_at
     `)
     .eq('role', 'student')
-    .not('plan', 'is', null)
-    .order('subscription_expires_at', { ascending: true })
+    .order('created_at', { ascending: false })
+
+  // Fetch all successful payments to identify online vs manual upgrades
+  const { data: allPayments } = await supabase
+    .from('payments')
+    .select('user_id')
+    .in('status', ['paid', 'completed'])
 
   if (error) {
     console.error('Error fetching users:', error)
   }
 
   const now = new Date()
+  const onlinePaidUserIds = new Set((allPayments ?? []).map(p => p.user_id))
   
   // Categorize users by plan and status
-  const premiumUsers = users?.filter(user => user.plan === 'premium') || []
-  const basicUsers = users?.filter(user => user.plan === 'basic') || []
-  const expiredSubscriptions = users?.filter(user => 
-    user.subscription_expires_at && new Date(user.subscription_expires_at) < now
-  ) || []
+  const eliteUsers   = users?.filter(u => u.plan === 'elite')   || []
+  const proUsers     = users?.filter(u => u.plan === 'pro')     || []
+  const starterUsers = users?.filter(u => u.plan === 'starter') || []
+  const freeUsers    = users?.filter(u => u.plan === 'free' || !u.plan) || []
+
+  const paidUsers = [...eliteUsers, ...proUsers, ...starterUsers]
   
-  const expiringSoon = users?.filter(user => {
+  const expiredSubscriptions = paidUsers.filter(user => 
+    user.subscription_expires_at && new Date(user.subscription_expires_at) < now
+  )
+  
+  const expiringSoon = paidUsers.filter(user => {
     if (!user.subscription_expires_at) return false
     const daysLeft = Math.ceil((new Date(user.subscription_expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     return daysLeft > 0 && daysLeft <= 7
-  }) || []
+  })
 
-  const getSubscriptionStatus = (user: { plan: string; subscription_expires_at: string | null }) => {
+  const getSubscriptionStatus = (user: { id: string; plan: string; subscription_expires_at: string | null }) => {
+    if (user.plan === 'free' || !user.plan) {
+      return { status: 'free', color: 'text-slate-500', bg: 'bg-slate-50', label: 'Free Tier' }
+    }
+
     if (!user.subscription_expires_at) {
-      return { status: 'lifetime', color: 'text-purple-600', bg: 'bg-purple-50', label: 'Lifetime' }
+      // If they have a plan but no expiry, it's either lifetime or admin upgrade
+      const isOnline = onlinePaidUserIds.has(user.id)
+      return { 
+        status: 'lifetime', 
+        color: 'text-purple-600', 
+        bg: 'bg-purple-50', 
+        label: isOnline ? 'Lifetime' : 'Cash/Manual' 
+      }
     }
     
     const daysLeft = Math.ceil((new Date(user.subscription_expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
@@ -67,18 +89,26 @@ export default async function AdminPaymentsPage() {
     } else if (daysLeft <= 7) {
       return { status: 'expiring', color: 'text-amber-600', bg: 'bg-amber-50', label: `${daysLeft} days left` }
     } else {
-      return { status: 'active', color: 'text-green-600', bg: 'bg-green-50', label: `${daysLeft} days left` }
+      const isOnline = onlinePaidUserIds.has(user.id)
+      return { 
+        status: 'active', 
+        color: 'text-emerald-600', 
+        bg: 'bg-emerald-50', 
+        label: isOnline ? `${daysLeft} days left` : `Cash (${daysLeft}d)` 
+      }
     }
   }
 
   const getPlanBadge = (plan: string) => {
     switch (plan) {
-      case 'premium':
-        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-      case 'basic':
-        return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+      case 'elite':
+        return 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
+      case 'pro':
+        return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm'
+      case 'starter':
+        return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-sm'
       default:
-        return 'bg-gray-100 text-gray-600'
+        return 'bg-gray-100 text-gray-400'
     }
   }
 
@@ -149,8 +179,17 @@ export default async function AdminPaymentsPage() {
     )
   }
 
-  // Calculate revenue estimates (assuming basic: $5/month, premium: $15/month)
-  const estimatedMonthlyRevenue = (basicUsers.length * 5) + (premiumUsers.length * 15)
+  // Calculate revenue estimates (starter: $2, pro: $5, elite: $8)
+  const activePaidUsers = paidUsers.filter(u => {
+    if (!u.subscription_expires_at) return true // Assume manual/lifetime is active
+    return new Date(u.subscription_expires_at) >= now
+  })
+  
+  const estimatedMonthlyRevenue = 
+    (starterUsers.filter(u => activePaidUsers.includes(u)).length * 2) + 
+    (proUsers.filter(u => activePaidUsers.includes(u)).length * 5) + 
+    (eliteUsers.filter(u => activePaidUsers.includes(u)).length * 8)
+  
   const estimatedYearlyRevenue = estimatedMonthlyRevenue * 12
 
   return (
@@ -205,8 +244,8 @@ export default async function AdminPaymentsPage() {
                 <Users size={20} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{users?.length || 0}</p>
-                <p className="text-sm text-gray-500">Paying Users</p>
+                <p className="text-2xl font-bold text-gray-900">{activePaidUsers.length}</p>
+                <p className="text-sm text-gray-500">Active Subscribers</p>
               </div>
             </div>
           </div>
@@ -231,17 +270,31 @@ export default async function AdminPaymentsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-gray-700">Premium</span>
+                  <div className="w-3 h-3 bg-indigo-600 rounded-full"></div>
+                  <span className="text-sm font-medium text-gray-700">Elite</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900">{premiumUsers.length} users</span>
+                <span className="text-sm font-bold text-gray-900">{eliteUsers.length} users</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-gray-700">Basic</span>
+                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-gray-700">Pro</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900">{basicUsers.length} users</span>
+                <span className="text-sm font-bold text-gray-900">{proUsers.length} users</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-gray-700">Starter</span>
+                </div>
+                <span className="text-sm font-bold text-gray-900">{starterUsers.length} users</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                  <span className="text-sm font-medium text-gray-700">Free Tier</span>
+                </div>
+                <span className="text-sm font-bold text-gray-900">{freeUsers.length} users</span>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
@@ -292,12 +345,16 @@ export default async function AdminPaymentsPage() {
 
         {/* Users Table */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Paying Users</h2>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <CreditCard size={16} />
-                {users?.length || 0} total users
+              <div className="flex items-center gap-4">
+                <h2 className="text-lg font-bold text-gray-900">User Classification</h2>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-600">
+                  <Users size={12} /> {users?.length || 0} total students
+                </div>
+              </div>
+              <div className="text-xs text-gray-400 font-medium">
+                Showing all students ordered by join date
               </div>
             </div>
           </div>

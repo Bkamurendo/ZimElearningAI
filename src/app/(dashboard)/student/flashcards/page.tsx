@@ -320,7 +320,7 @@ export default function StudentFlashcardsPage() {
               <button onClick={() => setShowAdd(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
             <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none bg-white">
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-400 outline-none">
               <option value="">No subject</option>
               {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -328,13 +328,13 @@ export default function StudentFlashcardsPage() {
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Front (Question)</label>
                 <textarea rows={4} value={newFront} onChange={e => setNewFront(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-400 outline-none resize-none"
                   placeholder="Question or term…" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Back (Answer)</label>
                 <textarea rows={4} value={newBack} onChange={e => setNewBack(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-400 outline-none resize-none"
                   placeholder="Answer or definition…" />
               </div>
             </div>
@@ -381,7 +381,7 @@ export default function StudentFlashcardsPage() {
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subject</label>
                   <select value={genSubjectId} onChange={e => setGenSubjectId(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
                     <option value="">Select a subject...</option>
                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -392,7 +392,7 @@ export default function StudentFlashcardsPage() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Lesson Content</label>
                     <select value={genLessonId} onChange={e => setGenLessonId(e.target.value)}
                       disabled={lessons.length === 0}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all disabled:opacity-50">
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all disabled:opacity-50">
                       <option value="">{lessons.length > 0 ? 'Select a lesson...' : 'Select a subject first'}</option>
                       {lessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
                     </select>

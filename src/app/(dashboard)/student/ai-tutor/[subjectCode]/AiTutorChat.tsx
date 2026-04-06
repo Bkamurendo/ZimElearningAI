@@ -235,7 +235,7 @@ export default function AiTutorChat({
               onKeyDown={handleKeyDown}
               disabled={isStreaming}
               rows={2}
-              className="flex-1 px-3 py-2 bg-transparent text-sm outline-none resize-none disabled:opacity-50 placeholder:text-gray-300"
+              className="flex-1 px-3 py-2 bg-transparent text-sm text-gray-900 dark:text-white outline-none resize-none disabled:opacity-50 placeholder:text-gray-300 dark:placeholder:text-gray-500"
               placeholder={`Ask about ${subjectName}… (Enter to send)`}
             />
             <button

@@ -183,7 +183,7 @@ export default function StudentMessagesPage() {
                   <select
                     value={form.recipient_id}
                     onChange={e => setForm(f => ({ ...f, recipient_id: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   >
                     <option value="">Select a teacher…</option>
                     {teachers.map(t => (
@@ -195,12 +195,12 @@ export default function StudentMessagesPage() {
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                     Message
                   </label>
-                  <textarea
+                   <textarea
                     rows={5}
                     value={form.content}
                     onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                     placeholder="Type your message here…"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
                   />
                 </div>
                 {sendError && <p className="text-xs text-red-600 font-medium">{sendError}</p>}

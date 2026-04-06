@@ -175,15 +175,15 @@ export default function StudentNotesPage() {
             </div>
             <input type="text" placeholder="Note title…" value={newNote.title}
               onChange={e => setNewNote(p => ({ ...p, title: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-400 outline-none" />
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-400 outline-none" />
             <select value={newNote.subject_id} onChange={e => setNewNote(p => ({ ...p, subject_id: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-400 outline-none bg-white">
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-400 outline-none">
               <option value="">No subject</option>
               {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <textarea rows={6} placeholder="Write your note here…" value={newNote.content}
               onChange={e => setNewNote(p => ({ ...p, content: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-400 outline-none resize-none" />
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-400 outline-none resize-none" />
             <div className="flex gap-3">
               <button onClick={createNote} disabled={saving}
                 className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50">
@@ -274,14 +274,14 @@ export default function StudentNotesPage() {
                           <input
                             value={note.title}
                             onChange={e => scheduleAutoSave(note.id, 'title', e.target.value)}
-                            className="w-full text-sm font-semibold text-gray-900 border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+                            className="w-full text-sm font-semibold text-gray-900 dark:text-white bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
                             placeholder="Title…"
                           />
                           <textarea
                             value={note.content}
                             onChange={e => scheduleAutoSave(note.id, 'content', e.target.value)}
                             rows={20}
-                            className="w-full text-sm text-gray-700 font-mono border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-emerald-400 outline-none resize-y"
+                            className="w-full text-sm text-gray-700 dark:text-gray-200 font-mono bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 focus:ring-2 focus:ring-emerald-400 outline-none resize-y"
                             placeholder="Write your note here… (Markdown supported)"
                           />
                           <p className="text-xs text-gray-400">Markdown supported — auto-saves as you type</p>

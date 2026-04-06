@@ -203,7 +203,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Subject *</label>
                   <select value={notesSubject} onChange={e => setNotesSubject(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-400">
                     <option value="">Select subject...</option>
                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -212,7 +212,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Topic *</label>
                   <input type="text" value={notesTopic} onChange={e => setNotesTopic(e.target.value)}
                     placeholder="e.g. Photosynthesis, Quadratic Equations, World War 2..."
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400" />
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-400" />
                 </div>
                 <p className="text-xs text-gray-400">MaFundi will generate comprehensive ZIMSEC-aligned notes with worked examples and exam tips. Takes ~20 seconds.</p>
               </div>
@@ -224,7 +224,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Subject *</label>
                   <select value={mockSubject} onChange={e => setMockSubject(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-400">
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-purple-400">
                     <option value="">Select subject...</option>
                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -232,7 +232,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Paper Type *</label>
                   <select value={mockPaper} onChange={e => setMockPaper(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-400">
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-purple-400">
                     <option value="1">Paper 1 — Multiple Choice (40 MCQ)</option>
                     <option value="2">Paper 2 — Structured Questions</option>
                     <option value="3">Paper 3 — Essay Questions</option>
@@ -248,7 +248,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Subject *</label>
                   <select value={revSubject} onChange={e => setRevSubject(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400">
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-400">
                     <option value="">Select subject...</option>
                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -257,7 +257,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Topics * <span className="text-gray-400 font-normal">(comma-separated)</span></label>
                   <input type="text" value={revTopics} onChange={e => setRevTopics(e.target.value)}
                     placeholder="e.g. Osmosis, Cell Division, Genetics"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400" />
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-400" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Type</label>

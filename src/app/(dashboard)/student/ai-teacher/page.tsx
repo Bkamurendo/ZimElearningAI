@@ -968,7 +968,7 @@ export default function AITeacherPage() {
                                           `Ask MaFundi anything… (Enter to send)`
                 }
                 rows={1}
-                className="flex-1 resize-none bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400 max-h-32"
+                className="flex-1 resize-none bg-transparent outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 max-h-32"
                 style={{ minHeight: '24px' }} />
 
               {/* Voice input */}
