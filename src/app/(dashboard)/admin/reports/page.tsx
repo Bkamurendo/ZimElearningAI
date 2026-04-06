@@ -17,7 +17,7 @@ export default async function AdminReportsPage() {
     { data: userData },
     { data: revenueData },
     { data: activityData },
-    { data: contentData },
+    { data: _contentData },
     { data: quizData },
   ] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, role, plan, created_at, last_sign_in_at'),

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Generate the CSV content based on the requested file
     let csvContent = ''
-    let contentType = 'text/csv'
+    const contentType = 'text/csv'
 
     switch (filename) {
       case 'users_report.csv':

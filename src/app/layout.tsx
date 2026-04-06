@@ -4,7 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import { OfflineBanner } from '@/components/OfflineBanner'
-import { UpgradePopup } from '@/components/UpgradePopup'
+
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',

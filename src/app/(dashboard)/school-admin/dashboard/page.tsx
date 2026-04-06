@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  Building2, Users, GraduationCap, TrendingUp, BarChart3, 
+  Building2, Users, GraduationCap, BarChart3,
   MessageSquare, Settings, Share2, Sparkles, Star, Award,
   ArrowUpRight, School, BookOpen, UserCheck, ShieldCheck
 } from 'lucide-react'

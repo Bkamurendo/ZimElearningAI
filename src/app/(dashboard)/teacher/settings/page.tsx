@@ -40,13 +40,13 @@ export default function TeacherSettingsPage() {
           return
         }
 
-        const { data: p, error: pError } = await supabase
+        const { data: p, error: _pError } = await supabase
           .from('profiles')
           .select('full_name')
           .eq('id', user.id)
           .single()
 
-        const { data: tp, error: tpError } = await supabase
+        const { data: tp, error: _tpError } = await supabase
           .from('teacher_profiles')
           .select('qualification, bio')
           .eq('user_id', user.id)

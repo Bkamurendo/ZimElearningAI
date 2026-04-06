@@ -2,16 +2,16 @@
 
 import { useState } from 'react'
 import { Headphones, Play, Pause, Square, Loader2, Sparkles, Volume2 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 interface Props {
   lessonId: string
   lessonTitle: string
 }
 
-export default function AudioBriefingButton({ lessonId, lessonTitle }: Props) {
+export default function AudioBriefingButton({ lessonId, lessonTitle: _lessonTitle }: Props) {
   const [loading, setLoading] = useState(false)
-  const [script, setScript] = useState<string | null>(null)
+  const [_script, setScript] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
 

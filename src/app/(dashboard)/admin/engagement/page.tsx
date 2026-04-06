@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Activity, Users, Clock, AlertTriangle, TrendingUp, ArrowLeft, Eye, BookOpen, Target, Zap } from 'lucide-react'
+import { Activity, Users, Clock, AlertTriangle, ArrowLeft, BookOpen, Target, Zap } from 'lucide-react'
 
 export const metadata = { title: 'User Engagement — Admin' }
 
@@ -38,7 +38,7 @@ export default async function AdminEngagementPage() {
   const totalUsers = allUsers?.length || 0
   const activeToday = loginData?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(oneDayAgo)) || []
   const activeThisWeek = loginData?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(sevenDaysAgo)) || []
-  const activeThisMonth = loginData?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(thirtyDaysAgo)) || []
+  const _activeThisMonth = loginData?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(thirtyDaysAgo)) || []
   const inactiveUsersCount = inactiveUsers?.length || 0
 
   // Activity breakdown

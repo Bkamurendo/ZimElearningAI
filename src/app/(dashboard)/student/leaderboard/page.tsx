@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Trophy, Flame, Crown, Medal, BookOpen } from 'lucide-react'
+import { Trophy, Flame, Crown, Medal } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 

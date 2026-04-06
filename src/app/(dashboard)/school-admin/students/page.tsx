@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Users, Upload, Plus, UserPlus, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
-function formatDate(dateStr: string | null | undefined): string {
+function _formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('en-GB')
 }

@@ -35,7 +35,7 @@ export function SmsSummaryButton({ studentId, studentName, phoneNumber, averageP
       } else {
         alert(data.error || 'Failed to send SMS')
       }
-    } catch (err) {
+    } catch (_err) {
       alert('Error sending SMS')
     } finally {
       setLoading(false)

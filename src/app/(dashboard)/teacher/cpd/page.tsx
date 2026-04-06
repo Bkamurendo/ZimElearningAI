@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Award, Star, Zap, CheckCircle2, Trophy, ArrowRight, Download, Lock, Sparkles, BookOpen, GraduationCap, Printer, Clock } from 'lucide-react'
+import { Award, Star, Zap, Trophy, ArrowRight, Sparkles, GraduationCap, Printer, Clock } from 'lucide-react'
 import ClaimCertificateButton from './ClaimCertificateButton'
 
 export const metadata = {

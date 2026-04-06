@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { markAllNotificationsRead } from '@/app/actions/notifications'
 import { SmsSummaryButton } from './sms-button'
-import { Zap, Phone, BarChart3, CheckCircle2, ShieldAlert, Users } from 'lucide-react'
+import { Zap, BarChart3, ShieldAlert, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { isRedirectError } from 'next/dist/client/components/redirect'
 

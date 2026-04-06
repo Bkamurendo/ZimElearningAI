@@ -7,7 +7,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
   const supabase = createClient()
   
   // Safely check for user without crashing on null data
-  const { data, error: authError } = await supabase.auth.getUser()
+  const { data, error: _authError } = await supabase.auth.getUser()
   const user = data?.user
 
   let userName = 'Student'

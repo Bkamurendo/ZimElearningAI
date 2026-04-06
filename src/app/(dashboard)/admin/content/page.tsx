@@ -15,7 +15,7 @@ export default async function AdminContentPage() {
   // Fetch content data
   const [
     { data: documents },
-    { data: subjects },
+    { data: _subjects },
     { data: pendingApproval },
     { data: flaggedContent },
   ] = await Promise.all([

@@ -330,7 +330,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
         if (phone) {
           const result = await sendSMS(phone, SMS_TEMPLATES.examReminder(name, subject, 7))
-          result.success ? summary.examReminders.sent++ : summary.examReminders.failed++
+          if (result.success) { summary.examReminders.sent++ } else { summary.examReminders.failed++ }
         } else if (email) {
           const html = emailLayout(`
             <h2 style="color:#0284c7;font-size:22px;margin:0 0 8px">Hi ${name} — Exam in 7 days!</h2>
@@ -343,7 +343,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             </div>
           `)
           const result = await sendEmail(email, `Exam Reminder: ${subject} in 7 days`, html)
-          result.success ? summary.examReminders.sent++ : summary.examReminders.failed++
+          if (result.success) { summary.examReminders.sent++ } else { summary.examReminders.failed++ }
         }
       }
     }

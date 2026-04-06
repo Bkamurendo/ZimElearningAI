@@ -36,7 +36,7 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // 3. Try different approach - check for ANY trial_ends_at value
-    const { data: anyTrialEnds, error: anyError } = await supabase
+    const { data: anyTrialEnds, error: _anyError } = await supabase
       .from('profiles')
       .select('*')
       .eq('role', 'student')

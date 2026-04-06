@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Megaphone, MessageSquare, Users, Send, ArrowLeft, Plus, Edit, Trash2, Eye, Clock } from 'lucide-react'
+import { Megaphone, MessageSquare, Send, ArrowLeft, Plus, Edit, Trash2, Eye } from 'lucide-react'
 
 export const metadata = { title: 'Communications — Admin' }
 

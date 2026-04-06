@@ -217,7 +217,7 @@ export default function UpgradePage() {
     const status = searchParams.get('status')
     const flw    = searchParams.get('flw')
     const planId = searchParams.get('plan') as PlanId
-    const itemId = searchParams.get('subject')
+    const _itemId = searchParams.get('subject')
 
     if (planId && PLANS[planId]) {
       setSelectedPlan(planId)

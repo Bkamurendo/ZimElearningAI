@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
-  Sparkles, BookOpen, ClipboardList, FileText, AlertTriangle,
+  Sparkles, BookOpen, ClipboardList, FileText,
   TrendingUp, CalendarCheck, ChevronRight, Brain, Target,
   Clock, Zap, Bot, Trophy,
 } from 'lucide-react'
@@ -45,7 +45,7 @@ export default async function AIWorkspacePage() {
   let subjects: (SubjectCtx & { syllabus_pct: number })[] = []
   let weakTopics: WeakTopic[] = []
   let upcomingExams: UpcomingExam[] = []
-  let syllabusStats: SyllabusProgress[] = []
+  const syllabusStats: SyllabusProgress[] = []
   let streak = 0
   let xp = 0
 

@@ -4,10 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import {
   BookOpen,
-  Brain,
   BarChart3,
-  CalendarDays,
-  Star,
   CheckCircle2,
   Zap,
   ChevronRight,
@@ -16,7 +13,6 @@ import {
   ClipboardList,
   PlayCircle,
   CalendarCheck,
-  Clock,
   Sparkles,
   LayoutDashboard,
   GraduationCap,
@@ -57,7 +53,7 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({
-  user,
+  user: _user,
   profile,
   studentProfile,
   subjects,
@@ -66,10 +62,10 @@ export default function DashboardClient({
   recentBadges,
   continueItems,
   upcomingExams,
-  studyPlan,
+  studyPlan: _studyPlan,
   pendingAssignmentsCount,
   dailyChallengeCompleted,
-  dailyChallengeScore
+  dailyChallengeScore: _dailyChallengeScore
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -169,7 +165,7 @@ export default function DashboardClient({
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {stats.map(({ label, value, icon: Icon, color, bg, border }, idx) => (
+                {stats.map(({ label, value, icon: Icon, color, bg, border }, _idx) => (
                   <Card key={label} hover className={`p-5 border-t-4 ${border}`}>
                     <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3 shadow-inner`}>
                       <Icon size={20} className={color} />

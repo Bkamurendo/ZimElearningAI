@@ -88,7 +88,7 @@ export default function GiftPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [giftCode, setGiftCode] = useState('')
+  const [giftCode, _setGiftCode] = useState('')
 
   async function handlePay() {
     setError('')

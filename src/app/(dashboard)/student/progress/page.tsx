@@ -1,4 +1,4 @@
-import { Target, Users, Accessibility, Gift } from 'lucide-react'
+import { Target } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import SyllabusMasteryMap from './SyllabusMasteryMap'

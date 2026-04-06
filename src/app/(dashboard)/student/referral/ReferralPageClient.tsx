@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, Gift, Users, Share2 } from 'lucide-react'
+import { Copy, Check, Gift, Share2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface ReferralPageClientProps {

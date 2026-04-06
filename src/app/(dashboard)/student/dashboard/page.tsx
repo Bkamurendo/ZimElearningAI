@@ -55,7 +55,7 @@ export default async function StudentDashboard() {
       { count: lessonsCompleted },
       { count: quizzesCompleted },
       { count: topicsMastered },
-      { data: streak },
+      { data: _streak },
       { data: notifications },
       { data: recentBadges },
       { data: studyPlan }

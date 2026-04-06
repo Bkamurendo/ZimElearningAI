@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Activity, Target, ShieldCheck, ChevronRight, Zap, Loader2 } from 'lucide-react'
+import { Activity, Target, ChevronRight, Zap, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface AuditItem {

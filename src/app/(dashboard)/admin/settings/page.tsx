@@ -4,19 +4,18 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { 
-  Settings, 
-  ArrowLeft, 
-  Save, 
-  AlertTriangle, 
-  User, 
-  Shield, 
-  Lock, 
-  Clock, 
-  CheckCircle2, 
+  Settings,
+  ArrowLeft,
+  AlertTriangle,
+  User,
+  Shield,
+  Lock,
+  Clock,
+  CheckCircle2,
   LogOut,
   Loader2
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { logout } from '@/app/actions/auth'

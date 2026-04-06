@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { Monitor, Activity, Users, Server, Cpu, HardDrive, Wifi, AlertTriangle, ArrowLeft, RefreshCw, Clock, Database, ShieldAlert } from 'lucide-react'
+import { Monitor, Activity, Users, Cpu, HardDrive, Wifi, AlertTriangle, ArrowLeft, RefreshCw, Database, ShieldAlert } from 'lucide-react'
 
 export default function AdminMonitoringPage() {
   const supabase = createClient()

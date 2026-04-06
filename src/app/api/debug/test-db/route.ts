@@ -20,7 +20,7 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Test raw SQL query
-    const { data: rawResult, error: rawError } = await supabase
+    const { data: rawResult, error: _rawError } = await supabase
       .rpc('count_students_with_trials')
 
     return NextResponse.json({

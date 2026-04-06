@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { AlertTriangle, Users, TrendingDown, Target, Mail, Phone, MessageSquare, Calendar, BarChart3, Zap, Shield } from 'lucide-react'
@@ -30,7 +29,7 @@ export default async function AdminChurnReductionPage() {
 
   const now = new Date()
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const _sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   // Fetch churn risk data
   const [
@@ -39,7 +38,7 @@ export default async function AdminChurnReductionPage() {
     { data: trialUsers },
     { data: expiringTrials },
     { data: recentActivity },
-    { data: supportTickets }
+    { data: _supportTickets }
   ] = await Promise.all([
     // All active users
     supabase
@@ -108,7 +107,7 @@ export default async function AdminChurnReductionPage() {
     return acc
   }, {} as Record<string, number>) || {}
 
-  const disengagedUsers = allUsers?.filter(user => {
+  const _disengagedUsers = allUsers?.filter(user => {
     const activityCount = userActivityMap[user.id] || 0
     const daysSinceLastLogin = Math.floor((now.getTime() - new Date(user.last_sign_in_at).getTime()) / (1000 * 60 * 60 * 24))
     return activityCount < 5 && daysSinceLastLogin > 14
@@ -260,7 +259,7 @@ export default async function AdminChurnReductionPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {highRiskUsers.slice(0, 10).map((user) => {
                   const daysSinceLastLogin = Math.floor((now.getTime() - new Date(user.last_sign_in_at).getTime()) / (1000 * 60 * 60 * 24))
-                  const isTrialUser = trialUsers?.some(t => t.id === user.id)
+                  const _isTrialUser = trialUsers?.some(t => t.id === user.id)
                   
                   return (
                     <tr key={user.id}>

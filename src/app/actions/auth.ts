@@ -100,7 +100,7 @@ export async function register(formData: FormData): Promise<void> {
   }
 
   // Set role on the profile row created by the trigger
-  const { data: authData, error: userError } = await supabase.auth.getUser()
+  const { data: authData, error: _userError } = await supabase.auth.getUser()
   const user = authData?.user
   
   if (user) {

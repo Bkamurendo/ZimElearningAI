@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { Clock, AlertTriangle, CheckCircle, XCircle, Users } from 'lucide-react'
+import { AlertTriangle, CheckCircle, XCircle, Users } from 'lucide-react'
 
 export const metadata = { title: 'Trial Management Test — Admin' }
 

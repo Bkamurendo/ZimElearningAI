@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, 
-  BookOpen, BrainCircuit, Sparkles, Star, Download,
-  ArrowRight, FileWarning, Microscope
+  TrendingUp, TrendingDown,
+  BrainCircuit, Sparkles, Star, Download,
+  FileWarning, Microscope
 } from 'lucide-react'
 
 export const metadata = {

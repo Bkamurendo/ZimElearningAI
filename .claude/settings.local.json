@@ -203,7 +203,8 @@
       "Bash(ls \"C:\\\\Users\\\\Chegutu Mupfure\\\\OneDrive\\\\Desktop\\\\AI E-LEARNING PLATFORM ZIM\\\\src\\\\app\\\\\\(dashboard\\)\")",
       "Bash(find 'C:\\\\Users\\\\Chegutu Mupfure\\\\OneDrive\\\\Desktop\\\\AI E-LEARNING PLATFORM ZIM\\\\src\\\\app\\\\\\(dashboard\\)\\\\school-admin' -name *.tsx -o -name *.ts)",
       "Bash(find \"C:\\\\Users\\\\Chegutu Mupfure\\\\OneDrive\\\\Desktop\\\\AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)\" -type f -name \"page.tsx\")",
-      "Bash(find \"/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)/teacher\" -type f -name \"page.tsx\")"
+      "Bash(find \"/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)/teacher\" -type f -name \"page.tsx\")",
+      "Bash(npx eslint:*)"
     ]
   }
 }

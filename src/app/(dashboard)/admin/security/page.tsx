@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Shield, AlertTriangle, Users, Lock, Activity, Eye, ArrowLeft, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { Shield, AlertTriangle, Users, Lock, Activity, Eye, ArrowLeft, CheckCircle, XCircle } from 'lucide-react'
 
 export const metadata = { title: 'Security — Admin' }
 

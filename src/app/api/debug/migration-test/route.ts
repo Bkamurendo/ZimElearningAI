@@ -27,67 +27,67 @@ export async function GET(): Promise<NextResponse> {
         .single()
       results.trialUsers.count = trialData?.count || 0
       results.trialUsers.status = 'working'
-    } catch (err) {
+    } catch (_err) {
       results.trialUsers.status = 'error'
     }
     
     // Test 2: User activity table
     try {
-      const { data: activityData } = await supabase
+      const { data: _activityData } = await supabase
         .from('user_activity')
         .select('count')
         .single()
       results.userActivity.exists = true
       results.userActivity.status = 'working'
-    } catch (err) {
+    } catch (_err) {
       results.userActivity.status = 'table_not_found'
     }
     
     // Test 3: Study sessions table
     try {
-      const { data: sessionData } = await supabase
+      const { data: _sessionData } = await supabase
         .from('study_sessions')
         .select('count')
         .single()
       results.studySessions.exists = true
       results.studySessions.status = 'working'
-    } catch (err) {
+    } catch (_err) {
       results.studySessions.status = 'table_not_found'
     }
     
     // Test 4: Schools table
     try {
-      const { data: schoolData } = await supabase
+      const { data: _schoolData } = await supabase
         .from('schools')
         .select('count')
         .single()
       results.schools.exists = true
       results.schools.status = 'working'
-    } catch (err) {
+    } catch (_err) {
       results.schools.status = 'table_not_found'
     }
     
     // Test 5: Announcements table
     try {
-      const { data: announcementData } = await supabase
+      const { data: _announcementData } = await supabase
         .from('announcements')
         .select('count')
         .single()
       results.announcements.exists = true
       results.announcements.status = 'working'
-    } catch (err) {
+    } catch (_err) {
       results.announcements.status = 'table_not_found'
     }
     
     // Test 6: Security events table
     try {
-      const { data: securityData } = await supabase
+      const { data: _securityData } = await supabase
         .from('security_events')
         .select('count')
         .single()
       results.securityEvents.exists = true
       results.securityEvents.status = 'working'
-    } catch (err) {
+    } catch (_err) {
       results.securityEvents.status = 'table_not_found'
     }
     

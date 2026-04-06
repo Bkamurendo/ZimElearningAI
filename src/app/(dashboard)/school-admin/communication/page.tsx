@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { 
-  MessageSquare, Send, Users, History, CheckCircle2, 
-  AlertCircle, Loader2, Sparkles, Smartphone, Mail,
-  ArrowLeft, Search, Filter, Trash2, Calendar
+  MessageSquare, Send, Users, History, CheckCircle2,
+  Loader2, Sparkles, Smartphone, Mail,
+  ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
 

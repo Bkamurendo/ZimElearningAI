@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  Users, MessageSquare, Library, Trophy, 
-  Send, Plus, FileText, ChevronLeft, 
-  Trophy as TrophyIcon, Zap, Target
+  Users, MessageSquare, Library,
+  Send, Plus, FileText, ChevronLeft,
+  Zap, Target
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -44,7 +44,7 @@ export default function SquadIdPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [resources, setResources] = useState<Resource[]>([])
   const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [_loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'chat' | 'library' | 'mastery'>('chat')
 
   useEffect(() => {

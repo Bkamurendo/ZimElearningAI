@@ -41,12 +41,12 @@ export async function GET(): Promise<NextResponse> {
     }
     
     // Test 3: Check if new tables exist
-    const { data: activityData, error: activityError } = await supabase
+    const { data: _activityData, error: activityError } = await supabase
       .from('user_activity')
       .select('count')
       .single()
-    
-    const userActivityTableExists = !activityError
+
+    const _userActivityTableExists = !activityError
     
     const now = new Date()
     const activeTrials = trialUsers?.filter(user => 

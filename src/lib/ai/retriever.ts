@@ -20,7 +20,7 @@ export async function retrievePlatformKnowledge(
   const results: SearchResult[] = []
 
   // 1. Search Lessons
-  let lessonQuery = supabase
+  const lessonQuery = supabase
     .from('lessons')
     .select('title, content, courses(title, subject_id, subjects(name, zimsec_level))')
     .textSearch('content', query, { config: 'english', type: 'plain' })

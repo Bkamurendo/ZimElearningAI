@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Award, Loader2, Sparkles, Lock } from 'lucide-react'
+import { Loader2, Sparkles, Lock } from 'lucide-react'
 import Link from 'next/link'
 
 interface ClaimCertificateButtonProps {

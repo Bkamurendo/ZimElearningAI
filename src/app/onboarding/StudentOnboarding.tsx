@@ -5,7 +5,7 @@ import { completeStudentOnboarding } from '@/app/actions/onboarding'
 import type { Subject, ZimsecLevel } from '@/types/database'
 import {
   GraduationCap, BookOpen, CheckCircle2, Zap, Star, Crown,
-  ArrowRight, Check, ChevronRight,
+  Check, ChevronRight,
 } from 'lucide-react'
 
 const LEVELS: { value: ZimsecLevel; label: string; sublabel: string; grades: string[]; gradient: string; emoji: string }[] = [

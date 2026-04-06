@@ -148,7 +148,7 @@ export default async function TeacherDashboard() {
           </div>
 
           <div className="grid grid-cols-3 gap-3 sm:gap-4">
-            {stats.map(({ label, value, icon: Icon, color, bg, border }, idx) => (
+            {stats.map(({ label, value, icon: Icon, color, bg, border }, _idx) => (
               <div
                 key={label}
                 className={`bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 border-t-4 ${border}`}

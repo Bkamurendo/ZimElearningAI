@@ -53,7 +53,7 @@ export default async function AdminDashboard() {
     const trialTodayEnd = new Date()
     trialTodayEnd.setHours(23, 59, 59, 999)
 
-    let activeTrialsCount = 0
+    let _activeTrialsCount = 0
     let endingTodayCount = 0
     try {
       const { count: at } = await supabase
@@ -62,7 +62,7 @@ export default async function AdminDashboard() {
         .not('trial_ends_at', 'is', null)
         .gt('trial_ends_at', trialNow)
         .eq('plan', 'free')
-      activeTrialsCount = at ?? 0
+      _activeTrialsCount = at ?? 0
     } catch { /* trial_ends_at column may not exist yet */ }
     
     try {

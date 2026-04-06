@@ -31,7 +31,7 @@ const diffColors: Record<string, string> = {
   hard: 'bg-red-50 text-red-700',
 }
 
-const levelLabels: Record<string, string> = { primary: 'Primary', olevel: 'O-Level', alevel: 'A-Level' }
+const _levelLabels: Record<string, string> = { primary: 'Primary', olevel: 'O-Level', alevel: 'A-Level' }
 
 export default function QuestionBankPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])

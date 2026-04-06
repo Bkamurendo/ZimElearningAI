@@ -10,7 +10,7 @@ export async function GET(): Promise<NextResponse> {
 
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const _sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
     // Fetch user data for churn prediction
     const [
@@ -69,7 +69,7 @@ export async function GET(): Promise<NextResponse> {
       
       // Risk factors calculation
       let riskScore = 0
-      let riskFactors = []
+      const riskFactors = []
       
       // Inactivity risk (highest weight)
       if (daysSinceLastLogin > 30) {
@@ -138,7 +138,7 @@ export async function GET(): Promise<NextResponse> {
       else if (riskScore >= 30) riskLevel = 'Medium'
       
       // Recommended actions
-      let recommendedActions = []
+      const recommendedActions = []
       if (riskScore >= 70) {
         recommendedActions.push('immediate_personal_outreach', 'special_offer', 'phone_call')
       } else if (riskScore >= 50) {

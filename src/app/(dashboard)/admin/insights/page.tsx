@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Brain, TrendingUp, AlertTriangle, Target, ArrowLeft, Zap, BarChart3, Users, DollarSign, Award, Calendar } from 'lucide-react'
+import { Brain, TrendingUp, AlertTriangle, Target, ArrowLeft, BarChart3 } from 'lucide-react'
 
 export const metadata = { title: 'AI Insights — Admin' }
 

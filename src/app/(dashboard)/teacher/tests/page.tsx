@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { FlaskConical, Plus, Users, BookOpen } from 'lucide-react'
+import { FlaskConical, Plus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 type TestRow = {

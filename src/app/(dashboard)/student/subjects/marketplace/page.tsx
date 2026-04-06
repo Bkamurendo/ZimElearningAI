@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { BookOpen, Star, Zap, CheckCircle2, ChevronRight, Lock, Sparkles } from 'lucide-react'
+import { Zap, CheckCircle2, ChevronRight, Lock, Sparkles } from 'lucide-react'
 
 export const metadata = {
   title: 'Subject Marketplace – ZimLearn AI',
@@ -100,7 +100,7 @@ export default async function SubjectMarketplacePage() {
         {/* Subjects Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {allSubjects?.map((subject) => {
-            const isEnrolled = enrolledIds.has(subject.id)
+            const _isEnrolled = enrolledIds.has(subject.id)
             const isPurchased = purchasedIds.has(subject.id)
             const emoji = getEmoji(subject.name)
             

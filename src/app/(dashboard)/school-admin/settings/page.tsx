@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Settings,
   ArrowLeft,
-  Save,
   Loader2,
   CheckCircle,
   XCircle,

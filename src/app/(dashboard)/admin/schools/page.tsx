@@ -27,7 +27,7 @@ export default async function AdminSchoolsPage() {
     const [
       { data: schools },
       { data: licenses },
-      { data: schoolStats },
+      { data: _schoolStats },
     ] = await Promise.all([
       supabase.from('schools').select('*, admin:profiles(full_name, email)').order('created_at', { ascending: false }),
       supabase.from('school_licenses').select('*, schools(name)').order('created_at', { ascending: false }),

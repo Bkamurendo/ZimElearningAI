@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BookOpen, CheckCircle2, Circle, AlertCircle, Loader2 } from 'lucide-react'
+import { CheckCircle2, Circle, AlertCircle, Loader2 } from 'lucide-react'
 
 interface Topic {
   subject: string
@@ -17,7 +17,7 @@ export default function SyllabusMasteryMap() {
     // In a real app, this would fetch from /api/student/readiness-audit or a dedicated mastery endpoint
     fetch('/api/student/readiness-audit')
        .then(res => res.json())
-       .then(data => {
+       .then(_data => {
           // Flattening topics from the audit for demonstration
           // In production, we'd fetch the full syllabus topics
           setTopics([

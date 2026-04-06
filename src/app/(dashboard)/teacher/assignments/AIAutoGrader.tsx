@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { 
-  Camera, Upload, FileText, CheckCircle2, AlertCircle, 
-  Loader2, Sparkles, Wand2, ArrowRight, X, Trash2
+  Camera, FileText, CheckCircle2, AlertCircle,
+  Loader2, Sparkles, Wand2, X, Trash2
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -13,7 +13,7 @@ interface Props {
   studentName: string
 }
 
-export default function AIAutoGrader({ assignmentId, studentId, studentName }: Props) {
+export default function AIAutoGrader({ assignmentId: _assignmentId, studentId: _studentId, studentName }: Props) {
   const [image, setImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [grading, setGrading] = useState(false)
@@ -54,7 +54,7 @@ export default function AIAutoGrader({ assignmentId, studentId, studentName }: P
       }
       
       setResult(mockResult)
-    } catch (err) {
+    } catch (_err) {
       setError('AI Grading failed. Please try again or grade manually.')
     } finally {
       setGrading(false)

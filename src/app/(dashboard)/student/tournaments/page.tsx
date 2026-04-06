@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Trophy, Clock, Users, Zap, Lock, ChevronRight, Star } from 'lucide-react'
+import { Trophy, Clock, Users, Zap, ChevronRight, Star } from 'lucide-react'
 
 export const metadata = {
   title: 'Study Tournaments – ZimLearn AI',
@@ -31,7 +31,7 @@ export default async function TournamentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const { data: _profile } = await supabase
     .from('profiles')
     .select('plan, full_name')
     .eq('id', user.id)

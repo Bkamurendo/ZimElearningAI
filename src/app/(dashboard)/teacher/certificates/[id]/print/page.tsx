@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { 
-  Award, ShieldCheck, GraduationCap, Calendar, 
-  MapPin, Printer, Download, Share2, Sparkles, Star
+  Award, ShieldCheck, GraduationCap,
+  Printer, Download, Star
 } from 'lucide-react'
 import Image from 'next/image'
 

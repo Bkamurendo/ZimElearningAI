@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  Compass, GraduationCap, MapPinned, Stethoscope, 
-  Cpu, Gavel, Briefcase, Sparkles, Star, ArrowRight,
+  Compass, GraduationCap, Stethoscope,
+  Cpu, Gavel, Sparkles, Star, ArrowRight,
   TrendingUp, BookCheck, Building2
 } from 'lucide-react'
 

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Sparkles, FileText, Download, Wand2, Loader2, 
-  CheckCircle2, Shuffle, Layers, Printer, GraduationCap, X, Star
+  FileText, Download, Wand2, Loader2,
+  CheckCircle2, Shuffle, Layers, Printer, GraduationCap, Star
 } from 'lucide-react'
 
 interface Question {

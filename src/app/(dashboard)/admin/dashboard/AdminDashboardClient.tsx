@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+
 import {
   Users,
   BookOpen,
@@ -99,22 +99,22 @@ interface AdminDashboardClientProps {
 }
 
 export default function AdminDashboardClient({
-  user,
+  user: _user,
   profile,
   stats = [],
   endingTodayCount = 0,
-  expiringSoon = [],
+  expiringSoon: _expiringSoon = [],
   cohortByMonth = {},
   totalUsers = 0,
   liveActiveUsers = 0,
   currentMRR = 0,
   potentialMRR = 0,
-  activeTrials = [],
+  activeTrials: _activeTrials = [],
   paidUsers = [],
-  eliteUsers = [],
+  eliteUsers: _eliteUsers = [],
   pendingModeration = 0,
   totalDocuments = 0,
-  publishedDocuments = 0,
+  publishedDocuments: _publishedDocuments = 0,
   pendingTeachers = 0,
   activeAnnouncements = 0,
   totalQuestions = 0
@@ -237,7 +237,7 @@ export default function AdminDashboardClient({
           <div className="space-y-8">
             {/* Core Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.slice(0, 4).map((s, idx) => (
+                {stats.slice(0, 4).map((s, _idx) => (
                   <Link key={s.label} href={s.href ?? '#'}>
                     <Card hover className={`p-6 border-t-4 ${s.border ?? 'border-t-slate-800'}`}>
                         <div className={`w-12 h-12 ${s.bg} rounded-2xl flex items-center justify-center mb-4`}>
@@ -248,7 +248,7 @@ export default function AdminDashboardClient({
                     </Card>
                   </Link>
                 ))}
-                {stats.slice(4, 8).map((s, idx) => (
+                {stats.slice(4, 8).map((s, _idx) => (
                   <Link key={s.label} href={s.href ?? '#'}>
                     <Card hover className={`p-6 border-t-4 ${s.border ?? 'border-t-slate-800'}`}>
                         <div className={`w-12 h-12 ${s.bg} rounded-2xl flex items-center justify-center mb-4`}>

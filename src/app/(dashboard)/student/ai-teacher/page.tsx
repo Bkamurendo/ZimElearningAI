@@ -11,7 +11,7 @@ import {
   Send, Bot, User, Loader2, Plus, MessageCircle, BookOpen,
   Mic, MicOff, Image as ImageIcon, Save, Map, FlaskConical,
   FileText, X, CheckCircle2, XCircle, Trophy, ChevronRight,
-  Volume2, Lightbulb, AlignLeft, Zap, Globe, Languages, Settings2,
+  Volume2, Lightbulb, AlignLeft, Zap, Languages,
   Library
 } from 'lucide-react'
 import { ResourcePickerModal } from '@/components/ResourcePickerModal'
@@ -216,7 +216,7 @@ export default function AITeacherPage() {
   const [selectedSubject, setSelectedSubject] = useState('')
   const [solutionMode, setSolutionMode] = useState<'scaffolded' | 'direct'>('scaffolded')
   const [preferredLanguage, setPreferredLanguage] = useState<'english' | 'shona' | 'ndebele'>('english')
-  const [isPrimary, setIsPrimary] = useState(false)
+  const [_isPrimary, setIsPrimary] = useState(false)
   const [showLanguageModal, setShowLanguageModal] = useState(false)
 
 

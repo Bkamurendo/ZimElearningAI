@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { ShieldAlert, Database, Lock, UserCheck } from 'lucide-react'
+import { ShieldAlert, Database } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
