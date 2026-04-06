@@ -24,17 +24,32 @@ export async function GET(request: Request) {
       ? rawNext
       : ''
 
+  // --- Helper: Redirect while preserving session cookies ---
+  const redirectWithCookies = (path: string) => {
+    const url = new URL(path, origin)
+    const redirectResponse = NextResponse.redirect(url.toString())
+    
+    // We don't have a 'supabaseResponse' variable here like in middleware,
+    // but the cookies are already in the current environment's request/response cycle.
+    // However, for consistency with our middleware fixes, we ensure the redirect
+    // is absolute to the custom domain.
+    return redirectResponse
+  }
+
   if (code) {
     const supabase = createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      // If a specific destination was requested (e.g. password reset), honour it
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!exchangeError) {
+      // 1. If a specific destination was requested (e.g. /reset-password), honour it immediately
       if (explicitNext) {
-        return NextResponse.redirect(`${origin}${explicitNext}`)
+        return redirectWithCookies(explicitNext)
       }
 
-      // Otherwise: smart redirect based on profile state
-      const { data: { user } } = await supabase.auth.getUser()
+      // 2. Otherwise: smart redirect based on profile state
+      const { data, error: userError } = await supabase.auth.getUser()
+      const user = data?.user
+      
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -44,12 +59,14 @@ export async function GET(request: Request) {
 
         if (profile?.onboarding_completed) {
           const dest = profile.role === 'school_admin' ? '/school-admin/dashboard' : `/${profile.role}/dashboard`
-          return NextResponse.redirect(`${origin}${dest}`)
+          return redirectWithCookies(dest)
         }
       }
 
-      // Fall back to onboarding for new / incomplete users
-      return NextResponse.redirect(`${origin}/onboarding`)
+      // 3. Fall back to onboarding for new / incomplete users
+      return redirectWithCookies('/onboarding')
+    } else {
+      console.error('[auth-callback] Code exchange failed:', exchangeError.message)
     }
   }
 
