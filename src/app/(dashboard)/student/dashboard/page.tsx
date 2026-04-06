@@ -47,7 +47,10 @@ export default async function StudentDashboard() {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'student') redirect(`/${profile?.role || 'student'}/dashboard`)
+    if (profile?.role?.toLowerCase() !== 'student') {
+      const safeRole = profile?.role?.toLowerCase() || 'student'
+      redirect(`/${safeRole === 'school_admin' ? 'school-admin' : safeRole}/dashboard`)
+    }
 
   const { data: studentProfile } = (await supabase
     .from('student_profiles')

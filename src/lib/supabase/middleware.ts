@@ -27,14 +27,15 @@ export async function updateSession(request: NextRequest) {
   )
 
   const { pathname } = request.nextUrl
+  const lowerPath = pathname.toLowerCase()
   
   // OPTIMIZATION: Skip getUser() for public assets and the callback route itself
   // to avoid consuming one-time 'code' parameters or slowing down static files
-  const isAuthCallback = pathname.startsWith('/auth/callback')
+  const isAuthCallback = lowerPath.startsWith('/auth/callback')
   
   // Only skip for actual common static assets
   const staticExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js', '.ico', '.woff', '.woff2']
-  const isStaticFile = staticExtensions.some(ext => pathname.toLowerCase().endsWith(ext))
+  const isStaticFile = staticExtensions.some(ext => lowerPath.endsWith(ext))
   
   let user = null
   if (!isAuthCallback && !isStaticFile) {
@@ -61,7 +62,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   const publicPaths = ['/login', '/register', '/auth/callback', '/schools', '/privacy', '/terms', '/forgot-password', '/reset-password', '/api/schools', '/api/debug', '/admin/trials-test']
-  const isPublicPath = publicPaths.some((p) => pathname.startsWith(p))
+  const isPublicPath = publicPaths.some((p) => lowerPath.startsWith(p))
 
   // 1. Not logged in -> Redirect to login (unless already on a public path)
   if (!user && !isPublicPath && pathname !== '/') {
@@ -71,6 +72,9 @@ export async function updateSession(request: NextRequest) {
   // 2. Logged in on a public path OR root -> Redirect to their respective home
   if (user && (isPublicPath || pathname === '/')) {
     try {
+      // OPTIMIZATION: If already on a dashboard, don't re-fetch profile to redirect
+      if (lowerPath.includes('/dashboard')) return supabaseResponse
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, onboarding_completed')
@@ -81,11 +85,13 @@ export async function updateSession(request: NextRequest) {
         if (!profile.onboarding_completed) {
           return redirectWithCookies('/onboarding')
         }
-        return redirectWithCookies(`/${profile.role}/dashboard`)
+        // Enforce lower-case role for URL consistency
+        const safeRole = profile.role?.toLowerCase() || 'student'
+        const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
+        return redirectWithCookies(dest)
       }
     } catch (err) {
       console.error('[Middleware] Profile lookup failed:', err)
-      // Fall through to allow request if DB is busy, rather than crashing
     }
   }
 
@@ -99,7 +105,8 @@ export async function updateSession(request: NextRequest) {
         .single()
 
       if (profile?.onboarding_completed) {
-        return redirectWithCookies(`/${profile.role}/dashboard`)
+        const safeRole = profile.role?.toLowerCase() || 'student'
+        return redirectWithCookies(`/${safeRole}/dashboard`)
       }
     } catch (err) {
        console.error('[Middleware] Onboarding check failed:', err)

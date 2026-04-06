@@ -20,7 +20,10 @@ export default async function AdminDashboard() {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') redirect(`/${profile?.role || 'admin'}/dashboard`)
+    if (profile?.role?.toLowerCase() !== 'admin') {
+      const safeRole = profile?.role?.toLowerCase() || 'admin'
+      redirect(`/${safeRole === 'school_admin' ? 'school-admin' : safeRole}/dashboard`)
+    }
 
   const [
     { count: totalUsers },
