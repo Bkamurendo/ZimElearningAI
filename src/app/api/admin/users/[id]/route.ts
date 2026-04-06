@@ -110,3 +110,31 @@ export async function POST(
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+/* ── DELETE — hard delete user account ───────────────────────────────────── */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const admin = await guardAdmin()
+    if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    // Prevent deleting oneself
+    if (admin.id === params.id) {
+      return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 })
+    }
+
+    const svc = serviceClient()
+
+    // Delete the user from auth.users (this should cascade to public.profiles and related tables if foreign keys are set up correctly)
+    const { error } = await svc.auth.admin.deleteUser(params.id)
+    if (error) throw new Error(error.message)
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Server error'
+    console.error('[admin/users DELETE]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}

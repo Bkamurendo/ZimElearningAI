@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import UserEditForm from './UserEditForm'
 import { SuspendUserButton } from './SuspendUserButton'
+import { DeleteUserButton } from './DeleteUserButton'
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
   student: { label: 'Student', color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-200', icon: GraduationCap },
@@ -141,6 +142,11 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
             userId={target.id}
             isSuspended={target.suspended ?? false}
           />
+        )}
+
+        {/* Delete */}
+        {!isCurrentUser && (
+          <DeleteUserButton userId={target.id} />
         )}
 
       </div>
