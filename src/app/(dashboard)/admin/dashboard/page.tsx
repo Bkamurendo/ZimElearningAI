@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, Shield, Library, Megaphone, Globe, BarChart2, BarChart3, Settings, Bell, ClipboardList, HelpCircle, Building2, CreditCard, Clock, TrendingUp, Activity, FileText, Monitor, Brain, MessageSquare, AlertTriangle } from 'lucide-react'
 import AdminDashboardClient from './AdminDashboardClient'
 
 export default async function AdminDashboard() {
@@ -102,17 +101,14 @@ export default async function AdminDashboard() {
   const now = new Date()
   const trialUsers = trialStats?.filter(p => p.trial_ends_at) || []
   const activeTrials = trialUsers.filter(p => new Date(p.trial_ends_at) > now)
-  const expiredTrials = trialUsers.filter(p => new Date(p.trial_ends_at) <= now)
   const expiringSoon = trialUsers.filter(p => {
     const daysLeft = Math.ceil((new Date(p.trial_ends_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     return daysLeft > 0 && daysLeft <= 3
   })
 
   // Payment Tracking - FIX: correctly classify paying users
-  // A user is "Paying" if they have a plan other than 'free' AND their subscription hasn't expired
   const paidUsers = paymentStats?.filter(p => p.plan !== 'free' && p.plan !== null) || []
   const premiumUsers = paidUsers.filter(p => p.plan === 'premium')
-  const expiredSubscriptions = paidUsers.filter(p => p.subscription_expires_at && new Date(p.subscription_expires_at) < now)
   const trulyActivePaidUsers = paidUsers.filter(p => !p.subscription_expires_at || new Date(p.subscription_expires_at) >= now)
 
   // Process cohort data
@@ -123,14 +119,14 @@ export default async function AdminDashboard() {
   }, {} as Record<string, number>) || {}
 
   const stats = [
-    { label: 'Total users',    value: totalUsers ?? 0,        icon: Users,         color: 'text-blue-600',   bg: 'bg-blue-50',   href: '/admin/users', border: 'border-t-blue-500' },
-    { label: 'Students',       value: totalStudents ?? 0,     icon: GraduationCap, color: 'text-green-600',  bg: 'bg-green-50',  href: '/admin/users', border: 'border-t-green-500' },
-    { label: 'Subjects',       value: totalSubjects ?? 0,     icon: LayoutList,    color: 'text-purple-600', bg: 'bg-purple-50', href: '/admin/subjects', border: 'border-t-purple-500' },
-    { label: 'Active Trials',  value: activeTrials.length,    icon: Clock,         color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/trials', border: 'border-t-amber-500' },
-    { label: 'Paid Users',     value: trulyActivePaidUsers.length, icon: CreditCard,    color: 'text-emerald-600', bg: 'bg-emerald-50', href: '/admin/payments', border: 'border-t-emerald-500' },
-    { label: 'Published Docs', value: publishedDocuments ?? 0, icon: FileText,     color: 'text-teal-600',   bg: 'bg-teal-50',   href: '/admin/documents', border: 'border-t-teal-500' },
-    { label: 'Docs to review', value: pendingModeration ?? 0, icon: BarChart2,     color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/documents', border: 'border-t-amber-500' },
-    { label: 'Expirations Today', value: endingTodayCount,    icon: AlertTriangle, color: endingTodayCount > 0 ? 'text-rose-600' : 'text-slate-400', bg: endingTodayCount > 0 ? 'bg-rose-50' : 'bg-slate-50', href: '/admin/trials', border: 'border-t-rose-500' },
+    { label: 'Total users',    value: totalUsers ?? 0,        iconId: 'Users',         color: 'text-blue-600',   bg: 'bg-blue-50',   href: '/admin/users', border: 'border-t-blue-500' },
+    { label: 'Students',       value: totalStudents ?? 0,     iconId: 'GraduationCap', color: 'text-green-600',  bg: 'bg-green-50',  href: '/admin/users', border: 'border-t-green-500' },
+    { label: 'Subjects',       value: totalSubjects ?? 0,     iconId: 'LayoutList',    color: 'text-purple-600', bg: 'bg-purple-50', href: '/admin/subjects', border: 'border-t-purple-500' },
+    { label: 'Active Trials',  value: activeTrials.length,    iconId: 'Clock',         color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/trials', border: 'border-t-amber-500' },
+    { label: 'Paid Users',     value: trulyActivePaidUsers.length, iconId: 'CreditCard',    color: 'text-emerald-600', bg: 'bg-emerald-50', href: '/admin/payments', border: 'border-t-emerald-500' },
+    { label: 'Published Docs', value: publishedDocuments ?? 0, iconId: 'FileText',     color: 'text-teal-600',   bg: 'bg-teal-50',   href: '/admin/documents', border: 'border-t-teal-500' },
+    { label: 'Docs to review', value: pendingModeration ?? 0, iconId: 'BarChart2',     color: 'text-amber-600',  bg: 'bg-amber-50',  href: '/admin/documents', border: 'border-t-amber-500' },
+    { label: 'Expirations Today', value: endingTodayCount,    iconId: 'AlertTriangle', color: endingTodayCount > 0 ? 'text-rose-600' : 'text-slate-400', bg: endingTodayCount > 0 ? 'bg-rose-50' : 'bg-slate-50', href: '/admin/trials', border: 'border-t-rose-500' },
   ]
 
   return (
@@ -140,7 +136,6 @@ export default async function AdminDashboard() {
       stats={stats}
       endingTodayCount={endingTodayCount}
       expiringSoon={expiringSoon}
-      expiredSubscriptions={expiredSubscriptions}
       cohortByMonth={cohortByMonth}
       totalUsers={totalUsers ?? 0}
       activeTrials={activeTrials}
