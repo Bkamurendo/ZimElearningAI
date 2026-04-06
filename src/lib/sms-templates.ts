@@ -33,6 +33,10 @@ export const SMS_TEMPLATES = {
   trialEnding: (name: string, daysLeft: number) =>
     `Hi ${name}, your ZimLearn Pro trial ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}. Upgrade now at zimlearn.ai/student/upgrade`,
 
+  /** Trial expired message */
+  trialExpired: (name: string) =>
+    `Hi ${name}, your ZimLearn Pro trial has expired. Upgrade now to keep accessing premium features: zimlearn.ai/student/upgrade`,
+
   // ── Academic ─────────────────────────────────────────────────────────────────
 
   /** Assignment due-date reminder */

@@ -190,6 +190,14 @@ export async function sendTrialEndingSMS(
   await sendSMS(phone, SMS_TEMPLATES.trialEnding(name, daysLeft))
 }
 
+export async function sendTrialExpiredSMS(
+  phone: string,
+  name: string
+): Promise<void> {
+  const { SMS_TEMPLATES } = await import('@/lib/sms-templates')
+  await sendSMS(phone, SMS_TEMPLATES.trialExpired(name))
+}
+
 export async function sendAssignmentDueSMS(
   phone: string,
   studentName: string,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Zap, Trophy, Clock, CheckCircle2, XCircle, Share2, ChevronRight, Loader2, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
+import { fireConfetti, firePrideConfetti } from '@/lib/confetti'
 
 // ---------- Types ----------
 
@@ -360,6 +361,15 @@ export default function DailyChallengesPage() {
       setIsPerfect(data.isPerfect ?? false)
       setJustCompleted(true)
       setPhase('results')
+      
+      // FIRE CELEBRATION!
+      if (data.score && data.score >= 4) {
+        if (data.isPerfect) {
+          firePrideConfetti()
+        } else {
+          fireConfetti()
+        }
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to submit. Please try again.')
     } finally {

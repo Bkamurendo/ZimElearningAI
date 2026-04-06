@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { retrievePlatformKnowledge } from '@/lib/ai/retriever'
 import { extractTextFromPDF, classifyZimsecDocument } from '@/lib/ai/doc-processor'
 import { NATIVE_LEXICON, LexiconLanguage } from '@/lib/ai/lexicon'
+import { checkAIQuota } from '@/lib/ai-quota'
 
 
 export const maxDuration = 60
@@ -537,6 +538,19 @@ export async function POST(req: NextRequest) {
       .single() as { data: { id: string; grade: string | null; zimsec_level: string } | null; error: unknown }
 
     if (!studentProfile) return NextResponse.json({ error: 'No student profile' }, { status: 403 })
+
+    // AI QUOTA ENFORCEMENT
+    const quota = await checkAIQuota(supabase, user.id)
+    if (!quota.allowed) {
+      return NextResponse.json({ 
+        error: 'Daily AI limit reached', 
+        quota_exceeded: true,
+        trial_expired: quota.trialExpired,
+        limit: quota.limit,
+        used: quota.used,
+        resets_at: quota.resetsAt
+      }, { status: 429 })
+    }
 
     const {
       conversation_id,

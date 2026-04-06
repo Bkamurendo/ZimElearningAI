@@ -34,6 +34,7 @@ export interface QuotaResult {
   limit: number
   remaining: number
   resetsAt: string   // ISO string
+  trialExpired?: boolean
 }
 
 /**
@@ -59,6 +60,7 @@ export async function checkAIQuota(
   // Check if 7-day free trial is still active — treat as 'pro' while on trial
   const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null
   const isTrialActive = trialEndsAt ? trialEndsAt > new Date() : false
+  const isTrialExpired = trialEndsAt ? trialEndsAt <= new Date() : false
 
   const plan: PlanTier = profile.plan ?? 'free'
   // Effective plan for quota purposes: trial users get pro limits
@@ -79,12 +81,12 @@ export async function checkAIQuota(
       ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),
     }).eq('id', userId)
 
-    return { allowed: true, plan, used, limit, remaining: limit - used, resetsAt: tomorrowMidnightUTC() }
+    return { allowed: true, plan, used, limit, remaining: limit - used, resetsAt: tomorrowMidnightUTC(), trialExpired: isTrialExpired }
   }
 
   // Starter / Free — enforce daily limit
   if (used >= limit) {
-    return { allowed: false, plan, used, limit, remaining: 0, resetsAt: tomorrowMidnightUTC() }
+    return { allowed: false, plan, used, limit, remaining: 0, resetsAt: tomorrowMidnightUTC(), trialExpired: isTrialExpired }
   }
 
   await supabase.from('profiles').update({
@@ -99,6 +101,7 @@ export async function checkAIQuota(
     limit,
     remaining: limit - (used + 1),
     resetsAt: tomorrowMidnightUTC(),
+    trialExpired: isTrialExpired,
   }
 }
 

@@ -94,8 +94,44 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // If schedule is immediate, send messages now
     if (!schedule || new Date(schedule) <= now) {
-      // In a real implementation, this would integrate with an email service
-      // For now, we'll mark as sent and create activity logs
+      const { sendSMS } = await import('@/lib/sms')
+      const { sendEmail } = await import('@/lib/email')
+
+      for (const msg of personalizedMessages) {
+        // Send Email
+        if (msg.email) {
+          await sendEmail(
+            msg.email,
+            `Special Update from ZimLearn: ${campaignType.replace('_', ' ')}`,
+            `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #334155;">
+                <h2 style="color: #0d9488;">Hello from MaFundi!</h2>
+                <div style="font-size: 16px; line-height: 1.6; background-color: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                  ${msg.personalized_message.replace(/\n/g, '<br>')}
+                </div>
+                <div style="margin: 30px 0; text-align: center;">
+                  <a href="https://zimlearn.ai/student/dashboard" style="background-color: #0d9488; color: white; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block;">Return to My Learning</a>
+                </div>
+                <p style="font-size: 12px; color: #94a3b8; text-align: center;">You received this because of your learning activity on ZimLearn.</p>
+              </div>
+            `
+          )
+        }
+
+        // Send SMS (assuming phone is available or fetched)
+        // Note: profiles table has 'phone' field. Let's ensure we have it.
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('id', msg.user_id)
+          .single()
+
+        if (userProfile?.phone) {
+          await sendSMS(userProfile.phone, msg.personalized_message)
+        }
+      }
+
+      // Create activity logs
       const activityLogs = personalizedMessages.map(msg => ({
         user_id: msg.user_id,
         activity_type: 'retention_campaign',
