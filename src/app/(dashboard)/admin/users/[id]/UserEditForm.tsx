@@ -14,10 +14,18 @@ const ROLES = [
   { value: 'admin',   label: 'Admin',   icon: Shield,         active: 'bg-gray-100 border-gray-400 text-gray-800 ring-2 ring-gray-300 ring-offset-1',       idle: 'bg-white border-gray-200 text-gray-500 hover:border-gray-300' },
 ]
 
+const PLANS = [
+  { value: 'free', label: 'Free',      active: 'bg-gray-50 border-gray-400 text-gray-700 ring-2 ring-gray-300 ring-offset-1',  idle: 'bg-white border-gray-200 text-gray-500 hover:border-gray-300' },
+  { value: 'starter', label: 'Starter', active: 'bg-blue-50 border-blue-400 text-blue-700 ring-2 ring-blue-300 ring-offset-1',  idle: 'bg-white border-gray-200 text-gray-500 hover:border-gray-300' },
+  { value: 'pro',     label: 'Pro',     active: 'bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300 ring-offset-1', idle: 'bg-white border-gray-200 text-gray-500 hover:border-gray-300' },
+  { value: 'elite',   label: 'Elite',   active: 'bg-indigo-50 border-indigo-400 text-indigo-700 ring-2 ring-indigo-300 ring-offset-1', idle: 'bg-white border-gray-200 text-gray-500 hover:border-gray-300' },
+]
+
 interface Props {
   userId: string
   initialName: string
   initialRole: string
+  initialPlan: string
   initialOnboarded: boolean
   isCurrentUser: boolean
 }
@@ -26,6 +34,7 @@ export default function UserEditForm({
   userId,
   initialName,
   initialRole,
+  initialPlan,
   initialOnboarded,
   isCurrentUser,
 }: Props) {
@@ -34,6 +43,7 @@ export default function UserEditForm({
   // Edit state
   const [name, setName]           = useState(initialName)
   const [role, setRole]           = useState(initialRole)
+  const [plan, setPlan]           = useState(initialPlan)
   const [onboarded, setOnboarded] = useState(initialOnboarded)
   const [saving, setSaving]       = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
@@ -47,6 +57,7 @@ export default function UserEditForm({
   const dirty =
     name !== initialName ||
     role !== initialRole ||
+    plan !== initialPlan ||
     onboarded !== initialOnboarded
 
   async function handleSave() {
@@ -56,7 +67,7 @@ export default function UserEditForm({
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: name, role, onboarding_completed: onboarded }),
+        body: JSON.stringify({ full_name: name, role, plan, onboarding_completed: onboarded }),
       })
       if (res.ok) {
         setSaveStatus('saved')
@@ -144,6 +155,25 @@ export default function UserEditForm({
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all ${role === value ? active : idle}`}
                 >
                   <Icon size={14} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Plan */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Subscription Plan
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {PLANS.map(({ value, label, active, idle }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setPlan(value)}
+                  className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all ${plan === value ? active : idle}`}
+                >
                   {label}
                 </button>
               ))}

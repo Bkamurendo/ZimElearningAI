@@ -7,6 +7,7 @@ import {
   Clock, Zap, Bot, Trophy,
 } from 'lucide-react'
 import WorkspaceActions from './WorkspaceActions'
+import { MasteryHeatmap } from '@/components/MasteryHeatmap'
 
 type SubjectCtx = {
   id: string; name: string; code: string; zimsec_level: string
@@ -258,28 +259,70 @@ export default async function AIWorkspacePage() {
           </div>
         )}
 
-        {/* Syllabus Progress Tracking */}
+        {/* MaFundi Recommendations */}
         {subjects.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-4">
-              <BookOpen size={16} className="text-teal-600" /> ZIMSEC Syllabus Mastery
-            </h2>
-            <div className="space-y-4">
-              {subjects.map(s => (
-                <div key={s.id} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-gray-700">{s.name}</span>
-                    <span className="font-bold text-teal-600">{s.syllabus_pct}% mastered</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-teal-500 h-full rounded-full transition-all duration-1000" style={{ width: `${s.syllabus_pct}%` }} />
-                  </div>
-                </div>
-              ))}
+          <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center gap-6 shadow-sm overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0 relative">
+               <Bot size={32} className="text-indigo-600" />
+               <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
             </div>
-            <p className="text-[10px] text-gray-400 mt-4 leading-relaxed">
-              Mastery increases as you pass quizzes and MaFundi evaluates your understanding of specific syllabus topics.
-            </p>
+            <div className="flex-1 text-center sm:text-left relative">
+              <h3 className="font-black text-indigo-900 text-lg mb-1 leading-tight">MaFundi&apos;s Recommendation</h3>
+              <p className="text-indigo-700 text-sm mb-0">
+                You should focus on <strong>Agricultural Science - Soil Fertility</strong>. 
+                Your current mastery is <span className="font-bold">42%</span>. 
+                Shall we push it to 80% today?
+              </p>
+            </div>
+            <Link href="/student/ai-teacher" className="bg-indigo-600 text-white rounded-xl py-3 px-6 text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition shadow-xl shadow-indigo-200 hover:scale-105 active:scale-95 flex-shrink-0 relative">
+              Start Learning
+            </Link>
+          </div>
+        )}
+
+        {/* Syllabus Mastery Heatmap Section */}
+        {subjects.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+              <BookOpen size={14} /> Interactive Syllabus Mastery
+            </h2>
+            <div className="space-y-8">
+              {subjects.map(async (s) => {
+                // Fetch dynamic topics for this subject
+                const { data: topics } = await supabase
+                  .from('subject_topics')
+                  .select('id, topic_name, importance')
+                  .eq('subject_id', s.id)
+                
+                const { data: memory } = await supabase
+                  .from('student_teaching_memory')
+                  .select('*')
+                  .eq('student_id', sid)
+                  .eq('subject_id', s.id)
+                
+                // Map topics to their mastery state
+                const mappedTopics = (topics ?? []).map(t => {
+                  const m = (memory ?? []).find(mem => mem.topic.toLowerCase() === t.topic_name.toLowerCase())
+                  return {
+                    id: t.id,
+                    topic_name: t.topic_name,
+                    importance: t.importance as any,
+                    mastery_level: m ? m.mastery_level : 0,
+                    confidence_score: m ? [m.confidence_score] : [0.5],
+                    common_mistakes: m ? m.common_mistakes : []
+                  }
+                })
+
+                return (
+                  <MasteryHeatmap 
+                    key={s.id} 
+                    subjectName={s.name} 
+                    topics={mappedTopics} 
+                  />
+                )
+              })}
+            </div>
           </div>
         )}
 

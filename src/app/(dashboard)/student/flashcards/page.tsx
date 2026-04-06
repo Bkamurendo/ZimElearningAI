@@ -46,6 +46,7 @@ export default function StudentFlashcardsPage() {
   const [genLessonId, setGenLessonId] = useState('')
   const [genLoading, setGenLoading] = useState(false)
   const [genResult, setGenResult] = useState<string | null>(null)
+  const [genType, setGenType] = useState<'lesson' | 'mission'>('lesson')
 
   useEffect(() => {
     async function load() {
@@ -145,6 +146,25 @@ export default function StudentFlashcardsPage() {
       setGenResult(`✓ Generated ${data.count} flashcards!`)
     } else {
       setGenResult(data.error ?? 'Failed to generate flashcards')
+    }
+    setGenLoading(false)
+  }
+
+  async function generateStruggleCards() {
+    if (!genSubjectId) return
+    setGenLoading(true)
+    setGenResult(null)
+    const res = await fetch('/api/student/flashcards/struggles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject_id: genSubjectId }),
+    })
+    const data = await res.json()
+    if (data.flashcards?.length) {
+      setCards(prev => [...data.flashcards, ...prev])
+      setGenResult(`✓ MaFundi Mission: ${data.count} cards created!`)
+    } else {
+      setGenResult(data.error ?? 'Failed to start mission')
     }
     setGenLoading(false)
   }
@@ -265,16 +285,14 @@ export default function StudentFlashcardsPage() {
                 <p className="text-violet-100 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} across {Object.keys(decks).length} deck{Object.keys(decks).length !== 1 ? 's' : ''}</p>
               </div>
             </div>
-            <div className="flex gap-2">
               <button onClick={() => setShowGenerate(true)}
-                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition border border-white/20">
-                <Sparkles size={15} /> Generate
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-lg shadow-indigo-100 border border-indigo-500/20">
+                <Sparkles size={16} /> AI Mission
               </button>
               <button onClick={() => setShowAdd(true)}
-                className="flex items-center gap-2 bg-white text-violet-700 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-violet-50 transition">
+                className="flex items-center gap-2 bg-white text-slate-700 font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-slate-50 transition border border-slate-200">
                 <Plus size={15} /> Add Card
               </button>
-            </div>
           </div>
         </div>
       </div>
@@ -329,33 +347,82 @@ export default function StudentFlashcardsPage() {
 
         {/* Generate modal */}
         {showGenerate && (
-          <div className="bg-white rounded-2xl border border-violet-200 shadow-lg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Sparkles size={16} className="text-violet-500" /> Generate from Lesson</h3>
-              <button onClick={() => { setShowGenerate(false); setGenResult(null) }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          <div className="bg-white rounded-3xl border border-indigo-200 shadow-2xl p-6 space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
+                    <Sparkles size={20} className="text-white" />
+                  </div>
+                  <h3 className="font-black text-slate-900 tracking-tight text-lg">AI Flashcard Generator</h3>
+                </div>
+                <button onClick={() => { setShowGenerate(false); setGenResult(null) }} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+                <button 
+                  onClick={() => setGenType('lesson')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${genType === 'lesson' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Lesson Based
+                </button>
+                <button 
+                  onClick={() => setGenType('mission')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${genType === 'mission' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  MaFundi Mission
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subject</label>
+                  <select value={genSubjectId} onChange={e => setGenSubjectId(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                    <option value="">Select a subject...</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+
+                {genType === 'lesson' ? (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Lesson Content</label>
+                    <select value={genLessonId} onChange={e => setGenLessonId(e.target.value)}
+                      disabled={lessons.length === 0}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all disabled:opacity-50">
+                      <option value="">{lessons.length > 0 ? 'Select a lesson...' : 'Select a subject first'}</option>
+                      {lessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                    </select>
+                    <p className="text-[10px] text-slate-400 font-medium px-1 italic">Creates 6 cards from the core lesson text.</p>
+                  </div>
+                ) : (
+                  <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100">
+                    <p className="text-xs text-indigo-700 leading-relaxed">
+                      MaFundi will analyze the <strong>Common Mistakes</strong> and <strong>Gaps</strong> in your Teaching Memory for this subject to create personalized Active Recall cards.
+                    </p>
+                  </div>
+                )}
+
+                {genResult && (
+                  <div 
+                    className={`text-sm font-bold px-4 py-3 rounded-2xl text-center shadow-sm ${genResult.includes('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}
+                  >
+                    {genResult}
+                  </div>
+                )}
+
+                <button 
+                  onClick={genType === 'lesson' ? generateCards : generateStruggleCards} 
+                  disabled={genLoading || (genType === 'lesson' && !genLessonId) || !genSubjectId}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black uppercase tracking-widest rounded-2xl transition shadow-xl shadow-indigo-100 disabled:opacity-50 disabled:grayscale"
+                >
+                  {genLoading ? 'AI is thinking...' : genType === 'lesson' ? 'Generate from Lesson' : 'Launch Mastery Mission'}
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-gray-500">AI will read the lesson content and create 6 flashcard pairs automatically.</p>
-            <select value={genSubjectId} onChange={e => setGenSubjectId(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none bg-white">
-              <option value="">Select subject…</option>
-              {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            {lessons.length > 0 && (
-              <select value={genLessonId} onChange={e => setGenLessonId(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none bg-white">
-                <option value="">Select lesson…</option>
-                {lessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
-              </select>
-            )}
-            {genResult && (
-              <p className={`text-sm font-medium px-3 py-2 rounded-xl ${genResult.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
-                {genResult}
-              </p>
-            )}
-            <button onClick={generateCards} disabled={genLoading || !genLessonId}
-              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50 flex items-center gap-2">
-              <Sparkles size={15} /> {genLoading ? 'Generating…' : 'Generate Flashcards'}
-            </button>
           </div>
         )}
 

@@ -5,6 +5,7 @@ import { markLessonComplete } from '@/app/actions/progress'
 import LessonNotes from './LessonNotes'
 import AskMaFundi from './AskMaFundi'
 import MarkdownContent from '@/components/MarkdownContent'
+import AudioBriefingButton from '@/components/AudioBriefingButton'
 
 export default async function LessonPage({
   params,
@@ -86,13 +87,16 @@ export default async function LessonPage({
 
         {/* Lesson content */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 shadow-sm">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
-            {isCompleted && (
-              <span className="flex-shrink-0 bg-green-100 text-green-700 text-sm font-medium px-3 py-1 rounded-full">
-                ✓ Completed
-              </span>
-            )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{lesson.title}</h1>
+            <div className="flex items-center gap-2">
+              <AudioBriefingButton lessonId={lesson.id} lessonTitle={lesson.title} />
+              {isCompleted && (
+                <span className="flex-shrink-0 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-green-200">
+                  ✓ Completed
+                </span>
+              )}
+            </div>
           </div>
 
           {lesson.content_type === 'text' && (

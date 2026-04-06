@@ -52,6 +52,9 @@ export async function PATCH(
     if (typeof body.onboarding_completed === 'boolean') {
       updates.onboarding_completed = body.onboarding_completed
     }
+    if (typeof (body as any).plan === 'string' && ['free', 'starter', 'pro', 'elite', 'basic'].includes((body as any).plan)) {
+      updates.plan = (body as any).plan
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })

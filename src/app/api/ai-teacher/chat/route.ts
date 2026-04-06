@@ -820,13 +820,32 @@ Language Preference: ${preferred_language?.toUpperCase() ?? 'ENGLISH'}
     if (memoryMatch) {
       try {
         const update = JSON.parse(memoryMatch[1])
+        
+        // 1. Fetch current memory to aggregate
+        const { data: currentMemory } = await supabase
+          .from('student_teaching_memory')
+          .select('common_mistakes, aha_moments')
+          .eq('student_id', studentProfile.id)
+          .eq('topic', update.topic)
+          .maybeSingle()
+
+        // 2. Aggregate unique mistakes (max 10)
+        const oldMistakes = Array.isArray(currentMemory?.common_mistakes) ? currentMemory.common_mistakes : []
+        const newMistake = update.struggle ? [update.struggle] : []
+        const mergedMistakes = Array.from(new Set([...oldMistakes, ...newMistake])).slice(-10)
+
+        // 3. Aggregate unique aha moments (max 5)
+        const oldAha = Array.isArray(currentMemory?.aha_moments) ? currentMemory.aha_moments : []
+        const newAha = update.aha_moment ? [update.aha_moment] : []
+        const mergedAha = Array.from(new Set([...oldAha, ...newAha])).slice(-5)
+
         // Save to DB (upsert)
         await supabase.from('student_teaching_memory').upsert({
           student_id: studentProfile.id,
           topic: update.topic,
           mastery_level: update.mastery_level,
-          common_mistakes: update.struggle ? [update.struggle] : [],
-          aha_moments: update.aha_moment ? [update.aha_moment] : [],
+          common_mistakes: mergedMistakes,
+          aha_moments: mergedAha,
           last_explained_at: new Date().toISOString()
         }, { onConflict: 'student_id, topic' })
         
@@ -836,6 +855,7 @@ Language Preference: ${preferred_language?.toUpperCase() ?? 'ENGLISH'}
         console.error('Pedagogical memory update failed:', e)
       }
     }
+
 
     // Save assistant reply
     await supabase.from('ai_teacher_messages').insert({

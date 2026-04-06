@@ -41,9 +41,9 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
   const { data: target } = await svc
     .from('profiles')
-    .select('id, full_name, email, role, onboarding_completed, created_at, suspended, suspension_reason, suspended_at')
+    .select('id, full_name, email, role, plan, onboarding_completed, created_at, suspended, suspension_reason, suspended_at')
     .eq('id', params.id)
-    .single() as { data: (UserRow & { suspended?: boolean; suspension_reason?: string | null; suspended_at?: string | null }) | null; error: unknown }
+    .single() as { data: (UserRow & { plan?: string; suspended?: boolean; suspension_reason?: string | null; suspended_at?: string | null }) | null; error: unknown }
 
   if (!target) notFound()
 
@@ -130,6 +130,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
           userId={target.id}
           initialName={target.full_name ?? ''}
           initialRole={target.role}
+          initialPlan={target.plan ?? 'free'}
           initialOnboarded={target.onboarding_completed}
           isCurrentUser={isCurrentUser}
         />
