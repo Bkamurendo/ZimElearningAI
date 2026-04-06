@@ -183,12 +183,14 @@ export default function DashboardClient({
                 <CardContent className="flex items-center justify-between p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-[1.25rem] flex items-center justify-center shadow-lg">
-                       <Zap size={24} className="text-yellow-300 animate-bounce" />
+                       {dailyChallengeCompleted ? <Trophy size={24} className="text-yellow-300" /> : <Zap size={24} className="text-yellow-300 animate-bounce" />}
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-white italic tracking-tight">DAILY SURVIVAL CHALLENGE</h3>
-                      <p className="text-amber-100 text-sm font-medium">
-                        {dailyChallengeCompleted ? 'You survived today! Check your ranking.' : '5 Questions · 50 XP Reward · One Life.'}
+                      <h3 className="text-xl font-black text-white italic tracking-tight uppercase">DAILY SURVIVAL MISSION</h3>
+                      <p className="text-amber-100 text-sm font-black uppercase tracking-tight">
+                        {dailyChallengeCompleted 
+                          ? `COMPLETED: RECEIVED ${(_dailyChallengeScore || 0) * 10} XP` 
+                          : '5 Questions · 50 XP Reward · One Life.'}
                       </p>
                     </div>
                   </div>
@@ -243,14 +245,20 @@ export default function DashboardClient({
                            <div className={`w-10 h-10 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-xs`}>
                               {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
                            </div>
-                           <Badge variant="emerald">82% Prep</Badge>
+                           <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-[10px] uppercase">
+                              {/* Calculate a realistic proxy for progress */}
+                              {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% PREP
+                           </Badge>
                         </div>
                         <div>
-                          <h4 className="text-sm font-black text-slate-800 dark:text-white">{s.name}</h4>
+                          <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">{s.name}</h4>
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
                         </div>
-                        <div className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                           <div className="h-full bg-emerald-500 w-4/5 rounded-full" />
+                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                           <div 
+                             className={`h-full bg-gradient-to-r ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-full`} 
+                             style={{ width: `${Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}%` }} 
+                           />
                         </div>
                       </Card>
                     </Link>

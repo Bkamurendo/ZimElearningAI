@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { markAllNotificationsRead } from '@/app/actions/notifications'
 import { SmsSummaryButton } from './sms-button'
-import { Zap, BarChart3, ShieldAlert, Users } from 'lucide-react'
+import { Zap, BarChart3, ShieldAlert, Users, Star } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { isRedirectError } from 'next/dist/client/components/redirect'
 
@@ -251,6 +251,22 @@ export default async function ParentDashboard() {
                       <div className="flex flex-wrap gap-2 uppercase">
                         {child.weakTopics.map((t) => (
                           <span key={t} className="text-[9px] bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg font-black border border-rose-200 tracking-tight shadow-sm">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {child.recentBadges.length > 0 && (
+                    <div className="bg-indigo-50/30 border border-indigo-100/50 rounded-2xl p-6 shadow-sm uppercase font-bold">
+                      <p className="text-[10px] font-black text-indigo-800 mb-3 tracking-widest leading-none flex items-center gap-2">
+                        <Star size={14} className="text-yellow-500 fill-current" /> RECENT ACCOMPLISHMENTS
+                      </p>
+                      <div className="flex flex-wrap gap-3 uppercase">
+                        {child.recentBadges.map((badge, bIdx) => (
+                          <div key={bIdx} className="bg-white border border-indigo-100 rounded-xl px-4 py-2 flex items-center gap-2 shadow-sm animate-in zoom-in-95 duration-500">
+                             <div className="w-6 h-6 bg-yellow-400 rounded-lg flex items-center justify-center text-[10px] shadow-inner font-black">🏆</div>
+                             <span className="text-[10px] font-black text-slate-800 tracking-tight">{badge}</span>
+                          </div>
                         ))}
                       </div>
                     </div>

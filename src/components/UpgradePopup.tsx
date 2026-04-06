@@ -123,7 +123,10 @@ export function UpgradePopup() {
     }
   }
 
-  const { tag, title, desc, buttonText } = content[displayMode]
+  const contentItem = content[displayMode as keyof typeof content]
+  if (!contentItem) return null
+
+  const { tag, title, desc, buttonText } = contentItem
 
   return (
     <>

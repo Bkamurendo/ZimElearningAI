@@ -43,11 +43,21 @@ export default async function SchoolAdminDashboard() {
 
     const isElite = school?.subscription_plan === 'pro' || school?.subscription_plan === 'elite'
 
+    const [
+      { count: totalStudents },
+      { count: schoolTeachers },
+      { count: schoolCourses }
+    ] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', profile.school_id).eq('role', 'student'),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', profile.school_id).eq('role', 'teacher'),
+      supabase.from('courses').select('id', { count: 'exact', head: true }).eq('school_id', profile.school_id).eq('published', true)
+    ])
+
     const STATS = [
-      { label: 'Total Students', value: '482', icon: <Users size={20} />, trend: '+12% THIS MONTH' },
-      { label: 'AVG. GRADE (SCHOOL)', value: '72%', icon: <GraduationCap size={20} />, trend: '+3% IMPROVEMENT' },
-      { label: 'TEACHER ACTIVITY', value: '89%', icon: <UserCheck size={20} />, trend: 'HIGH ENGAGEMENT' },
-      { label: 'AI SAVINGS (HOURS)', value: '140', icon: <Sparkles size={20} />, trend: 'WEEKLY AUTOMATED TASKS' },
+      { label: 'Total Students', value: (totalStudents ?? 0).toString(), icon: <Users size={20} />, trend: 'REAL-TIME ROSTER' },
+      { label: 'ACTIVE TEACHERS', value: (schoolTeachers ?? 0).toString(), icon: <UserCheck size={20} />, trend: 'FACULTY SYNCED' },
+      { label: 'PUBLISHED COURSES', value: (schoolCourses ?? 0).toString(), icon: <BookOpen size={20} />, trend: 'CURRICULUM ACTIVE' },
+      { label: 'INSTITUTIONAL RANK', value: isElite ? 'ELITE' : 'BASIC', icon: <Award size={20} />, trend: isElite ? 'MAX THROUGHPUT' : 'UPGRADE PENDING' },
     ]
 
     const TOP_SUBJECTS = [
