@@ -8,10 +8,9 @@ import type { ZimsecLevel } from '@/types/database'
 export async function completeStudentOnboarding(formData: FormData): Promise<void> {
   const supabase = createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data, error: authError } = await supabase.auth.getUser()
+  const user = data?.user
+  if (authError || !user) redirect('/login')
 
   const zimsecLevel = formData.get('zimsec_level') as ZimsecLevel
   const grade = formData.get('grade') as string
@@ -50,10 +49,9 @@ export async function completeStudentOnboarding(formData: FormData): Promise<voi
 export async function completeGeneralOnboarding(formData: FormData): Promise<void> {
   const supabase = createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data, error: authError } = await supabase.auth.getUser()
+  const user = data?.user
+  if (authError || !user) redirect('/login')
 
   const role = formData.get('role') as string
 
