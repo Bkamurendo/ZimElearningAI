@@ -69,7 +69,7 @@ export async function updateSession(request: NextRequest) {
   const publicPaths = [
     '/login', '/register', '/auth/callback', '/schools', 
     '/privacy', '/terms', '/forgot-password', '/reset-password', 
-    '/api/schools', '/api/debug', '/admin/trials-test'
+    '/api/schools', '/api/debug', '/admin/trials-test', '/debug-elearning'
   ]
   const isPublicPath = publicPaths.some((p) => lowerPath.startsWith(p))
 
