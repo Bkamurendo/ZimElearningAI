@@ -7,6 +7,7 @@ import {
   ArrowUpRight, School, BookOpen, UserCheck, ShieldCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { isRedirectError } from 'next/dist/client/components/redirect'
 
 export const metadata = {
   title: 'Headmaster Dashboard – ZimLearn Elite',
@@ -210,6 +211,7 @@ export default async function SchoolAdminDashboard() {
       </div>
     )
   } catch (err) {
+    if (isRedirectError(err)) throw err
     console.error('[SchoolAdminDashboard] Runtime error:', err)
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 px-4 text-center bg-gray-50 uppercase font-bold">

@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { isRedirectError } from 'next/dist/client/components/redirect'
 
 export default async function TeacherDashboard() {
   const supabase = createClient()
@@ -286,6 +287,7 @@ export default async function TeacherDashboard() {
       </div>
     )
   } catch (err) {
+    if (isRedirectError(err)) throw err
     console.error('[TeacherDashboard] Runtime error:', err)
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 px-4 text-center bg-gray-50">

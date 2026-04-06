@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ShieldAlert
 } from 'lucide-react'
+import { isRedirectError } from 'next/dist/client/components/redirect'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
 
@@ -150,6 +151,7 @@ export default async function StudentDashboard() {
       />
     )
   } catch (err) {
+    if (isRedirectError(err)) throw err
     console.error('[StudentDashboard] Runtime error:', err)
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 px-4 text-center bg-gray-50 uppercase font-black">

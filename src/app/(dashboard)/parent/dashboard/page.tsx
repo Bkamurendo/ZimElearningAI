@@ -6,6 +6,7 @@ import { markAllNotificationsRead } from '@/app/actions/notifications'
 import { SmsSummaryButton } from './sms-button'
 import { Zap, Phone, BarChart3, CheckCircle2, ShieldAlert, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { isRedirectError } from 'next/dist/client/components/redirect'
 
 export default async function ParentDashboard() {
   const supabase = createClient()
@@ -300,6 +301,7 @@ export default async function ParentDashboard() {
       </div>
     )
   } catch (error) {
+    if (isRedirectError(error)) throw error
     console.error('[ParentDashboard] Runtime error:', error)
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 px-4 text-center bg-gray-50 uppercase font-black">
