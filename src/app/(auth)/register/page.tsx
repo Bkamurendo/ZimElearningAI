@@ -116,7 +116,7 @@ export default function RegisterPage({
           <div className="mt-8">
             <PlatformTourButton
               variant="banner"
-              label="▶  Watch how ZimLearn works (2 min)"
+              label="▶  Full platform tour — all features explained"
             />
           </div>
         </div>

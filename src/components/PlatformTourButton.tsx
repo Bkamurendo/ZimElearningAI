@@ -14,7 +14,7 @@ interface Props {
 
 export function PlatformTourButton({
   variant = 'ghost',
-  label = 'See how it works',
+  label = 'See how it works ▶',
   className = '',
 }: Props) {
   const [open, setOpen] = useState(false)
