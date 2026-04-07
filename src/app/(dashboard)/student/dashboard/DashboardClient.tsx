@@ -16,8 +16,18 @@ import {
   Sparkles,
   LayoutDashboard,
   GraduationCap,
-  ListTodo
+  ListTodo,
+  Brain,
+  Star,
 } from 'lucide-react'
+
+// Icons mapped by stat label — avoids passing component functions across the server/client boundary
+const STAT_ICONS: Record<string, React.ElementType> = {
+  'Subjects': BookOpen,
+  'Lessons done': CheckCircle2,
+  'Quizzes done': Brain,
+  'Topics mastered': Star,
+}
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -165,7 +175,9 @@ export default function DashboardClient({
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {stats.map(({ label, value, icon: Icon, color, bg, border }, _idx) => (
+                {stats.map(({ label, value, color, bg, border }, _idx) => {
+                  const Icon = STAT_ICONS[label] ?? BookOpen
+                  return (
                   <Card key={label} hover className={`p-5 border-t-4 ${border}`}>
                     <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3 shadow-inner`}>
                       <Icon size={20} className={color} />
@@ -173,7 +185,8 @@ export default function DashboardClient({
                     <p className={`text-3xl font-black ${color}`}>{value}</p>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{label}</p>
                   </Card>
-                ))}
+                  )
+                })}
             </div>
 
             {/* Daily Challenge Promo */}

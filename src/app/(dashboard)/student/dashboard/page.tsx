@@ -1,13 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import {
-  BookOpen,
-  Brain,
-  Star,
-  CheckCircle2,
-  ShieldAlert
-} from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 import { isRedirectError } from 'next/dist/client/components/redirect'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
@@ -163,10 +157,10 @@ export default async function StudentDashboard() {
     const { data: upcomingExams } = await supabase.from('exam_timetable').select('id, exam_date, paper_number, subjects(name, code)').eq('student_id', studentProfile?.id ?? '').gte('exam_date', todayStr).order('exam_date', { ascending: true }).limit(3)
 
     const stats = [
-      { label: 'Subjects', value: subjects.length, icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-t-emerald-500' },
-      { label: 'Lessons done', value: lessonsCompleted ?? 0, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-t-blue-500' },
-      { label: 'Quizzes done', value: quizzesCompleted ?? 0, icon: Brain, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-t-purple-500' },
-      { label: 'Topics mastered', value: topicsMastered ?? 0, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-t-amber-500' },
+      { label: 'Subjects', value: subjects.length, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-t-emerald-500' },
+      { label: 'Lessons done', value: lessonsCompleted ?? 0, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-t-blue-500' },
+      { label: 'Quizzes done', value: quizzesCompleted ?? 0, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-t-purple-500' },
+      { label: 'Topics mastered', value: topicsMastered ?? 0, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-t-amber-500' },
     ]
 
     return (
