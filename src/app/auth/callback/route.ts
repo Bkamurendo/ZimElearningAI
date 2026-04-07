@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin: requestOrigin } = new URL(request.url)
   const code = searchParams.get('code')
   const rawNext = searchParams.get('next') ?? ''
