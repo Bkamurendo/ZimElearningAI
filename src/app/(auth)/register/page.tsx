@@ -4,6 +4,7 @@ import type { UserRole } from '@/types/database'
 import { GraduationCap, Users, BookOpen, User, Zap } from 'lucide-react'
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
 import { FacebookAuthButton } from '@/components/auth/FacebookAuthButton'
+import { PlatformTourButton } from '@/components/PlatformTourButton'
 
 const ROLES: {
   value: UserRole
@@ -109,6 +110,14 @@ export default function RegisterPage({
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Platform tour */}
+          <div className="mt-8">
+            <PlatformTourButton
+              variant="banner"
+              label="▶  Watch how ZimLearn works (2 min)"
+            />
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import { GraduationCap, Brain, Target, BookOpen, CheckCircle } from 'lucide-react'
 import { LoginForm } from './LoginForm'
+import { PlatformTourButton } from '@/components/PlatformTourButton'
 
 const SUCCESS_MESSAGES: Record<string, string> = {
   password_reset_success: 'Password updated successfully. Please sign in with your new password.',
@@ -84,8 +85,16 @@ export default function LoginPage({
             ))}
           </div>
 
+          {/* Platform tour CTA */}
+          <div className="mt-8">
+            <PlatformTourButton
+              variant="banner"
+              label="▶  Watch how ZimLearn works (2 min)"
+            />
+          </div>
+
           {/* Stats row */}
-          <div className="mt-10 flex items-center gap-4">
+          <div className="mt-6 flex items-center gap-4">
             {[
               { value: '10K+', label: 'Students' },
               { value: '500+', label: 'Lessons' },
