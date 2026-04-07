@@ -95,17 +95,22 @@ export default async function ParentDashboard() {
     }
 
     for (const stats of childStats) {
-      const { data: cycles } = await supabase
-        .from('syllabus_cycles')
-        .select('subject_name, pass_number')
-        .eq('student_id', stats.id)
+      // syllabus_cycles table may not exist yet — fall back gracefully
+      try {
+        const { data: cycles } = await supabase
+          .from('syllabus_cycles')
+          .select('subject_name, pass_number')
+          .eq('student_id', stats.id)
 
-      if (cycles && cycles.length > 0) {
-        stats.cycleProgress = cycles.map((c: any) => ({ subject: c.subject_name, pass_number: c.pass_number }))
-        const avgPass = cycles.reduce((acc: number, c: any) => acc + c.pass_number, 0) / cycles.length
-        const masteryScore = (stats.topicsMastered / 30) * 100
-        stats.readyPulse = Math.min(100, Math.round((masteryScore * 0.5) + ((avgPass / 3) * 50)))
-      } else {
+        if (cycles && cycles.length > 0) {
+          stats.cycleProgress = cycles.map((c: any) => ({ subject: c.subject_name, pass_number: c.pass_number }))
+          const avgPass = cycles.reduce((acc: number, c: any) => acc + c.pass_number, 0) / cycles.length
+          const masteryScore = (stats.topicsMastered / 30) * 100
+          stats.readyPulse = Math.min(100, Math.round((masteryScore * 0.5) + ((avgPass / 3) * 50)))
+        } else {
+          stats.readyPulse = Math.min(100, Math.round((stats.topicsMastered / 30) * 100))
+        }
+      } catch {
         stats.readyPulse = Math.min(100, Math.round((stats.topicsMastered / 30) * 100))
       }
     }

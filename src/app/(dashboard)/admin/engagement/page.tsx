@@ -27,10 +27,10 @@ export default async function AdminEngagementPage() {
     { data: inactiveUsers },
   ] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, last_sign_in_at, created_at').eq('role', 'student'),
-    supabase.from('user_activity').select('user_id, activity_type, created_at, metadata').gte('created_at', thirtyDaysAgo),
+    Promise.resolve({ data: [] as any[] }), // user_activity table not yet in schema
     supabase.from('profiles').select('id, last_sign_in_at').eq('role', 'student'),
-    supabase.from('feature_usage').select('user_id, feature, usage_count, last_used').gte('last_used', thirtyDaysAgo),
-    supabase.from('study_sessions').select('user_id, duration, subject, created_at').gte('created_at', thirtyDaysAgo),
+    Promise.resolve({ data: [] as any[] }), // feature_usage table not yet in schema
+    Promise.resolve({ data: [] as any[] }), // study_sessions table not yet in schema
     supabase.from('profiles').select('id, full_name, email, last_sign_in_at').eq('role', 'student').lt('last_sign_in_at', new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString()),
   ])
 
@@ -42,7 +42,7 @@ export default async function AdminEngagementPage() {
   const inactiveUsersCount = inactiveUsers?.length || 0
 
   // Activity breakdown
-  const activityByType = recentActivity?.reduce((acc, activity) => {
+  const activityByType: Record<string, number> = recentActivity?.reduce((acc, activity) => {
     acc[activity.activity_type] = (acc[activity.activity_type] || 0) + 1
     return acc
   }, {} as Record<string, number>) || {}
@@ -52,7 +52,7 @@ export default async function AdminEngagementPage() {
   const avgStudySession = studyTime && studyTime.length > 0 ? Math.round(totalStudyMinutes / studyTime.length) : 0
 
   // Feature popularity
-  const featureStats = featureUsage?.reduce((acc, feature) => {
+  const featureStats: Record<string, number> = featureUsage?.reduce((acc, feature) => {
     acc[feature.feature] = (acc[feature.feature] || 0) + feature.usage_count
     return acc
   }, {} as Record<string, number>) || {}

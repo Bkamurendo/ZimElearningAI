@@ -71,17 +71,11 @@ export default async function AdminChurnReductionPage() {
       .lte('trial_ends_at', new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString())
       .gt('trial_ends_at', now.toISOString()),
     
-    // Recent activity patterns
-    supabase
-      .from('user_activity')
-      .select('user_id, activity_type, created_at')
-      .gte('created_at', thirtyDaysAgo.toISOString()),
-    
-    // Recent support tickets (indicator of dissatisfaction)
-    supabase
-      .from('support_tickets')
-      .select('user_id, category, status, created_at')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+    // Recent activity patterns (user_activity table not yet in schema)
+    Promise.resolve({ data: [] as any[] }),
+
+    // Recent support tickets (support_tickets table not yet in schema)
+    Promise.resolve({ data: [] as any[] })
   ])
 
   // Calculate churn metrics

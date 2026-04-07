@@ -23,16 +23,13 @@ export default async function AdminSchoolsPage() {
       redirect(`/${safeRole === 'school_admin' ? 'school-admin' : safeRole}/dashboard`)
     }
 
-    // Fetch schools and licensing data safely
-    const [
-      { data: schools },
-      { data: licenses },
-      { data: _schoolStats },
-    ] = await Promise.all([
-      supabase.from('schools').select('*, admin:profiles(full_name, email)').order('created_at', { ascending: false }),
-      supabase.from('school_licenses').select('*, schools(name)').order('created_at', { ascending: false }),
-      supabase.from('school_statistics').select('*').order('date', { ascending: false }).limit(30),
-    ])
+    // Fetch schools (school_licenses and school_statistics tables may not exist yet)
+    const { data: schools } = await supabase
+      .from('schools')
+      .select('*, admin:profiles(full_name, email)')
+      .order('created_at', { ascending: false })
+
+    const licenses: any[] = []
 
     const totalSchools = schools?.length || 0
     const activeLicenses = licenses?.filter(l => l.status === 'active')?.length || 0

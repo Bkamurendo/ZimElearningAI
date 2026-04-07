@@ -20,9 +20,9 @@ export default async function AdminCommunicationsPage() {
     { data: notifications },
   ] = await Promise.all([
     supabase.from('announcements').select('*').order('created_at', { ascending: false }),
-    supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(10),
-    supabase.from('communication_campaigns').select('*').order('created_at', { ascending: false }),
-    supabase.from('push_notifications').select('*').order('created_at', { ascending: false }).limit(10),
+    Promise.resolve({ data: [] as any[] }), // support_tickets table not yet in schema
+    Promise.resolve({ data: [] as any[] }), // communication_campaigns table not yet in schema
+    Promise.resolve({ data: [] as any[] }), // push_notifications table not yet in schema
   ])
 
   const activeAnnouncements = announcements?.filter(a => a.is_active) || []

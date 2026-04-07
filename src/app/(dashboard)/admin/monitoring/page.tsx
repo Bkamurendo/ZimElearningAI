@@ -77,9 +77,9 @@ export default function AdminMonitoringPage() {
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }),
           supabase.from('lessons').select('*', { count: 'exact', head: true }),
-          supabase.from('security_events').select('*', { count: 'exact', head: true }).eq('success', false).gt('created_at', oneDayAgo),
-          supabase.from('user_activity').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(10),
-          supabase.from('security_events').select('*, profiles(full_name)').eq('success', false).order('created_at', { ascending: false }).limit(5)
+          Promise.resolve({ count: 0, data: null, error: null }), // security_events table not yet in schema
+          Promise.resolve({ data: [] as any[] }), // user_activity table not yet in schema
+          Promise.resolve({ data: [] as any[] }) // security_events table not yet in schema
         ])
 
         setRealTimeData({
