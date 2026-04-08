@@ -5,7 +5,7 @@
  * The client then redirects the browser to that link.
  * Supports: Visa, Mastercard, Google Pay, Apple Pay (international clients).
  *
- * Body: { planId: 'pro_monthly' | 'pro_quarterly' | 'pro_yearly' }
+ * Body: { planId: PlanId, couponCode?: string }
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -25,14 +25,14 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    let body: { planId: PlanId }
+    let body: { planId: PlanId; couponCode?: string }
     try {
       body = await req.json()
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const { planId } = body
+    const { planId, couponCode } = body
     const plan = PLANS[planId]
     if (!plan) {
       return NextResponse.json({ error: `Invalid plan: "${planId}"` }, { status: 400 })
@@ -46,16 +46,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `You are already on the ${currentPlan} plan or higher` }, { status: 400 })
     }
 
+    // Validate coupon if provided
+    let finalAmountUsd = plan.amountUsd
+    let couponId: string | null = null
+
+    if (couponCode) {
+      try {
+        const couponValidateRes = await fetch(
+          `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/coupons/validate`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Cookie: req.headers.get('cookie') ?? '' },
+            body: JSON.stringify({ code: couponCode, planId, amountUsd: plan.amountUsd }),
+          }
+        )
+        const couponData = await couponValidateRes.json()
+        if (couponData.valid) {
+          finalAmountUsd = couponData.discountedAmount
+          couponId = couponData.couponId
+        }
+      } catch {
+        // Coupon validation failed — proceed with full price
+      }
+    }
+
     // Create pending payment record in DB
     const { data: payment, error: dbErr } = await supabase
       .from('payments')
       .insert({
         user_id: user.id,
         plan_id: planId,
-        amount_usd: plan.amountUsd,
+        amount_usd: finalAmountUsd,
         method: 'card',
         status: 'pending',
         gateway: 'flutterwave',
+        coupon_id: couponId,
+        item_type: 'subscription',
       })
       .select('id')
       .single()
@@ -73,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     const result = await createFlutterwavePayment({
       txRef,
-      amount: plan.amountUsd,
+      amount: finalAmountUsd,
       email: user.email ?? 'student@zimlearn.co.zw',
       name: (profile?.full_name as string) ?? 'Student',
       planId,
@@ -92,6 +118,22 @@ export async function POST(req: NextRequest) {
       .from('payments')
       .update({ paynow_reference: txRef })
       .eq('id', payment.id)
+
+    // Record coupon use
+    if (couponId) {
+      await supabase.from('coupon_uses').upsert({
+        coupon_id: couponId,
+        user_id: user.id,
+        plan_id: planId,
+        amount_saved_usd: plan.amountUsd - finalAmountUsd,
+      }, { onConflict: 'coupon_id,user_id', ignoreDuplicates: true })
+
+      try {
+        await supabase.rpc('increment_coupon_uses_count', { p_coupon_id: couponId })
+      } catch {
+        // Non-critical
+      }
+    }
 
     return NextResponse.json({
       paymentLink: result.paymentLink,
