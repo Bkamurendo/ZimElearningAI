@@ -66,68 +66,32 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
     { count: newPaidThisMonth },
     { count: newPaidLastMonth },
   ] = await Promise.all([
-    // active free trials
-    supabase.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .not('trial_ends_at', 'is', null)
-      .gt('trial_ends_at', now)
-      .eq('plan', 'free'),
-
-    // expired & never converted
-    supabase.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .not('trial_ends_at', 'is', null)
-      .lt('trial_ends_at', now)
-      .eq('plan', 'free'),
-
-    // had a trial AND is now on paid plan
-    supabase.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .not('trial_ends_at', 'is', null)
-      .not('plan', 'in', ['free']),
-
-    // total who ever had a trial
-    supabase.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .not('trial_ends_at', 'is', null),
-
-    // plan distribution
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('trial_ends_at', 'is', null).gt('trial_ends_at', now).eq('plan', 'free'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('trial_ends_at', 'is', null).lt('trial_ends_at', now).eq('plan', 'free'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('trial_ends_at', 'is', null).not('plan', 'in', ['free']),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('trial_ends_at', 'is', null),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('plan', 'free'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('plan', 'starter'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('plan', 'pro'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('plan', 'elite'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
-
-    // new paid this month (created_at proxy — not perfect but no plan_changed_at column assumed)
-    supabase.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .not('plan', 'in', ['free'])
-      .gte('updated_at', startOfMonth.toISOString()),
-
-    supabase.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .not('plan', 'in', ['free'])
-      .gte('updated_at', startOfLastMonth.toISOString())
-      .lt('updated_at', startOfMonth.toISOString()),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('plan', 'in', ['free']).gte('updated_at', startOfMonth.toISOString()),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('plan', 'in', ['free']).gte('updated_at', startOfLastMonth.toISOString()).lt('updated_at', startOfMonth.toISOString()),
   ])
 
-  // Ending today (full rows for the list)
   type TrialRow = { id: string; full_name: string | null; email: string | null; trial_ends_at: string; zimsec_level?: string | null; phone_number?: string | null }
 
   const { data: endingToday } = await supabase
     .from('profiles')
     .select('id, full_name, email, trial_ends_at, phone_number')
-
     .not('trial_ends_at', 'is', null)
     .gt('trial_ends_at', now)
     .lt('trial_ends_at', todayEnd.toISOString())
     .eq('plan', 'free') as { data: TrialRow[] | null; error: unknown }
 
-  // Ending within 7 days
   const { data: endingSoon } = await supabase
     .from('profiles')
     .select('id, full_name, email, trial_ends_at, phone_number')
-
     .not('trial_ends_at', 'is', null)
     .gt('trial_ends_at', now)
     .lt('trial_ends_at', sevenDaysEnd.toISOString())
@@ -141,19 +105,25 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
 
   const estimatedMRR = (starterUsers ?? 0) * 2 + (proUsers ?? 0) * 5 + (eliteUsers ?? 0) * 8
   const total = totalUsers ?? 1
-  
-  // Get recent reminders sent (last 14 days)
-  const fourteenDaysAgo = new Date(now)
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
-  const { data: recentReminders } = await supabase
-    .from('admin_activity_log')
-    .select('new_values')
-    .eq('resource_type', 'reminder')
-    .gte('created_at', fourteenDaysAgo.toISOString())
-    
-  const remindedUserIds = new Set(
-    (recentReminders || []).map((log: any) => log.new_values?.target_user as string)
-  )
+
+  // Get recent reminders sent (last 24 hours only — allows re-sending daily)
+  const oneDayAgo = new Date()
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
+  let remindedUserIds = new Set<string>()
+  try {
+    const { data: recentReminders } = await supabase
+      .from('admin_activity_log')
+      .select('new_values')
+      .eq('resource_type', 'reminder')
+      .gte('created_at', oneDayAgo.toISOString())
+
+    remindedUserIds = new Set(
+      (recentReminders || []).map((log: any) => log.new_values?.target_user as string).filter(Boolean)
+    )
+  } catch {
+    // admin_activity_log table may not exist yet — that's fine, show all as sendable
+  }
 
   const planRows = [
     { label: 'Free',    count: freeUsers ?? 0,    bar: 'bg-gray-400',                                       price: 0 },
@@ -177,21 +147,37 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
           </div>
         </div>
 
-        {/* Status Messages */}
+        {/* Status Messages — only show briefly, clear on next navigation */}
         {searchParams.success && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
-            <CheckCircle className="text-emerald-500 flex-shrink-0" size={20} />
-            <p className="font-semibold text-emerald-800">
-              Reminder was sent successfully!
-            </p>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="text-emerald-500 flex-shrink-0" size={20} />
+              <p className="font-semibold text-emerald-800">
+                Reminder sent successfully!
+              </p>
+            </div>
+            <Link href="/admin/trials" className="text-xs text-emerald-600 hover:text-emerald-800 font-medium">
+              Dismiss
+            </Link>
           </div>
         )}
         {searchParams.error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-            <XCircle className="text-red-500 flex-shrink-0" size={20} />
-            <p className="font-semibold text-red-800">
-              {searchParams.error === 'no_contact' ? "Could not send reminder: User has no valid phone or email." : "Failed to send reminder."}
-            </p>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <XCircle className="text-red-500 flex-shrink-0" size={20} />
+              <p className="font-semibold text-red-800">
+                {searchParams.error === 'no_contact'
+                  ? "Could not send: User has no valid phone or email."
+                  : searchParams.error === 'delivery_failed'
+                  ? "Delivery failed — check Africa's Talking dashboard for errors."
+                  : searchParams.error === 'not_authenticated'
+                  ? "Session expired. Please log in again."
+                  : "Failed to send reminder."}
+              </p>
+            </div>
+            <Link href="/admin/trials" className="text-xs text-red-600 hover:text-red-800 font-medium">
+              Dismiss
+            </Link>
           </div>
         )}
 
@@ -216,46 +202,28 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
           </div>
         )}
 
+        {/* SMS Configuration Warning */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertTriangle className="text-amber-500 flex-shrink-0" size={18} />
+          <div className="text-sm">
+            <p className="font-semibold text-amber-800">SMS Delivery Check</p>
+            <p className="text-amber-700 mt-0.5">
+              If reminders aren&apos;t reaching users, verify on Vercel: <code className="bg-amber-100 px-1 rounded text-xs">AFRICASTALKING_USERNAME</code> must
+              be your <strong>production username</strong> (not &quot;sandbox&quot;). Sandbox mode only simulates delivery.
+            </p>
+          </div>
+        </div>
+
         {/* ── Section A: Trial Funnel ───────────────────────────────────────── */}
         <div>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Section A — Trial Funnel</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
-              {
-                label: 'Active Trials',
-                value: activeTrials ?? 0,
-                icon: Clock,
-                color: 'text-blue-600',
-                bg: 'bg-blue-50',
-              },
-              {
-                label: 'Conversion Rate',
-                value: `${conversionRate}%`,
-                icon: TrendingUp,
-                color: 'text-emerald-600',
-                bg: 'bg-emerald-50',
-              },
-              {
-                label: 'Ending Today',
-                value: (endingToday ?? []).length,
-                icon: AlertTriangle,
-                color: (endingToday ?? []).length > 0 ? 'text-red-600' : 'text-gray-400',
-                bg: (endingToday ?? []).length > 0 ? 'bg-red-50' : 'bg-gray-50',
-              },
-              {
-                label: 'Ending This Week',
-                value: (endingSoon ?? []).length,
-                icon: Clock,
-                color: 'text-amber-600',
-                bg: 'bg-amber-50',
-              },
-              {
-                label: 'Churned Trials',
-                value: expiredNotConverted ?? 0,
-                icon: XCircle,
-                color: 'text-rose-600',
-                bg: 'bg-rose-50',
-              },
+              { label: 'Active Trials', value: activeTrials ?? 0, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { label: 'Conversion Rate', value: `${conversionRate}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'Ending Today', value: (endingToday ?? []).length, icon: AlertTriangle, color: (endingToday ?? []).length > 0 ? 'text-red-600' : 'text-gray-400', bg: (endingToday ?? []).length > 0 ? 'bg-red-50' : 'bg-gray-50' },
+              { label: 'Ending This Week', value: (endingSoon ?? []).length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+              { label: 'Churned Trials', value: expiredNotConverted ?? 0, icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
@@ -306,68 +274,72 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
                   <thead>
                     <tr className="border-b border-gray-50 bg-gray-50/70">
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">User</th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Expires</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Time Left</th>
                       <th className="px-5 py-3" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {(endingSoon ?? []).map((row) => (
-                      <tr key={row.id} className="hover:bg-gray-50/50 transition">
-                        <td className="px-5 py-3.5 font-medium text-gray-900">
-                          {row.full_name ?? 'Unknown'}
-                        </td>
-                        <td className="px-5 py-3.5 text-gray-500">{row.email ?? '—'}</td>
-                        <td className="px-5 py-3.5 text-gray-500">
-                          {(() => {
-                            try {
-                              if (!row.trial_ends_at) return '—'
-                              const d = new Date(row.trial_ends_at)
-                              if (isNaN(d.getTime())) return 'Invalid Date'
-                              return d.toLocaleDateString('en-GB', {
-                                day: 'numeric', month: 'short', year: 'numeric',
-                              })
-                            } catch (_) {
-                              return 'Invalid Date'
-                            }
-                          })()}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <DaysChip days={daysLeft(row.trial_ends_at)} />
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {remindedUserIds.has(row.id) ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg px-3 py-1.5 border border-emerald-200">
-                                <CheckCircle size={12} />
-                                Sent Recently
-                              </span>
-                            ) : (
+                    {(endingSoon ?? []).map((row) => {
+                      const recentlySent = remindedUserIds.has(row.id)
+                      return (
+                        <tr key={row.id} className="hover:bg-gray-50/50 transition">
+                          <td className="px-5 py-3.5 font-medium text-gray-900">
+                            {row.full_name ?? 'Unknown'}
+                          </td>
+                          <td className="px-5 py-3.5 text-gray-500 text-xs">
+                            {row.phone_number && <div>{row.phone_number}</div>}
+                            {row.email && <div className="truncate max-w-[180px]">{row.email}</div>}
+                            {!row.phone_number && !row.email && <span className="text-red-400">No contact</span>}
+                          </td>
+                          <td className="px-5 py-3.5 text-gray-500">
+                            {(() => {
+                              try {
+                                if (!row.trial_ends_at) return '—'
+                                const d = new Date(row.trial_ends_at)
+                                if (isNaN(d.getTime())) return 'Invalid Date'
+                                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                              } catch { return 'Invalid Date' }
+                            })()}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <DaysChip days={daysLeft(row.trial_ends_at)} />
+                          </td>
+                          <td className="px-5 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Send Reminder — always available, shows "sent today" hint if recently sent */}
                               <a
                                 href={`/api/admin/send-sms?userId=${row.id}`}
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 rounded-lg px-3 py-1.5 transition"
+                                className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 transition ${
+                                  recentlySent
+                                    ? 'text-gray-500 border border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                                    : 'text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400'
+                                }`}
                               >
                                 <Mail size={12} />
-                                Send Reminder
+                                {recentlySent ? 'Resend' : 'Send Reminder'}
                               </a>
-                            )}
-                            {row.phone_number && (
-                              <a
-                                href={`https://wa.me/${row.phone_number.replace(/\D/g, '').replace(/^0/, '263')}?text=${encodeURIComponent(`Hi ${row.full_name?.split(' ')[0] ?? 'there'}, your ZimLearn AI free trial is ending soon! Don't lose access to AI tutoring and ZIMSEC past papers. Upgrade now from just $2/month: https://zim-elearningai.co.zw/student/upgrade`)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-800 border border-green-200 hover:border-green-400 rounded-lg px-3 py-1.5 transition"
-                                title="Send WhatsApp message"
-                              >
-                                <span className="text-base leading-none">📱</span>
-                                WhatsApp
-                              </a>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {recentlySent && (
+                                <span className="text-xs text-emerald-500 font-medium">sent today</span>
+                              )}
+                              {row.phone_number && (
+                                <a
+                                  href={`https://wa.me/${row.phone_number.replace(/\D/g, '').replace(/^0/, '263')}?text=${encodeURIComponent(`Hi ${row.full_name?.split(' ')[0] ?? 'there'}, your ZimLearn AI free trial is ending soon! Don't lose access to AI tutoring and ZIMSEC past papers. Upgrade now from just $2/month: https://zim-elearningai.co.zw/student/upgrade`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-800 border border-green-200 hover:border-green-400 rounded-lg px-3 py-1.5 transition"
+                                  title="Send WhatsApp message"
+                                >
+                                  <span className="text-base leading-none">📱</span>
+                                  WhatsApp
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -390,13 +362,12 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
               <p className="text-xs text-gray-400 mt-1">vs {newPaidLastMonth ?? 0} last month</p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Trial → Paid Rate</p>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Trial &rarr; Paid Rate</p>
               <p className="text-3xl font-bold text-purple-600">{conversionRate}%</p>
               <p className="text-xs text-gray-400 mt-1">{converted ?? 0} of {totalEverTrialed ?? 0} trialists</p>
             </div>
           </div>
 
-          {/* MRR breakdown bar */}
           <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">MRR Contribution by Plan</h3>
             <div className="space-y-3">
@@ -411,10 +382,7 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
                     <span className="text-gray-500">{count} users · <span className="font-semibold text-gray-700">${mrr}/mo</span></span>
                   </div>
                   <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${bar} rounded-full`}
-                      style={{ width: estimatedMRR > 0 ? `${(mrr / estimatedMRR) * 100}%` : '0%' }}
-                    />
+                    <div className={`h-full ${bar} rounded-full`} style={{ width: estimatedMRR > 0 ? `${(mrr / estimatedMRR) * 100}%` : '0%' }} />
                   </div>
                 </div>
               ))}
@@ -431,15 +399,10 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
                 <div key={label}>
                   <div className="flex items-center justify-between text-sm mb-1.5">
                     <span className="font-medium text-gray-700">{label}</span>
-                    <span className="text-gray-500">
-                      {count} users ({total > 0 ? Math.round((count / total) * 100) : 0}%)
-                    </span>
+                    <span className="text-gray-500">{count} users ({total > 0 ? Math.round((count / total) * 100) : 0}%)</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${bar} rounded-full transition-all`}
-                      style={{ width: `${total > 0 ? (count / total) * 100 : 0}%` }}
-                    />
+                    <div className={`h-full ${bar} rounded-full transition-all`} style={{ width: `${total > 0 ? (count / total) * 100 : 0}%` }} />
                   </div>
                 </div>
               ))}
@@ -459,7 +422,7 @@ export default async function TrialsRetentionPage({ searchParams }: { searchPara
           </Link>
           <span className="text-gray-300">·</span>
           <Link href="/admin/dashboard" className="text-sm text-gray-500 hover:text-gray-700 transition">
-            ← Back to Dashboard
+            &larr; Back to Dashboard
           </Link>
         </div>
 
