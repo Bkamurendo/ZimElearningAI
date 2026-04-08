@@ -12,7 +12,7 @@
 const FLW_BASE = 'https://api.flutterwave.com/v3'
 
 function getSecretKey(): string {
-  const key = process.env.FLUTTERWAVE_SECRET_KEY
+  const key = process.env.FLUTTERWAVE_SECRET_KEY?.trim()
   if (!key) throw new Error('FLUTTERWAVE_SECRET_KEY is not set')
   return key
 }

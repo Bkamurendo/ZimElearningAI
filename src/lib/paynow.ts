@@ -45,9 +45,9 @@ export interface PaynowPollResult {
 // ── Build client ──────────────────────────────────────────────────────────────
 
 function buildClient() {
-  const id  = process.env.PAYNOW_INTEGRATION_ID
-  const key = process.env.PAYNOW_INTEGRATION_KEY
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const id  = process.env.PAYNOW_INTEGRATION_ID?.trim()
+  const key = process.env.PAYNOW_INTEGRATION_KEY?.trim()
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').trim().replace(/\/+$/, '')
 
   if (!id || !key) {
     throw new Error('PAYNOW_INTEGRATION_ID or PAYNOW_INTEGRATION_KEY is not set')
