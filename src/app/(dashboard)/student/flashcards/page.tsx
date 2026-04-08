@@ -301,12 +301,12 @@ export default function StudentFlashcardsPage() {
         {/* Subject filter */}
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => setActiveSubject('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${activeSubject === 'all' ? 'bg-violet-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+            className={`px-3 py-2 rounded-full text-xs font-semibold transition ${activeSubject === 'all' ? 'bg-violet-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
             All Decks
           </button>
           {subjects.map(s => (
             <button key={s.id} onClick={() => setActiveSubject(s.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${activeSubject === s.id ? 'bg-violet-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+              className={`px-3 py-2 rounded-full text-xs font-semibold transition ${activeSubject === s.id ? 'bg-violet-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
               {s.name}
             </button>
           ))}

@@ -253,7 +253,7 @@ export default function AiTutorChat({
               <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-2xl flex items-center justify-center text-white dark:text-slate-900 text-[10px] font-black flex-shrink-0 mt-1 shadow-lg">
                 AI
               </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-6 py-6 rounded-[2rem] rounded-tl-none shadow-sm space-y-3 min-w-[240px]">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-6 py-6 rounded-[2rem] rounded-tl-none shadow-sm space-y-3 min-w-0 max-w-[80vw]">
                 <Skeleton className="h-4 w-[90%] rounded-full" />
                 <Skeleton className="h-4 w-[75%] rounded-full" />
                 <Skeleton className="h-4 w-[50%] rounded-full" />

@@ -659,7 +659,7 @@ export default function AITeacherPage() {
               <button
                 key={l.id}
                 onClick={() => updateLanguage(l.id as any)}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${
+                className={`px-3 py-2 rounded-lg text-[10px] font-bold transition ${
                   preferredLanguage === l.id ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -808,7 +808,7 @@ export default function AITeacherPage() {
                           <button
                             key={idx}
                             onClick={() => sendMessage(action)}
-                            className="bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-teal-100 transition shadow-sm"
+                            className="bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold px-3 py-2 rounded-full border border-teal-100 transition shadow-sm"
                           >
                             {action}
                           </button>
@@ -856,7 +856,7 @@ export default function AITeacherPage() {
                   <p className="text-xs font-semibold text-blue-700 truncate">{imageFile?.name}</p>
                   <p className="text-[10px] text-blue-400">Image attached — ask MaFundi about it</p>
                 </div>
-                <button onClick={clearUploads} className="p-1 rounded-lg hover:bg-blue-100 transition flex-shrink-0">
+                <button onClick={clearUploads} className="p-2 rounded-lg hover:bg-blue-100 transition flex-shrink-0">
                   <X size={14} className="text-blue-500" />
                 </button>
               </div>
@@ -869,7 +869,7 @@ export default function AITeacherPage() {
                   <p className="text-xs font-semibold text-teal-700 truncate">{activeFile.name}</p>
                   <p className="text-[10px] text-teal-400">Document attached — ask MaFundi for help</p>
                 </div>
-                <button onClick={() => setActiveFile(null)} className="p-1 rounded-lg hover:bg-teal-100 transition flex-shrink-0">
+                <button onClick={() => setActiveFile(null)} className="p-2 rounded-lg hover:bg-teal-100 transition flex-shrink-0">
                   <X size={14} className="text-teal-500" />
                 </button>
               </div>
@@ -884,7 +884,7 @@ export default function AITeacherPage() {
                       <p className="text-[10px] font-bold text-indigo-700 truncate tracking-tight">{res.title}</p>
                       <p className="text-[9px] text-indigo-400 font-medium">Library Resource</p>
                     </div>
-                    <button onClick={() => removeResource(res.id)} className="p-0.5 rounded-md hover:bg-indigo-100 transition flex-shrink-0">
+                    <button onClick={() => removeResource(res.id)} className="p-2 rounded-md hover:bg-indigo-100 transition flex-shrink-0">
                       <X size={12} className="text-indigo-500" />
                     </button>
                   </div>
@@ -896,7 +896,7 @@ export default function AITeacherPage() {
             <div className="flex items-center gap-1.5 p-1.5 bg-gray-100 rounded-xl w-fit mx-auto sm:mx-0">
               <button
                 onClick={() => setSolutionMode('scaffolded')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition ${
                   solutionMode === 'scaffolded' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -904,7 +904,7 @@ export default function AITeacherPage() {
               </button>
               <button
                 onClick={() => setSolutionMode('direct')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition ${
                   solutionMode === 'direct' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >

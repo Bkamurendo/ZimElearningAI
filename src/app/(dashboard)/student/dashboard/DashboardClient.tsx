@@ -28,6 +28,7 @@ const STAT_ICONS: Record<string, React.ElementType> = {
   'Quizzes done': Brain,
   'Topics mastered': Star,
 }
+import GettingStartedChecklist from '@/components/GettingStartedChecklist'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -60,6 +61,8 @@ interface DashboardClientProps {
   pendingAssignmentsCount: number
   dailyChallengeCompleted: boolean
   dailyChallengeScore: number | null
+  hasExamDates?: boolean
+  hasUsedMaFundi?: boolean
 }
 
 export default function DashboardClient({
@@ -75,7 +78,9 @@ export default function DashboardClient({
   studyPlan: _studyPlan,
   pendingAssignmentsCount,
   dailyChallengeCompleted,
-  dailyChallengeScore: _dailyChallengeScore
+  dailyChallengeScore: _dailyChallengeScore,
+  hasExamDates = false,
+  hasUsedMaFundi = false,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -111,20 +116,20 @@ export default function DashboardClient({
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
              {/* Dynamic Stats Pill */}
-             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-4 rounded-3xl text-center min-w-[100px]">
+             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
                 <Zap size={20} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
-                <p className="text-xl font-black text-white">
+                <p className="text-lg sm:text-xl font-black text-white">
                   {stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0}
                 </p>
-                <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Mastered</p>
+                <p className="text-xs uppercase font-black text-slate-500 tracking-widest">Mastered</p>
              </div>
-             
+
              {/* Streak Pill */}
-             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-4 rounded-3xl text-center min-w-[100px]">
-                <p className="text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
-                <p className="text-[10px] uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
+             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
+                <p className="text-lg sm:text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
+                <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
              </div>
 
              <Button 
@@ -145,6 +150,13 @@ export default function DashboardClient({
           </div>
         </div>
       </div>
+
+      {/* Getting Started Checklist — shown for new students */}
+      <GettingStartedChecklist
+        hasSubjects={subjects.length > 0}
+        hasExamDates={hasExamDates}
+        hasUsedMaFundi={hasUsedMaFundi}
+      />
 
       {/* Modern Tabbed Navigation */}
       <div className="sticky top-4 z-40 flex justify-center">
@@ -183,7 +195,7 @@ export default function DashboardClient({
                       <Icon size={20} className={color} />
                     </div>
                     <p className={`text-3xl font-black ${color}`}>{value}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{label}</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{label}</p>
                   </Card>
                   )
                 })}
@@ -232,7 +244,7 @@ export default function DashboardClient({
                              {item.subjectCode.split('-')[1]?.slice(0, 2) ?? 'Z'}
                           </div>
                           <div className="flex-1 min-w-0">
-                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.subjectName}</p>
+                             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{item.subjectName}</p>
                              <h4 className="text-base font-bold text-slate-800 dark:text-white truncate">{item.lessonTitle}</h4>
                           </div>
                           <ChevronRight className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
@@ -258,14 +270,14 @@ export default function DashboardClient({
                            <div className={`w-10 h-10 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-xs`}>
                               {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
                            </div>
-                           <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-[10px] uppercase">
+                           <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-xs uppercase">
                               {/* Calculate a realistic proxy for progress */}
                               {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% PREP
                            </Badge>
                         </div>
                         <div>
                           <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">{s.name}</h4>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
+                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
                         </div>
                         <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                            <div 
@@ -291,7 +303,7 @@ export default function DashboardClient({
                           </div>
                           <div>
                             <p className="text-white font-bold text-sm">Ask MaFundi AI</p>
-                            <p className="text-slate-400 text-[10px] uppercase font-black">24/7 Personal Tutor</p>
+                            <p className="text-slate-400 text-xs uppercase font-black">24/7 Personal Tutor</p>
                           </div>
                        </div>
                        <ChevronRight className="text-slate-600" />
@@ -306,7 +318,7 @@ export default function DashboardClient({
                           </div>
                           <div>
                             <p className="font-bold text-sm">My Progress</p>
-                            <p className="text-slate-400 text-[10px] uppercase font-black">In-depth Analytics</p>
+                            <p className="text-slate-400 text-xs uppercase font-black">In-depth Analytics</p>
                           </div>
                        </div>
                        <ChevronRight className="text-slate-300" />
@@ -318,7 +330,7 @@ export default function DashboardClient({
                {recentBadges.length > 0 && (
                  <Card glass className="border-amber-100/50 dark:border-amber-900/20">
                    <CardHeader className="flex flex-row items-center justify-between">
-                      <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Recent Trophies</h3>
+                      <h3 className="text-xs font-black text-amber-600 uppercase tracking-widest">Recent Trophies</h3>
                       <Trophy size={14} className="text-amber-500" />
                    </CardHeader>
                    <CardContent className="space-y-3">
@@ -327,7 +339,7 @@ export default function DashboardClient({
                            <span className="text-xl">🏅</span>
                            <div className="min-w-0">
                               <p className="text-xs font-bold text-amber-900 dark:text-amber-100 truncate">{b.badge_name}</p>
-                              <p className="text-[10px] text-amber-600/60 font-bold uppercase tracking-tighter">Achievement Unlocked</p>
+                              <p className="text-xs text-amber-600/60 font-bold uppercase tracking-tighter">Achievement Unlocked</p>
                            </div>
                         </div>
                       ))}
@@ -364,7 +376,7 @@ export default function DashboardClient({
                               </div>
                               <div className="text-right">
                                  <p className={`text-2xl font-black text-${urgencyStatus}-600 leading-none`}>{days <= 0 ? 'GO!' : days}</p>
-                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Days Left</p>
+                                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Days Left</p>
                               </div>
                            </div>
                            <Link href="/student/ai-workspace" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
@@ -402,7 +414,7 @@ export default function DashboardClient({
                 {/* Notifications Quick-Access */}
                 <Card className="overflow-hidden">
                    <CardHeader className="bg-slate-50 dark:bg-slate-900/50 flex flex-row items-center justify-between py-3">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Intelligence Briefing</h4>
+                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Intelligence Briefing</h4>
                       <Bell size={14} className="text-slate-400" />
                    </CardHeader>
                    <CardContent className="divide-y divide-slate-50 dark:divide-slate-800 p-0">
@@ -411,11 +423,11 @@ export default function DashboardClient({
                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0 mt-1.5" />
                            <div className="min-w-0">
                               <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{n.title}</p>
-                              <p className="text-[10px] text-slate-500 truncate">{n.message}</p>
+                              <p className="text-xs text-slate-500 truncate">{n.message}</p>
                            </div>
                         </div>
                       ))}
-                      <Link href="/student/notifications" className="block text-center py-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
+                      <Link href="/student/notifications" className="block text-center py-2 text-xs font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                          View All Intelligence
                       </Link>
                    </CardContent>

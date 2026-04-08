@@ -173,7 +173,7 @@ export default function ProfileSettingsPage() {
                   setNewPhone(profile?.phone_number ?? '')
                   setEditingName(true)
                 }}
-                className="p-1 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
+                className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
                 title="Edit profile"
               >
                 <Edit2 size={14} />

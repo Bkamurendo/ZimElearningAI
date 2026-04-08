@@ -236,7 +236,7 @@ export default function PastPaperClient({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Examination Year (style)</label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {years.map((y) => (
                   <button
                     key={y}

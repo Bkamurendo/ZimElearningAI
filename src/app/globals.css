@@ -66,6 +66,24 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ─── Safe area support (notched / Dynamic Island phones) ─────────────────── */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ─── Mobile readability floor ────────────────────────────────────────────── */
+/* Ensures no label/text drops below 12px on phones ≤480px                    */
+@media (max-width: 480px) {
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-\[11px\] {
+    font-size: 12px !important;
+  }
+}
+
 /* ─── Animations ───────────────────────────────────────────────────────────── */
 
 @keyframes fadeInUp {
