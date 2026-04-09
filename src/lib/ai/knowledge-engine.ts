@@ -2,22 +2,28 @@ import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
 let openaiInstance: OpenAI | null = null
+let supabaseInstance: ReturnType<typeof createClient> | null = null
 
 function getOpenAI() {
   if (!openaiInstance) {
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY is missing from environment variables.')
-    }
+    if (!apiKey) throw new Error('OPENAI_API_KEY is missing.')
     openaiInstance = new OpenAI({ apiKey })
   }
   return openaiInstance
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  if (!supabaseInstance) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) {
+      throw new Error('Supabase credentials (URL/Role Key) are missing from environment.')
+    }
+    supabaseInstance = createClient(url, key)
+  }
+  return supabaseInstance as any
+}
 
 const CHUNK_SIZE = 1500
 const CHUNK_OVERLAP = 200
@@ -79,6 +85,7 @@ export class KnowledgeEngine {
     const chunks = this.chunkText(content)
     
     // 2. Process each chunk
+    const supabase = getSupabase()
     for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i]
         const embedding = await this.generateEmbedding(chunk)
@@ -118,6 +125,7 @@ export class KnowledgeEngine {
 
     // 1. Generate query embedding
     const queryEmbedding = await this.generateEmbedding(query)
+    const supabase = getSupabase()
 
     // 2. Query Supabase using the match_knowledge_chunks RPC
     const { data, error } = await supabase.rpc('match_knowledge_chunks', {
