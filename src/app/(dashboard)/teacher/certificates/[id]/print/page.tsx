@@ -1,10 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import { 
-  Award, ShieldCheck, GraduationCap,
-  Printer, Download, Star
-} from 'lucide-react'
+import { Award, ShieldCheck, GraduationCap, Star } from 'lucide-react'
 import Image from 'next/image'
+import { CertificateControls } from './CertificateControls'
 
 export const metadata = {
   title: 'ZimLearn | Certificate of Excellence',
@@ -25,17 +23,10 @@ export default async function CertificatePrintPage({ params }: { params: { id: s
   if (!cert) notFound()
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-20 print:p-0 print:bg-white">
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-20 print:p-0 print:bg-white text-slate-900">
       
       {/* Controls Overlay (Hidden on Print) */}
-      <div className="fixed top-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl border border-white z-50 print:hidden transition hover:scale-105">
-         <button onClick={() => window.print()} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition">
-            <Printer size={14} /> Print Certificate
-         </button>
-         <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition">
-            <Download size={14} /> Download PDF
-         </button>
-      </div>
+      <CertificateControls />
 
       {/* The Certificate Canvas */}
       <div className="relative w-full max-w-[1000px] aspect-[1.414/1] bg-white shadow-[0_40px_100px_rgba(0,0,0,0.2)] border-[20px] border-double border-slate-900 p-12 overflow-hidden flex flex-col group print:shadow-none print:border-slate-300 print:w-full print:max-w-none">

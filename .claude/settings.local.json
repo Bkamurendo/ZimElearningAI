@@ -204,7 +204,28 @@
       "Bash(find 'C:\\\\Users\\\\Chegutu Mupfure\\\\OneDrive\\\\Desktop\\\\AI E-LEARNING PLATFORM ZIM\\\\src\\\\app\\\\\\(dashboard\\)\\\\school-admin' -name *.tsx -o -name *.ts)",
       "Bash(find \"C:\\\\Users\\\\Chegutu Mupfure\\\\OneDrive\\\\Desktop\\\\AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)\" -type f -name \"page.tsx\")",
       "Bash(find \"/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)/teacher\" -type f -name \"page.tsx\")",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")",
+      "Bash(taskkill /PID 18416 /F)",
+      "Bash(cmd /c \"taskkill /PID 18416 /F\")",
+      "Bash(cat \"src/app/\\(dashboard\\)/parent/dashboard/page.tsx\")",
+      "Bash(ls \"src/app/\\(dashboard\\)/student/dashboard/\")",
+      "Bash(ls src/lib/confetti*)",
+      "Bash(grep -rn \"from ''@/components/ui/Tabs''\\\\|from ''@/components/ui/Card''\\\\|from ''@/components/ui/Badge''\\\\|from ''@/components/ui/Button''\" src/app/\\\\\\(dashboard\\\\\\)/student/dashboard/DashboardClient.tsx)",
+      "Bash(tasklist /FI \"PID eq 18416\")",
+      "Bash(tasklist)",
+      "Bash(wmic process:*)",
+      "Bash(find \"/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)/student\" -type f -name \"*.tsx\" -o -name \"*.ts\")",
+      "Bash(wc -l \"/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)/student/ai-teacher/page.tsx\")",
+      "Bash(find '/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM/src/app/\\(dashboard\\)/student' -name page.tsx -type f)",
+      "Bash(ls \"C:\\\\Users\\\\Chegutu Mupfure\\\\OneDrive\\\\Desktop\\\\AI E-LEARNING PLATFORM ZIM\\\\supabase\"/*.sql)",
+      "Bash(find . -name .env* -type f)",
+      "Bash(grep -r \"PAYNOW\\\\|FLUTTERWAVE\\\\|PAYMENT\" .env*)",
+      "Bash(grep -r \"pro_expires_at\\\\|plan.*pro\\\\|subscription\" supabase/*.sql)",
+      "Bash(node -e \"try { require.resolve\\(''paynow''\\); console.log\\(''paynow installed''\\) } catch\\(e\\) { console.log\\(''paynow NOT installed''\\) }\")",
+      "Bash(npx vercel:*)",
+      "Bash(printf 'https://zim-elearningai.co.zw')"
     ]
   }
 }

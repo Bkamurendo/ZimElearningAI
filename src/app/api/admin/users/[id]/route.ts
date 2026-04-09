@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
 
 const VALID_ROLES = ['student', 'teacher', 'parent', 'admin'] as const
 
@@ -99,9 +100,31 @@ export async function POST(
 
     if (linkErr) throw new Error(linkErr.message)
 
+    const link = linkData.properties?.action_link ?? null
+
+    // Optional: Send email if requested
+    const body = await _req.json().catch(() => ({})) as { sendEmail?: boolean }
+    if (body.sendEmail && link && authUser.user.email) {
+      await sendEmail(
+        authUser.user.email,
+        'Reset your ZimLearn password',
+        `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4f46e5;">ZimLearn Identity Service</h2>
+          <p>An administrator has generated a secure sign-in link for your account.</p>
+          <p>Click the button below to sign in and set a new password:</p>
+          <a href="${link}" style="display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 20px 0;">Sign In & Reset Password</a>
+          <p style="color: #6b7280; font-size: 12px;">This link is for one-time use and expires shortly.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="color: #9ca3af; font-size: 10px;">If you did not request this, please ignore this email or contact support.</p>
+        </div>
+        `
+      )
+    }
+
     return NextResponse.json({
       success: true,
-      link: linkData.properties?.action_link ?? null,
+      link,
       email: authUser.user.email,
     })
   } catch (err) {

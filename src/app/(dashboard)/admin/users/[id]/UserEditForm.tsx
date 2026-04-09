@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   GraduationCap, BookOpen, Heart, Shield,
-  Save, Key, Check, Copy, AlertCircle, Loader2,
+  Save, Key, Check, Copy, AlertCircle, Loader2, Mail,
 } from 'lucide-react'
 
 const ROLES = [
@@ -48,11 +48,12 @@ export default function UserEditForm({
   const [saving, setSaving]       = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
 
-  // Password reset state
-  const [resetting, setResetting]   = useState(false)
-  const [resetLink, setResetLink]   = useState<string | null>(null)
-  const [resetError, setResetError] = useState<string | null>(null)
-  const [copied, setCopied]         = useState(false)
+  const [resetting, setResetting]      = useState(false)
+  const [resetLink, setResetLink]      = useState<string | null>(null)
+  const [resetError, setResetError]    = useState<string | null>(null)
+  const [shouldEmail, setShouldEmail]  = useState(false)
+  const [emailSent, setEmailSent]      = useState(false)
+  const [copied, setCopied]            = useState(false)
 
   const dirty =
     name !== initialName ||
@@ -87,11 +88,17 @@ export default function UserEditForm({
     setResetting(true)
     setResetLink(null)
     setResetError(null)
+    setEmailSent(false)
     try {
-      const res  = await fetch(`/api/admin/users/${userId}`, { method: 'POST' })
+      const res  = await fetch(`/api/admin/users/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendEmail: shouldEmail }),
+      })
       const json = await res.json() as { link?: string; error?: string }
       if (res.ok && json.link) {
         setResetLink(json.link)
+        if (shouldEmail) setEmailSent(true)
       } else {
         setResetError(json.error ?? 'Failed to generate reset link')
       }
@@ -239,17 +246,37 @@ export default function UserEditForm({
           </p>
         </div>
 
-        <div className="p-5 space-y-3">
-          <button
-            onClick={handlePasswordReset}
-            disabled={resetting}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-sm font-semibold transition-all"
-          >
-            {resetting
-              ? <Loader2 size={14} className="animate-spin text-amber-600" />
-              : <Key size={14} />}
-            {resetting ? 'Generating…' : 'Generate Reset Link'}
-          </button>
+        <div className="p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <button
+              onClick={handlePasswordReset}
+              disabled={resetting}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-sm font-semibold transition-all shadow-sm"
+            >
+              {resetting
+                ? <Loader2 size={14} className="animate-spin text-amber-600" />
+                : <Key size={14} />}
+              {resetting ? 'Generating…' : 'Generate Reset Link'}
+            </button>
+
+            <label className="flex items-center gap-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={shouldEmail}
+                onChange={(e) => setShouldEmail(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition cursor-pointer"
+              />
+              <span className="text-sm text-gray-600 group-hover:text-gray-900 transition font-medium">
+                Email link to user automatically
+              </span>
+            </label>
+          </div>
+
+          {emailSent && (
+            <p className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 bg-indigo-50 p-2 rounded-lg">
+              <Mail size={12} /> Email notification sent to user email address
+            </p>
+          )}
 
           {resetError && (
             <p className="text-sm text-red-500 flex items-center gap-1.5">
