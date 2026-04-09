@@ -318,7 +318,16 @@ export default function GiftPage() {
               <p className="text-2xl font-black text-indigo-700">${selectedGift.price}</p>
             </div>
 
-            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>}
+            {error && (
+              <div className="space-y-3">
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
+                <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 text-center">
+                  <p className="text-xs text-slate-600 font-medium italic">
+                    Having trouble gifting? <a href="https://wa.me/263785170918" target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-bold hover:underline">WhatsApp us at +263785170918</a> and we&apos;ll help you out!
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button onClick={() => setStep('select')} className="flex-1 py-3 border-2 border-gray-200 hover:border-gray-300 text-gray-600 font-bold rounded-2xl transition text-sm">

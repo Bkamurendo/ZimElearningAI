@@ -225,7 +225,8 @@
       "Bash(grep -r \"pro_expires_at\\\\|plan.*pro\\\\|subscription\" supabase/*.sql)",
       "Bash(node -e \"try { require.resolve\\(''paynow''\\); console.log\\(''paynow installed''\\) } catch\\(e\\) { console.log\\(''paynow NOT installed''\\) }\")",
       "Bash(npx vercel:*)",
-      "Bash(printf 'https://zim-elearningai.co.zw')"
+      "Bash(printf 'https://zim-elearningai.co.zw')",
+      "Bash(find '/c/Users/Chegutu Mupfure/OneDrive/Desktop/AI E-LEARNING PLATFORM ZIM' -type f \\\\\\(-name *.sql -o -name *migration* -o -name *schema* \\\\\\))"
     ]
   }
 }

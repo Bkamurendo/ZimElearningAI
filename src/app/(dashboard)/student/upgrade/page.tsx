@@ -369,6 +369,19 @@ export default function UpgradePage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Payment Not Completed</h1>
           <p className="text-slate-500 mb-8">{error || 'The payment was cancelled or timed out. Your account has not been charged.'}</p>
+          
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-8">
+            <p className="text-sm text-slate-600 font-medium">Having trouble paying?</p>
+            <a 
+              href="https://wa.me/263785170918" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-1 text-emerald-600 font-bold hover:underline"
+            >
+              WhatsApp us at +263785170918 and we&apos;ll help
+            </a>
+          </div>
+
           <button onClick={() => { setPaymentStatus('idle'); setPaymentId(null); setPollCount(0); setError('') }}
             className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl transition mb-3 shadow-md">Try Again</button>
           <Link href="/student/dashboard" className="block text-slate-400 hover:text-slate-600 text-sm underline underline-offset-2">Back to Dashboard</Link>
@@ -756,8 +769,13 @@ export default function UpgradePage() {
 
           <div className="p-5 space-y-3">
             {error && (
-              <div className="flex items-start gap-2.5 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
-                <XCircle size={16} className="mt-0.5 shrink-0" />{error}
+              <div className="space-y-3">
+                <div className="flex items-start gap-2.5 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
+                  <XCircle size={16} className="mt-0.5 shrink-0" />{error}
+                </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
+                  <p className="text-xs text-slate-600 font-medium">Having trouble? <a href="https://wa.me/263785170918" target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-bold hover:underline">WhatsApp us at +263785170918</a></p>
+                </div>
               </div>
             )}
 

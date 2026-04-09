@@ -35,6 +35,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabContent } from '@/components/ui/Tabs'
 import PassPulseRings from './PassPulseRings'
 import { fireConfetti } from '@/lib/confetti'
+import LearningMinutesTracker from './LearningMinutesTracker'
+import AdaptivePath from './AdaptivePath'
 
 const SUBJECT_COLORS = [
   'from-emerald-400 to-emerald-600',
@@ -63,6 +65,7 @@ interface DashboardClientProps {
   dailyChallengeScore: number | null
   hasExamDates?: boolean
   hasUsedMaFundi?: boolean
+  learningMinutesToday: number
 }
 
 export default function DashboardClient({
@@ -81,6 +84,7 @@ export default function DashboardClient({
   dailyChallengeScore: _dailyChallengeScore,
   hasExamDates = false,
   hasUsedMaFundi = false,
+  learningMinutesToday = 0,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -131,6 +135,11 @@ export default function DashboardClient({
                 <p className="text-lg sm:text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
                 <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
              </div>
+
+             <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
+                <p className="text-lg sm:text-xl font-black text-indigo-400">⏱️ {learningMinutesToday}m</p>
+                <p className="text-xs uppercase font-black text-indigo-500/60 tracking-widest">Focus Time</p>
+              </div>
 
              <Button 
                 onClick={() => {
@@ -185,6 +194,9 @@ export default function DashboardClient({
                </CardContent>
             </Card>
 
+            {/* Daily Focus Tracker */}
+            <LearningMinutesTracker minutesToday={learningMinutesToday} targetMinutes={60} />
+
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {stats.map(({ label, value, color, bg, border }, _idx) => {
@@ -229,9 +241,11 @@ export default function DashboardClient({
         </TabContent>
 
         <TabContent id="learning" activeTab={activeTab}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Continue Studying (Left) */}
-            <div className="lg:col-span-2 space-y-4">
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Adaptive Path & Continue Studying (Left) */}
+            <div className="lg:col-span-2 space-y-6">
+               <AdaptivePath />
+
                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                  <PlayCircle size={14} /> Resume Learning Path
                </h3>
