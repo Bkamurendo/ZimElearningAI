@@ -51,7 +51,7 @@ async function trainFunda() {
   console.log('Fetching documents...')
   const { data: docs, error: dErr } = await supabase
     .from('uploaded_documents')
-    .select('id, title, extracted_text, zimsec_level')
+    .select('id, title, extracted_text, zimsec_level, file_path')
     .eq('moderation_status', 'published')
 
   if (dErr) console.error('Error fetching documents:', dErr)
@@ -59,18 +59,25 @@ async function trainFunda() {
   if (docs) {
     console.log(`Found ${docs.length} documents. Vectorizing...`)
     for (const doc of docs) {
-      if (!doc.extracted_text) {
-        console.log(`Skipping document (no text): ${doc.title}`)
-        continue
-      }
       try {
-        await KnowledgeEngine.ingestResource(
-          doc.id,
-          'document',
-          doc.title,
-          doc.extracted_text,
-          { zimsec_level: doc.zimsec_level }
-        )
+        if (doc.extracted_text) {
+          await KnowledgeEngine.ingestResource(
+            doc.id,
+            'document',
+            doc.title,
+            doc.extracted_text,
+            { zimsec_level: doc.zimsec_level }
+          )
+        } else if (doc.file_path) {
+          // ACTIVE EXTRACTION: If text is missing, go get it from the file!
+          console.log(`[RECOVERY] No text for ${doc.title}. Extracting from storage...`)
+          await KnowledgeEngine.extractAndIngestDocument({
+            id: doc.id,
+            title: doc.title,
+            file_path: doc.file_path,
+            zimsec_level: doc.zimsec_level
+          })
+        }
       } catch (err: any) {
         console.error(`Failed to ingest document: ${doc.title}`, err.message)
       }

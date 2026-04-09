@@ -1,6 +1,8 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
+const pdfParse = require('pdf-parse/lib/pdf-parse.js')
+
 let openaiInstance: OpenAI | null = null
 let supabaseInstance: ReturnType<typeof createClient> | null = null
 
@@ -105,6 +107,47 @@ export class KnowledgeEngine {
     }
     
     console.log(`[KNOWLEDGE ENGINE] Successfully ingested ${chunks.length} chunks for ${title}.`)
+  }
+
+  /**
+   * Specifically for Documents: Downloads and extracts text if missing, then ingests.
+   */
+  static async extractAndIngestDocument(doc: { id: string, title: string, file_path: string, zimsec_level?: string }) {
+    const supabase = getSupabase()
+    console.log(`[KNOWLEDGE ENGINE] Processing Doc: ${doc.title}...`)
+
+    // 1. Download from storage
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from('platform-documents')
+      .download(doc.file_path)
+
+    if (downloadError || !fileData) {
+      console.warn(`[KNOWLEDGE ENGINE] Download failed for ${doc.title}:`, downloadError?.message)
+      return
+    }
+
+    // 2. Extract text
+    const buffer = Buffer.from(await fileData.arrayBuffer())
+    let text = ''
+    try {
+      const parsed = await pdfParse(buffer)
+      text = parsed.text?.trim() || ''
+    } catch (err) {
+      console.warn(`[KNOWLEDGE ENGINE] PDF Parse failed for ${doc.title}`)
+      return
+    }
+
+    if (!text) {
+      console.warn(`[KNOWLEDGE ENGINE] No text found in ${doc.title}`)
+      return
+    }
+
+    // 3. Save extracted text back to DB for future use
+    await supabase.from('uploaded_documents').update({ extracted_text: text }).eq('id', doc.id)
+
+    // 4. Ingest as normal
+    await this.ingestResource(doc.id, 'document', doc.title, text, { zimsec_level: doc.zimsec_level })
   }
 
   /**
