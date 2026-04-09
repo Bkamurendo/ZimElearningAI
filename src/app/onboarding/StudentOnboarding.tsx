@@ -91,6 +91,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
   const [grade, setGrade] = useState('')
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   const filteredSubjects = subjects.filter((s) => s.zimsec_level === level)
   const selectedLevel = LEVELS.find((l) => l.value === level)
@@ -104,11 +105,18 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
   // Step 2 submit: save profile, then go to Step 3
   async function handleStep2Submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    // Run the actual onboarding action in background
-    await (completeStudentOnboarding as unknown as (fd: FormData) => Promise<void>)(formData)
-    // Then show the upgrade step
-    setStep(3)
+    setIsSaving(true)
+    try {
+        const formData = new FormData(e.currentTarget)
+        const result = await (completeStudentOnboarding as any)(formData)
+        if (result?.success) {
+            setStep(3)
+        }
+    } catch (err) {
+        console.error('Onboarding save failed:', err)
+    } finally {
+        setIsSaving(false)
+    }
   }
 
   return (
@@ -301,11 +309,11 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                 </button>
                 <button
                   type="submit"
-                  disabled={selectedSubjects.length === 0}
+                  disabled={selectedSubjects.length === 0 || isSaving}
                   className="flex-1 py-3 font-bold rounded-2xl transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01]"
-                  style={{ background: selectedSubjects.length === 0 ? '#d1fae5' : 'linear-gradient(135deg, #059669, #10b981)' }}
+                  style={{ background: selectedSubjects.length === 0 || isSaving ? '#d1fae5' : 'linear-gradient(135deg, #059669, #10b981)' }}
                 >
-                  Next: Choose plan →
+                  {isSaving ? 'Saving...' : 'Next: Choose plan →'}
                 </button>
               </div>
             </form>

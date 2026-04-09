@@ -43,7 +43,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<voi
   await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user.id)
 
   revalidatePath('/', 'layout')
-  redirect('/student/dashboard')
+  return { success: true }
 }
 
 export async function completeGeneralOnboarding(formData: FormData): Promise<void> {
