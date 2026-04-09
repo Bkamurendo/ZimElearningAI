@@ -1,9 +1,18 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let openaiInstance: OpenAI | null = null
+
+function getOpenAI() {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY is missing from environment variables.')
+    }
+    openaiInstance = new OpenAI({ apiKey })
+  }
+  return openaiInstance
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,6 +51,7 @@ export class KnowledgeEngine {
    */
   static async generateEmbedding(text: string): Promise<number[]> {
     try {
+      const openai = getOpenAI()
       const response = await openai.embeddings.create({
         model: 'text-embedding-3-small',
         input: text.replace(/\n/g, ' '),

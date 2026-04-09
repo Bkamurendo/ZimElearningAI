@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
 import path from 'path'
 import dotenv from 'dotenv'
-import { KnowledgeEngine } from '../src/lib/ai/knowledge-engine'
-
-// Load .env.local first (Next.js default), then fallback to .env
+// Load .env files before any other imports
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 dotenv.config()
+
+import { createClient } from '@supabase/supabase-js'
+import { KnowledgeEngine } from '../src/lib/ai/knowledge-engine'
 
 async function trainFunda() {
   console.log('🚀 Starting Funda Knowledge Ingestion...')
