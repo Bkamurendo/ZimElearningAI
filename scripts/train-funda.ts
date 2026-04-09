@@ -1,70 +1,86 @@
-const { createClient } = require('@supabase/supabase-js')
-const axios = require('axios')
-require('dotenv').config()
+import { createClient } from '@supabase/supabase-js'
+import path from 'path'
+import dotenv from 'dotenv'
+import { KnowledgeEngine } from '../src/lib/ai/knowledge-engine'
+
+// Load .env.local first (Next.js default), then fallback to .env
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
+dotenv.config()
 
 async function trainFunda() {
   console.log('🚀 Starting Funda Knowledge Ingestion...')
   
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const adminEmail = 'admin@zim-elearningai.co.zw' // Default admin
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  console.log(`Connecting to ${appUrl}...`)
-  
-  // We'll use the API endpoint we just created
-  // Note: For a local script, we might want to bypass auth if we use the service role
-  // But safest is to just tell the user to hit the button in the UI (if I build one)
-  // or use the service role directly here.
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Error: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in .env.local')
+    process.exit(1)
+  }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
+  const supabase = createClient(supabaseUrl, supabaseKey)
 
-  const CHUNK_SIZE = 1500
-  const CHUNK_OVERLAP = 200
-  const { KnowledgeEngine } = require('../src/lib/ai/knowledge-engine')
+  console.log('Connected to Supabase. Mapping resources...')
 
   // 1. Fetch all lessons
   console.log('Fetching lessons...')
-  const { data: lessons } = await supabase
+  const { data: lessons, error: lErr } = await supabase
     .from('lessons')
     .select('id, title, content, courses(subjects(zimsec_level))')
+
+  if (lErr) console.error('Error fetching lessons:', lErr)
 
   if (lessons) {
     console.log(`Found ${lessons.length} lessons. Vectorizing...`)
     for (const lesson of lessons) {
-      await KnowledgeEngine.ingestResource(
-        lesson.id,
-        'lesson',
-        lesson.title,
-        lesson.content,
-        { zimsec_level: lesson.courses?.subjects?.zimsec_level }
-      )
+      try {
+        await KnowledgeEngine.ingestResource(
+          lesson.id,
+          'lesson',
+          lesson.title,
+          lesson.content || '',
+          { zimsec_level: (lesson.courses as any)?.subjects?.zimsec_level }
+        )
+      } catch (err: any) {
+        console.error(`Failed to ingest lesson: ${lesson.title}`, err.message)
+      }
     }
   }
 
   // 2. Fetch all documents
   console.log('Fetching documents...')
-  const { data: docs } = await supabase
+  const { data: docs, error: dErr } = await supabase
     .from('uploaded_documents')
     .select('id, title, extracted_text, zimsec_level')
     .eq('moderation_status', 'published')
 
+  if (dErr) console.error('Error fetching documents:', dErr)
+
   if (docs) {
     console.log(`Found ${docs.length} documents. Vectorizing...`)
     for (const doc of docs) {
-      if (!doc.extracted_text) continue
-      await KnowledgeEngine.ingestResource(
-        doc.id,
-        'document',
-        doc.title,
-        doc.extracted_text,
-        { zimsec_level: doc.zimsec_level }
-      )
+      if (!doc.extracted_text) {
+        console.log(`Skipping document (no text): ${doc.title}`)
+        continue
+      }
+      try {
+        await KnowledgeEngine.ingestResource(
+          doc.id,
+          'document',
+          doc.title,
+          doc.extracted_text,
+          { zimsec_level: doc.zimsec_level }
+        )
+      } catch (err: any) {
+        console.error(`Failed to ingest document: ${doc.title}`, err.message)
+      }
     }
   }
 
   console.log('✅ Funda has finished learning all materials!')
 }
 
-trainFunda().catch(console.error)
+trainFunda().catch(err => {
+  console.error('Fatal Error during training:', err)
+  process.exit(1)
+})
