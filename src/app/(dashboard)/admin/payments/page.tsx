@@ -112,6 +112,23 @@ export default async function AdminPaymentsPage() {
     }
   }
 
+  // Fetch recent pending/failed payments for recovery (last 7 days)
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: recentAttempts } = await supabase
+    .from('payments')
+    .select(`
+      id,
+      created_at,
+      status,
+      plan_id,
+      amount_usd,
+      user:profiles!payments_user_id_fkey(id, full_name, email)
+    `)
+    .neq('status', 'paid')
+    .gte('created_at', sevenDaysAgo)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
   const UserRow = ({ user }: { user: { id: string; full_name: string | null; email: string; phone: string | null; plan: string; subscription_expires_at: string | null; created_at: string; last_sign_in_at: string | null } }) => {
     const status = getSubscriptionStatus(user)
     const lastLogin = user.last_sign_in_at 
@@ -263,9 +280,9 @@ export default async function AdminPaymentsPage() {
           </div>
         </div>
 
-        {/* Plan Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+        {/* Plan Distribution and Recovery Center */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 lg:col-span-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Plan Distribution</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -289,39 +306,75 @@ export default async function AdminPaymentsPage() {
                 </div>
                 <span className="text-sm font-bold text-gray-900">{starterUsers.length} users</span>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                  <span className="text-sm font-medium text-gray-700">Free Tier</span>
-                </div>
-                <span className="text-sm font-bold text-gray-900">{freeUsers.length} users</span>
-              </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-500">Total Revenue</span>
-                  <span className="text-lg font-bold text-emerald-600">${estimatedMonthlyRevenue}/month</span>
+                  <span className="text-sm font-medium text-gray-500">Monthly Revenue</span>
+                  <span className="text-lg font-bold text-emerald-600">${estimatedMonthlyRevenue}/mo</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Subscription Health</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Active Subscriptions</span>
-                <span className="text-sm font-bold text-green-600">
-                  {users?.length ? users.length - expiredSubscriptions.length : 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Expired Subscriptions</span>
-                <span className="text-sm font-bold text-red-600">{expiredSubscriptions.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Expiring Soon</span>
-                <span className="text-sm font-bold text-amber-600">{expiringSoon.length}</span>
-              </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <TrendingUp size={18} className="text-teal-600" />
+                Recovery Center
+              </h3>
+              <span className="text-xs text-gray-400">Last 7 days · Failed/Pending</span>
+            </div>
+            
+            <div className="overflow-hidden">
+               <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                {recentAttempts?.map(attempt => (
+                  <div key={attempt.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group hover:border-teal-200 transition">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${attempt.status === 'failed' ? 'bg-red-400' : 'bg-amber-400'}`} />
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{(attempt.user as any)?.full_name || 'Anonymous'}</p>
+                        <p className="text-[10px] text-gray-500">{(attempt.user as any)?.email} · {attempt.plan_id.toUpperCase()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right mr-2">
+                        <p className="text-xs font-bold text-gray-700">${attempt.amount_usd}</p>
+                        <p className="text-[9px] text-gray-400">{new Date(attempt.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <button 
+                        onClick={async (e) => {
+                          const btn = e.currentTarget
+                          btn.disabled = true
+                          btn.innerText = 'Sending...'
+                          try {
+                            const res = await fetch('/api/admin/payments/recover', {
+                              method: 'POST',
+                              body: JSON.stringify({ paymentId: attempt.id })
+                            })
+                            if (res.ok) {
+                              btn.innerText = 'Sent ✓'
+                              btn.className = 'px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg cursor-default'
+                            } else {
+                              btn.innerText = 'Retry'
+                              btn.disabled = false
+                            }
+                          } catch {
+                            btn.disabled = false
+                            btn.innerText = 'Error'
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:border-teal-500 hover:text-teal-600 transition shadow-sm"
+                      >
+                        Send Email
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {(!recentAttempts || recentAttempts.length === 0) && (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-slate-400">No recent failed attempts found.</p>
+                  </div>
+                )}
+               </div>
             </div>
           </div>
         </div>
@@ -344,7 +397,7 @@ export default async function AdminPaymentsPage() {
         )}
 
         {/* Users Table */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden text-sm sm:text-base">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -377,9 +430,6 @@ export default async function AdminPaymentsPage() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Last Login
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
