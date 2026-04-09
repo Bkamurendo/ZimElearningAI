@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { KnowledgeEngine } from './knowledge-engine'
 
 export type SearchResult = {
   title: string
@@ -9,60 +10,58 @@ export type SearchResult = {
 
 /**
  * Searches the platform's internal knowledge base (Lessons, Documents, Notes)
- * to provide MaFundi with official ZIMSEC-aligned context.
+ * using the Funda Knowledge Engine (Vector RAG).
  */
 export async function retrievePlatformKnowledge(
   query: string,
   grade?: string,
   level?: string
 ): Promise<SearchResult[]> {
-  const supabase = createClient()
-  const results: SearchResult[] = []
-
-  // 1. Search Lessons
-  const lessonQuery = supabase
-    .from('lessons')
-    .select('title, content, courses(title, subject_id, subjects(name, zimsec_level))')
-    .textSearch('content', query, { config: 'english', type: 'plain' })
-    .limit(3)
-
-  const { data: lessons } = await lessonQuery
-
-  if (lessons) {
-    lessons.forEach((l: any) => {
-      if (l.content) {
-        results.push({
-          title: `${l.courses?.subjects?.name}: ${l.title}`,
-          content: l.content.slice(0, 1000), // Limit snippet size
-          source_type: 'lesson',
-          relevance: 0.8
-        })
-      }
+  try {
+    // Perform semantic search via the new Knowledge Engine
+    const vectorResults = await KnowledgeEngine.search(query, {
+        grade,
+        level,
+        limit: 8,
+        threshold: 0.3 // Lower threshold for educational content to catch partial matches
     })
+
+    if (vectorResults && vectorResults.length > 0) {
+      return vectorResults.map(res => ({
+        title: res.metadata?.title || 'Knowledge Resource',
+        content: res.content,
+        source_type: res.source_type as any,
+        relevance: res.similarity
+      }))
+    }
+
+    // Fallback to legacy text search if vector search returns nothing
+    const supabase = createClient()
+    const results: SearchResult[] = []
+
+    // Legacy Search Lessons
+    const { data: lessons } = await supabase
+      .from('lessons')
+      .select('title, content, courses(title, subject_id, subjects(name, zimsec_level))')
+      .textSearch('content', query, { config: 'english', type: 'plain' })
+      .limit(3)
+
+    if (lessons) {
+      lessons.forEach((l: any) => {
+        if (l.content) {
+          results.push({
+            title: `${l.courses?.subjects?.name}: ${l.title}`,
+            content: l.content.slice(0, 1000),
+            source_type: 'lesson',
+            relevance: 0.8
+          })
+        }
+      })
+    }
+
+    return results.sort((a, b) => b.relevance - a.relevance)
+  } catch (err) {
+    console.error('[RETRIEVER ERROR]', err)
+    return []
   }
-
-  // 2. Search Uploaded Documents (Textbooks/Notes)
-  let docQuery = supabase
-    .from('uploaded_documents')
-    .select('title, extracted_text, zimsec_level')
-    .textSearch('extracted_text', query, { config: 'english', type: 'plain' })
-
-  if (level) docQuery = docQuery.eq('zimsec_level', level)
-  
-  const { data: docs } = await docQuery.limit(2)
-
-  if (docs) {
-    docs.forEach((d: any) => {
-      if (d.extracted_text) {
-        results.push({
-          title: `Book/Document: ${d.title}`,
-          content: d.extracted_text.slice(0, 1500),
-          source_type: 'document',
-          relevance: 0.9
-        })
-      }
-    })
-  }
-
-  return results.sort((a, b) => b.relevance - a.relevance)
 }
