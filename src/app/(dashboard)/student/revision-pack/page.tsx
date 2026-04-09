@@ -64,8 +64,8 @@ export default async function RevisionPackPage() {
         daysUntilExam: days,
       }
     })
-    .filter(Boolean)
-    .sort((a: any, b: any) => {
+    .filter((s): s is NonNullable<typeof s> => s !== null)
+    .sort((a, b) => {
       // Sort by exam proximity: soonest first, then no-date subjects last
       if (a.daysUntilExam !== null && b.daysUntilExam !== null) return a.daysUntilExam - b.daysUntilExam
       if (a.daysUntilExam !== null) return -1
