@@ -200,15 +200,18 @@ export default async function AdminDashboard() {
                 <p className="text-xs text-gray-500 mt-0.5">{activeAnnouncements} active</p>
               </div>
             </Link>
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 opacity-40 cursor-not-allowed">
-              <div className="w-11 h-11 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <BarChart2 size={20} className="text-gray-400" />
+            <Link
+              href="/admin/cohort"
+              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition group"
+            >
+              <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-200 transition">
+                <BarChart2 size={20} className="text-indigo-700" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Analytics</p>
-                <p className="text-xs text-gray-500 mt-0.5">Coming soon</p>
+                <p className="font-semibold text-gray-900 text-sm">Cohort Analytics</p>
+                <p className="text-xs text-gray-500 mt-0.5">Growth &amp; retention insights</p>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
