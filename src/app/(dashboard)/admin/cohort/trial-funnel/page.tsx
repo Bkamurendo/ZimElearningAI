@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Clock, TrendingUp, AlertTriangle, XCircle, BarChart2, DollarSign } from 'lucide-react'
+import { ArrowLeft, Clock, TrendingUp, AlertTriangle, XCircle, BarChart2 } from 'lucide-react'
 
 // Plan pricing for MRR calculation
 const PLAN_PRICES: Record<string, number> = {
@@ -44,17 +44,12 @@ export default async function TrialFunnelPage() {
 
   // Fetch profiles and payments in parallel
   const [profilesResult, paymentsResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, plan, pro_expires_at, created_at') as Promise<{ data: ProfileRow[] | null; error: unknown }>,
-    supabase
-      .from('payments')
-      .select('id, user_id, plan_id, amount_usd, status, created_at, paid_at')
-      .order('created_at', { ascending: false }) as Promise<{ data: PaymentRow[] | null; error: unknown }>,
+    supabase.from('profiles').select('id, plan, pro_expires_at, created_at'),
+    supabase.from('payments').select('id, user_id, plan_id, amount_usd, status, created_at, paid_at').order('created_at', { ascending: false }),
   ])
 
-  const profiles = profilesResult.data ?? []
-  const payments = paymentsResult.data ?? []
+  const profiles = (profilesResult.data ?? []) as ProfileRow[]
+  const payments = (paymentsResult.data ?? []) as PaymentRow[]
 
   // ── Section A: Trial Funnel ───────────────────────────────────────────────────
 
