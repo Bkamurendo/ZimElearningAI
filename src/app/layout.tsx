@@ -3,6 +3,7 @@ import localFont from 'next/font/local'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
+import SupportChat from '@/components/SupportChat'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ServiceWorkerRegistration />
         <ThemeProvider>{children}</ThemeProvider>
+        <SupportChat />
       </body>
     </html>
   )
