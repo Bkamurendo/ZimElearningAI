@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { verifyFlutterwavePayment } from '@/lib/flutterwave'
 import { PLANS, type PlanId } from '@/lib/paynow'
+import { sendPaymentSuccessEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -95,6 +96,23 @@ export async function GET(req: NextRequest) {
       pro_expires_at: expiresAt.toISOString(),
     })
     .eq('id', payment.user_id)
+
+  // Send confirmation email (best-effort)
+  try {
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', payment.user_id)
+      .single() as { data: { email: string; full_name: string | null } | null; error: unknown }
+
+    if (userProfile?.email) {
+      const TIER_LABELS: Record<string, string> = { starter: 'Starter', pro: 'Pro', elite: 'Elite' }
+      const planLabel = TIER_LABELS[tierToActivate] ?? 'Pro'
+      await sendPaymentSuccessEmail(userProfile.email, userProfile.full_name, planLabel, expiresAt)
+    }
+  } catch (emailErr) {
+    console.error('[flutterwave/verify] payment success email failed:', emailErr)
+  }
 
   // Redirect to success screen
   return NextResponse.redirect(`${base}/student/upgrade?flw=paid`)

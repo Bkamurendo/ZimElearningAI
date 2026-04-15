@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parsePaynowCallback, PLANS, type PlanId } from '@/lib/paynow'
+import { sendPaymentSuccessEmail } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const raw = await req.text()
@@ -66,20 +67,35 @@ export async function POST(req: NextRequest) {
     .eq('id', payment.id)
 
   if (isPaid) {
-    // Upgrade user plan
+    // Upgrade user to the correct plan tier
     const plan = PLANS[payment.plan_id as PlanId]
-    const days = plan?.days ?? 30
+    const tierToActivate = plan?.tier ?? 'pro'
+    const daysToGrant    = plan?.days ?? 30
 
     const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + days)
+    expiresAt.setDate(expiresAt.getDate() + daysToGrant)
 
     await supabase
       .from('profiles')
-      .update({
-        plan: 'pro',
-        pro_expires_at: expiresAt.toISOString(),
-      })
+      .update({ plan: tierToActivate, pro_expires_at: expiresAt.toISOString() })
       .eq('id', payment.user_id)
+
+    // Send confirmation email (best-effort — don't fail the webhook if it errors)
+    try {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', payment.user_id)
+        .single() as { data: { email: string; full_name: string | null } | null; error: unknown }
+
+      if (userProfile?.email) {
+        const TIER_LABELS: Record<string, string> = { starter: 'Starter', pro: 'Pro', elite: 'Elite' }
+        const planLabel = TIER_LABELS[tierToActivate] ?? 'Pro'
+        await sendPaymentSuccessEmail(userProfile.email, userProfile.full_name, planLabel, expiresAt)
+      }
+    } catch (emailErr) {
+      console.error('[callback] payment success email failed:', emailErr)
+    }
   }
 
   // Always respond 200 — Paynow retries on non-200
