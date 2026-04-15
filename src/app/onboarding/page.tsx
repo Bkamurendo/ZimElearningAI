@@ -3,7 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import StudentOnboarding from './StudentOnboarding'
 import GeneralOnboarding from './GeneralOnboarding'
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: { error?: string }
+}) {
   const supabase = createClient()
   const {
     data: { user },
@@ -22,6 +26,7 @@ export default async function OnboardingPage() {
   }
 
   const role = profile?.role ?? 'student'
+  const error = searchParams.error
 
   if (role === 'student') {
     // Fetch subjects for all levels so the client component can filter
@@ -34,9 +39,10 @@ export default async function OnboardingPage() {
       <StudentOnboarding
         fullName={profile?.full_name ?? ''}
         subjects={subjects ?? []}
+        error={error}
       />
     )
   }
 
-  return <GeneralOnboarding role={role} fullName={profile?.full_name ?? ''} />
+  return <GeneralOnboarding role={role} fullName={profile?.full_name ?? ''} error={error} />
 }

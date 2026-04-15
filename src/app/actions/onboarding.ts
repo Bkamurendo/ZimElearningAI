@@ -41,7 +41,11 @@ export async function completeStudentOnboarding(formData: FormData): Promise<voi
   }
 
   // Mark onboarding complete
-  await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user.id)
+  const { error: updateErr } = await supabase
+    .from('profiles')
+    .update({ onboarding_completed: true })
+    .eq('id', user.id)
+  if (updateErr) redirect('/onboarding?error=Setup+failed.+Please+try+again.')
 
   revalidatePath('/', 'layout')
   redirect('/student/dashboard')
@@ -57,10 +61,11 @@ export async function completeGeneralOnboarding(formData: FormData): Promise<voi
 
   const role = formData.get('role') as string
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from('profiles')
     .update({ role, onboarding_completed: true })
     .eq('id', user.id)
+  if (updateErr) redirect('/onboarding?error=Setup+failed.+Please+try+again.')
 
   if (role === 'teacher') {
     const qualification = formData.get('qualification') as string

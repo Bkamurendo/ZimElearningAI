@@ -35,9 +35,10 @@ const LEVELS: { value: ZimsecLevel; label: string; sublabel: string; grades: str
 interface Props {
   fullName: string
   subjects: Subject[]
+  error?: string
 }
 
-export default function StudentOnboarding({ fullName, subjects }: Props) {
+export default function StudentOnboarding({ fullName, subjects, error }: Props) {
   const [step, setStep] = useState<1 | 2>(1)
   const [level, setLevel] = useState<ZimsecLevel | null>(null)
   const [grade, setGrade] = useState('')
@@ -67,6 +68,13 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+          {/* Error banner */}
+          {error && (
+            <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl">
+              {error}
+            </div>
+          )}
+
           {/* Animated step progress bar */}
           <div className="mb-8">
             <div className="flex items-center gap-0 mb-5">
@@ -196,44 +204,51 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 mb-6">
-                {filteredSubjects.map((subject) => {
-                  const checked = selectedSubjects.includes(subject.id)
-                  return (
-                    <label
-                      key={subject.id}
-                      className={`flex items-center gap-3 p-3.5 border-2 rounded-2xl cursor-pointer transition-all duration-150 ${
-                        checked
-                          ? 'border-emerald-500 bg-emerald-50 shadow-sm'
-                          : 'border-gray-100 hover:border-emerald-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        name="subject_ids"
-                        value={subject.id}
-                        checked={checked}
-                        onChange={() => toggleSubject(subject.id)}
-                        className="sr-only"
-                      />
-                      {/* Custom checkbox */}
-                      <div className={`w-5 h-5 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${
-                        checked ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
-                      }`}>
-                        {checked && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-gray-800 truncate block">{subject.name}</span>
-                      </div>
-                      {checked && <BookOpen size={13} className="text-emerald-500 flex-shrink-0" />}
-                    </label>
-                  )
-                })}
-              </div>
+              {filteredSubjects.length === 0 ? (
+                <div className="mb-6 px-4 py-6 bg-amber-50 border border-amber-200 rounded-2xl text-center">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">No subjects available yet</p>
+                  <p className="text-xs text-amber-700">Subjects for your level haven&apos;t been added yet. You can enrol in subjects from your dashboard later.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5 mb-6">
+                  {filteredSubjects.map((subject) => {
+                    const checked = selectedSubjects.includes(subject.id)
+                    return (
+                      <label
+                        key={subject.id}
+                        className={`flex items-center gap-3 p-3.5 border-2 rounded-2xl cursor-pointer transition-all duration-150 ${
+                          checked
+                            ? 'border-emerald-500 bg-emerald-50 shadow-sm'
+                            : 'border-gray-100 hover:border-emerald-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          name="subject_ids"
+                          value={subject.id}
+                          checked={checked}
+                          onChange={() => toggleSubject(subject.id)}
+                          className="sr-only"
+                        />
+                        {/* Custom checkbox */}
+                        <div className={`w-5 h-5 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                          checked ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                        }`}>
+                          {checked && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-gray-800 truncate block">{subject.name}</span>
+                        </div>
+                        {checked && <BookOpen size={13} className="text-emerald-500 flex-shrink-0" />}
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button
@@ -245,9 +260,9 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                 </button>
                 <button
                   type="submit"
-                  disabled={selectedSubjects.length === 0}
+                  disabled={filteredSubjects.length > 0 && selectedSubjects.length === 0}
                   className="flex-1 py-3 font-bold rounded-2xl transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01]"
-                  style={{ background: selectedSubjects.length === 0 ? '#d1fae5' : 'linear-gradient(135deg, #059669, #10b981)' }}
+                  style={{ background: (filteredSubjects.length > 0 && selectedSubjects.length === 0) ? '#d1fae5' : 'linear-gradient(135deg, #059669, #10b981)' }}
                 >
                   🚀 Start learning
                 </button>
