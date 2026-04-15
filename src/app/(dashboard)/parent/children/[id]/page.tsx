@@ -73,16 +73,40 @@ export default async function ChildDetailPage({ params }: { params: { id: string
 
   const subjects = (enrolments ?? []).map(e => e.subject).filter(Boolean) as { id: string; name: string; code: string; zimsec_level: string }[]
 
-  // Per-subject lesson + quiz counts
-  type SubjectStat = { id: string; name: string; code: string; lessons: number; quizzes: number }
-  const subjectStats: SubjectStat[] = []
-  for (const s of subjects.slice(0, 8)) {
-    const { count: sl } = await supabase
-      .from('lesson_progress').select('id', { count: 'exact', head: true }).eq('student_id', child.id)
-    const { count: sq } = await supabase
-      .from('quiz_attempts').select('id', { count: 'exact', head: true }).eq('student_id', child.id)
-    subjectStats.push({ id: s.id, name: s.name, code: s.code, lessons: sl ?? 0, quizzes: sq ?? 0 })
+  // Per-subject lesson + quiz counts — 2 queries instead of N*2
+  // lesson_progress → lessons → courses → subject_id
+  type LessonProgressJoin = { lessons: { courses: { subject_id: string } | null } | null }
+  const { data: lessonProgressRows } = await supabase
+    .from('lesson_progress')
+    .select('lessons!inner(courses!inner(subject_id))')
+    .eq('student_id', child.id) as { data: LessonProgressJoin[] | null; error: unknown }
+
+  // quiz_attempts has subject_id directly
+  type QuizAttemptSubject = { subject_id: string | null }
+  const { data: quizAttemptRows } = await supabase
+    .from('quiz_attempts')
+    .select('subject_id')
+    .eq('student_id', child.id) as { data: QuizAttemptSubject[] | null; error: unknown }
+
+  const subjectLessonMap = new Map<string, number>()
+  for (const row of lessonProgressRows ?? []) {
+    const sid = row.lessons?.courses?.subject_id
+    if (sid) subjectLessonMap.set(sid, (subjectLessonMap.get(sid) ?? 0) + 1)
   }
+
+  const subjectQuizMap = new Map<string, number>()
+  for (const row of quizAttemptRows ?? []) {
+    if (row.subject_id) subjectQuizMap.set(row.subject_id, (subjectQuizMap.get(row.subject_id) ?? 0) + 1)
+  }
+
+  type SubjectStat = { id: string; name: string; code: string; lessons: number; quizzes: number }
+  const subjectStats: SubjectStat[] = subjects.slice(0, 8).map(s => ({
+    id: s.id,
+    name: s.name,
+    code: s.code,
+    lessons: subjectLessonMap.get(s.id) ?? 0,
+    quizzes: subjectQuizMap.get(s.id) ?? 0,
+  }))
 
   // Badges
   type BadgeRow = { badge_name: string; earned_at: string }

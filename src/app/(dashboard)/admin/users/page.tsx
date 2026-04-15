@@ -27,6 +27,33 @@ export default async function AdminUsersPage() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') redirect('/admin/dashboard')
 
+  // Accurate role counts — separate queries, no row limit
+  const [
+    { count: studentCount },
+    { count: teacherCount },
+    { count: parentCount },
+    { count: adminCount },
+    { count: onboardedCount },
+    { count: totalCount },
+  ] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'parent'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('onboarding_completed', true),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+  ])
+
+  const roleBreakdown = {
+    student: studentCount ?? 0,
+    teacher: teacherCount ?? 0,
+    parent:  parentCount ?? 0,
+    admin:   adminCount ?? 0,
+  }
+  const onboarded = onboardedCount ?? 0
+  const totalUsers = totalCount ?? 0
+
+  // Recent users list — limited to 200 for display only
   const { data } = await supabase
     .from('profiles')
     .select('id, full_name, email, role, onboarding_completed, created_at')
@@ -34,15 +61,6 @@ export default async function AdminUsersPage() {
     .limit(200) as { data: UserRow[] | null; error: unknown }
 
   const users = data ?? []
-
-  const roleBreakdown = {
-    student: users.filter((u) => u.role === 'student').length,
-    teacher: users.filter((u) => u.role === 'teacher').length,
-    parent:  users.filter((u) => u.role === 'parent').length,
-    admin:   users.filter((u) => u.role === 'admin').length,
-  }
-
-  const onboarded = users.filter((u) => u.onboarding_completed).length
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -55,7 +73,7 @@ export default async function AdminUsersPage() {
               <ArrowLeft size={13} /> Dashboard
             </Link>
             <h1 className="text-xl font-bold text-gray-900">User Management</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{users.length} registered users</p>
+            <p className="text-sm text-gray-500 mt-0.5">{totalUsers} registered users</p>
           </div>
         </div>
 
@@ -85,16 +103,16 @@ export default async function AdminUsersPage() {
             <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-semibold text-gray-800">Onboarding Completion</p>
               <p className="text-sm font-bold text-indigo-600">
-                {users.length > 0 ? Math.round((onboarded / users.length) * 100) : 0}%
+                {totalUsers > 0 ? Math.round((onboarded / totalUsers) * 100) : 0}%
               </p>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-500 rounded-full transition-all"
-                style={{ width: `${users.length > 0 ? (onboarded / users.length) * 100 : 0}%` }}
+                style={{ width: `${totalUsers > 0 ? (onboarded / totalUsers) * 100 : 0}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">{onboarded} of {users.length} users completed onboarding</p>
+            <p className="text-xs text-gray-400 mt-1">{onboarded} of {totalUsers} users completed onboarding</p>
           </div>
         </div>
 
@@ -102,7 +120,7 @@ export default async function AdminUsersPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900">All Users</h2>
-            <span className="text-xs text-gray-400">{users.length} total</span>
+            <span className="text-xs text-gray-400">{totalUsers} total</span>
           </div>
 
           {users.length === 0 ? (
