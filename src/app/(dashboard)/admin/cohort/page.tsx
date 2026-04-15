@@ -9,6 +9,7 @@ type ProfileRow = {
   role: string
   plan: string
   ai_quota_reset_at: string | null
+  pro_expires_at: string | null
 }
 
 export default async function CohortAnalyticsPage() {
@@ -25,12 +26,21 @@ export default async function CohortAnalyticsPage() {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1)
 
-  const { data: allProfiles } = await supabase
-    .from('profiles')
-    .select('id, created_at, role, plan, ai_quota_reset_at')
-    .order('created_at', { ascending: false }) as { data: ProfileRow[] | null; error: unknown }
+  const [profilesResult, paidPaymentsResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, created_at, role, plan, ai_quota_reset_at, pro_expires_at')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('payments')
+      .select('user_id')
+      .eq('status', 'paid'),
+  ])
 
-  const profiles = allProfiles ?? []
+  const profiles = (profilesResult.data ?? []) as ProfileRow[]
+  // Users who have ever made a successful payment (paying customers, not free trialists)
+  const paidPayerIds = new Set((paidPaymentsResult.data ?? []).map((p: { user_id: string }) => p.user_id))
+
   const totalUsers = profiles.length
 
   // Month-over-month signup growth
@@ -46,6 +56,14 @@ export default async function CohortAnalyticsPage() {
   // Paid users across all paid plans
   const paidProfiles = profiles.filter(p => p.plan === 'pro' || p.plan === 'starter' || p.plan === 'elite')
   const conversionRate = totalUsers > 0 ? (paidProfiles.length / totalUsers * 100).toFixed(1) : '0'
+
+  // Active free trials: have pro_expires_at in the future but NO payment record
+  // (admin-granted trial access, not a paid subscription)
+  const inTrialProfiles = profiles.filter(p =>
+    p.pro_expires_at != null &&
+    new Date(p.pro_expires_at) > now &&
+    !paidPayerIds.has(p.id)
+  )
 
   // Dormant: students with no AI activity in 30+ days (ai_quota_reset_at not updated)
   const dormantStudents = profiles.filter(p =>
@@ -75,7 +93,7 @@ export default async function CohortAnalyticsPage() {
   // Plan distribution
   const planCounts = {
     free: profiles.filter(p => p.plan === 'free').length,
-    trial: 0,
+    trial: inTrialProfiles.length,
     starter: profiles.filter(p => p.plan === 'starter').length,
     pro: profiles.filter(p => p.plan === 'pro').length,
     elite: profiles.filter(p => p.plan === 'elite').length,

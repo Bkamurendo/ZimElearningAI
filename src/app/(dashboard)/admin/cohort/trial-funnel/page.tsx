@@ -52,12 +52,22 @@ export default async function TrialFunnelPage() {
   const payments = (paymentsResult.data ?? []) as PaymentRow[]
 
   // ── Section A: Trial Funnel ───────────────────────────────────────────────────
+  // A "trial" is admin-granted temporary Pro access (pro_expires_at set, no payment).
+  // Paying customers have a successful payment record — they are NOT counted as trialists.
 
-  // Active trials: users on a timed pro subscription that hasn't expired
-  const activeTrials = profiles.filter(p =>
-    p.plan === 'pro' &&
-    p.pro_expires_at != null &&
-    new Date(p.pro_expires_at) > now
+  // Users who have ever successfully paid — these are paying customers, not free trialists
+  const paidPayerIds = new Set(
+    payments.filter(p => p.status === 'paid').map(p => p.user_id)
+  )
+
+  // All users who ever had a free trial (pro_expires_at set, never paid)
+  const trialProfiles = profiles.filter(p =>
+    p.pro_expires_at != null && !paidPayerIds.has(p.id)
+  )
+
+  // Active trials: currently on a paid plan, trial not yet expired
+  const activeTrials = trialProfiles.filter(p =>
+    p.plan !== 'free' && new Date(p.pro_expires_at!) > now
   )
 
   // Trials ending today
@@ -72,14 +82,17 @@ export default async function TrialFunnelPage() {
     return exp >= tomorrow && exp <= in7Days
   })
 
-  // Churned trials: users who HAD a paid payment but are now on the free plan
-  const paidUserIds = new Set(
-    payments.filter(p => p.status === 'paid').map(p => p.user_id)
+  // Churned: trial expired, back to free
+  const churnedTrials = trialProfiles.filter(p =>
+    p.plan === 'free' && new Date(p.pro_expires_at!) < now
   )
-  const paidUserProfiles = profiles.filter(p => paidUserIds.has(p.id))
-  const churnedTrials = paidUserProfiles.filter(p => p.plan === 'free')
-  const convertedTrials = paidUserProfiles.filter(p => p.plan !== 'free')
-  const totalTrialed = paidUserIds.size
+
+  // Converted: had pro_expires_at set AND later made a successful payment
+  const convertedTrials = profiles.filter(p =>
+    p.pro_expires_at != null && paidPayerIds.has(p.id)
+  )
+
+  const totalTrialed = trialProfiles.length
   const stillInTrial = activeTrials.length
 
   const conversionRate = totalTrialed > 0
