@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2 } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LayoutList, FileText, Shield, Library, Megaphone, Globe, BarChart2, Activity } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -210,6 +210,18 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Cohort Analytics</p>
                 <p className="text-xs text-gray-500 mt-0.5">Growth &amp; retention insights</p>
+              </div>
+            </Link>
+            <Link
+              href="/admin/engagement"
+              className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition group"
+            >
+              <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
+                <Activity size={20} className="text-emerald-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Engagement Analytics</p>
+                <p className="text-xs text-gray-500 mt-0.5">Lessons, quizzes, AI &amp; streaks</p>
               </div>
             </Link>
           </div>
