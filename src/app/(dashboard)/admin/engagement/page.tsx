@@ -1,18 +1,37 @@
 /**
  * /admin/engagement
  *
- * Real-time user engagement analytics.
- * Pulls live counts from lesson_progress, quiz_attempts, ai_chat_messages,
- * student_streaks, topic_mastery, and student_badges — no fake numbers.
+ * Real user engagement analytics drawn exclusively from tables that exist:
+ *   profiles  — plan, ai_requests_today, ai_quota_reset_at, created_at, role
+ *   payments  — paid conversion data
+ *   student_subjects — subject enrolment counts
+ *   subjects  — subject names
+ *
+ * All other tables (lesson_progress, quiz_attempts, etc.) are not yet
+ * created, so we do not query them.
  */
 
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
-  ArrowLeft, Activity, BookOpen, Brain, Zap, Trophy,
-  TrendingUp, Users, Star, Clock, Target, Flame,
+  ArrowLeft, Activity, Zap, Users, TrendingUp,
+  CreditCard, BookOpen, Clock,
 } from 'lucide-react'
+
+type ProfileRow = {
+  id: string
+  role: string
+  plan: string
+  ai_requests_today: number
+  ai_quota_reset_at: string | null
+  created_at: string
+  pro_expires_at: string | null
+}
+
+type SubjectEnrolRow = { subject_id: string }
+type SubjectRow = { id: string; name: string; zimsec_level: string }
+type PaymentRow = { user_id: string; created_at: string }
 
 export default async function AdminEngagementPage() {
   const supabase = createClient()
@@ -24,143 +43,104 @@ export default async function AdminEngagementPage() {
   if (profile?.role !== 'admin') redirect('/student/dashboard')
 
   const now = new Date()
-  const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0)
-  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7)
-  const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const todayStart    = new Date(now); todayStart.setHours(0, 0, 0, 0)
+  const weekAgo       = new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-  // ── Batch 1: Count queries (all parallelised) ─────────────────
-  const [
-    lessonsTodayRes, quizzesTodayRes, aiMsgsTodayRes, badgesTodayRes,
-    lessonsWeekRes,  quizzesWeekRes,  aiMsgsWeekRes,  badgesWeekRes,
-    totalLessonsRes, totalQuizzesRes, totalAiMsgsRes, totalBadgesRes,
-    masteredRes, learningRes, practicingRes,
-    activeStreaksRes, studentCountRes,
-  ] = await Promise.all([
-    // Today
-    supabase.from('lesson_progress').select('id', { count: 'exact', head: true }).gte('completed_at', todayStart.toISOString()),
-    supabase.from('quiz_attempts').select('id', { count: 'exact', head: true }).gte('created_at', todayStart.toISOString()),
-    supabase.from('ai_chat_messages').select('id', { count: 'exact', head: true }).gte('created_at', todayStart.toISOString()).eq('role', 'user'),
-    supabase.from('student_badges').select('id', { count: 'exact', head: true }).gte('earned_at', todayStart.toISOString()),
-    // This week
-    supabase.from('lesson_progress').select('id', { count: 'exact', head: true }).gte('completed_at', weekAgo.toISOString()),
-    supabase.from('quiz_attempts').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()),
-    supabase.from('ai_chat_messages').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()).eq('role', 'user'),
-    supabase.from('student_badges').select('id', { count: 'exact', head: true }).gte('earned_at', weekAgo.toISOString()),
-    // All-time
-    supabase.from('lesson_progress').select('id', { count: 'exact', head: true }),
-    supabase.from('quiz_attempts').select('id', { count: 'exact', head: true }),
-    supabase.from('ai_chat_messages').select('id', { count: 'exact', head: true }).eq('role', 'user'),
-    supabase.from('student_badges').select('id', { count: 'exact', head: true }),
-    // Topic mastery distribution
-    supabase.from('topic_mastery').select('id', { count: 'exact', head: true }).eq('mastery_level', 'mastered'),
-    supabase.from('topic_mastery').select('id', { count: 'exact', head: true }).eq('mastery_level', 'learning'),
-    supabase.from('topic_mastery').select('id', { count: 'exact', head: true }).eq('mastery_level', 'practicing'),
-    // Streaks & students
-    supabase.from('student_streaks').select('id', { count: 'exact', head: true }).gt('current_streak', 0),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-  ])
-
-  // ── Batch 2: Data queries ─────────────────────────────────────
-  const [streakResult, quizScoreResult, recentLessonsResult, recentQuizzesResult, studentProfilesResult] = await Promise.all([
-    supabase.from('student_streaks')
-      .select('current_streak, total_xp, longest_streak')
-      .order('total_xp', { ascending: false })
-      .limit(200),
-    supabase.from('quiz_attempts')
-      .select('score, total')
-      .gt('total', 0)
-      .limit(2000),
-    supabase.from('lesson_progress')
-      .select('completed_at')
-      .gte('completed_at', weekAgo.toISOString()),
-    supabase.from('quiz_attempts')
-      .select('created_at')
+  const [profilesRes, enrolRes, subjectsRes, recentPaymentsRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, role, plan, ai_requests_today, ai_quota_reset_at, created_at, pro_expires_at')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('student_subjects')
+      .select('subject_id'),
+    supabase
+      .from('subjects')
+      .select('id, name, zimsec_level'),
+    supabase
+      .from('payments')
+      .select('user_id, created_at')
+      .eq('status', 'paid')
       .gte('created_at', weekAgo.toISOString()),
-    supabase.from('profiles')
-      .select('id, ai_quota_reset_at')
-      .eq('role', 'student')
-      .limit(500),
   ])
 
-  // ── Extract counts ─────────────────────────────────────────────
-  const lessonsToday  = lessonsTodayRes.count  ?? 0
-  const quizzesToday  = quizzesTodayRes.count  ?? 0
-  const aiMsgsToday   = aiMsgsTodayRes.count   ?? 0
-  const badgesToday   = badgesTodayRes.count   ?? 0
-  const lessonsWeek   = lessonsWeekRes.count   ?? 0
-  const quizzesWeek   = quizzesWeekRes.count   ?? 0
-  const aiMsgsWeek    = aiMsgsWeekRes.count    ?? 0
-  const badgesWeek    = badgesWeekRes.count    ?? 0
-  const totalLessons  = totalLessonsRes.count  ?? 0
-  const totalQuizzes  = totalQuizzesRes.count  ?? 0
-  const totalAiMsgs   = totalAiMsgsRes.count   ?? 0
-  const totalBadges   = totalBadgesRes.count   ?? 0
-  const masteredTopics   = masteredRes.count   ?? 0
-  const learningTopics   = learningRes.count   ?? 0
-  const practicingTopics = practicingRes.count ?? 0
-  const activeStreaks  = activeStreaksRes.count ?? 0
-  const totalStudents = studentCountRes.count  ?? 0
+  const profiles       = (profilesRes.data       ?? []) as ProfileRow[]
+  const enrolRows      = (enrolRes.data           ?? []) as SubjectEnrolRow[]
+  const subjectsList   = (subjectsRes.data        ?? []) as SubjectRow[]
+  const recentPayments = (recentPaymentsRes.data  ?? []) as PaymentRow[]
 
-  // ── Streak stats ───────────────────────────────────────────────
-  type StreakRow = { current_streak: number; total_xp: number; longest_streak: number }
-  const streakRows = (streakResult.data ?? []) as StreakRow[]
-  const avgStreak = streakRows.length > 0
-    ? Math.round(streakRows.reduce((s, r) => s + r.current_streak, 0) / streakRows.length)
-    : 0
-  const totalXp = streakRows.reduce((s, r) => s + r.total_xp, 0)
-  const topEarners = streakRows.slice(0, 5)
-  const maxXp = topEarners[0]?.total_xp || 1
+  const students = profiles.filter(p => p.role === 'student')
+  const totalStudents = students.length
+  const totalUsers    = profiles.length
 
-  // ── Quiz score distribution ────────────────────────────────────
-  type ScoreRow = { score: number; total: number }
-  const scoreRows = (quizScoreResult.data ?? []) as ScoreRow[]
-  const scoredQuizzes = scoreRows.filter(r => r.total > 0)
-  const avgScorePct = scoredQuizzes.length > 0
-    ? Math.round(scoredQuizzes.reduce((s, r) => s + (r.score / r.total) * 100, 0) / scoredQuizzes.length)
-    : 0
-  const failing   = scoredQuizzes.filter(r => r.score / r.total < 0.5).length
-  const passing   = scoredQuizzes.filter(r => r.score / r.total >= 0.5 && r.score / r.total < 0.75).length
-  const excellent = scoredQuizzes.filter(r => r.score / r.total >= 0.75).length
-  const scoredTotal = scoredQuizzes.length || 1
+  // ── Today ─────────────────────────────────────────────────────────────────
+  const aiActiveToday  = students.filter(p => (p.ai_requests_today ?? 0) > 0).length
+  const newSignupsToday = profiles.filter(p => new Date(p.created_at) >= todayStart).length
+  const totalAiReqsToday = students.reduce((s, p) => s + (p.ai_requests_today ?? 0), 0)
+  const atLimitToday   = students.filter(p => {
+    const limit = (p.plan === 'pro' || p.plan === 'elite') ? 9999 : 10
+    return (p.ai_requests_today ?? 0) >= limit
+  }).length
 
-  // ── 7-day activity chart ───────────────────────────────────────
-  const days: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    days.push(d.toISOString().slice(0, 10))
-  }
-  const todayKey = now.toISOString().slice(0, 10)
+  // ── This week ─────────────────────────────────────────────────────────────
+  const newSignupsWeek  = profiles.filter(p => new Date(p.created_at) >= weekAgo).length
+  const paidThisWeek    = recentPayments.length
 
-  const lessonsByDay = new Map<string, number>(days.map(d => [d, 0]))
-  const quizzesByDay = new Map<string, number>(days.map(d => [d, 0]))
-
-  for (const row of recentLessonsResult.data ?? []) {
-    const day = (row.completed_at as string).slice(0, 10)
-    if (lessonsByDay.has(day)) lessonsByDay.set(day, (lessonsByDay.get(day) ?? 0) + 1)
-  }
-  for (const row of recentQuizzesResult.data ?? []) {
-    const day = (row.created_at as string).slice(0, 10)
-    if (quizzesByDay.has(day)) quizzesByDay.set(day, (quizzesByDay.get(day) ?? 0) + 1)
-  }
-
-  const dailyMax = Math.max(...days.map(d => (lessonsByDay.get(d) ?? 0) + (quizzesByDay.get(d) ?? 0)), 1)
-  const dayLabels = days.map(d => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' }))
-
-  // ── Engagement segments (AI usage as activity proxy) ──────────
-  type StudentRow = { id: string; ai_quota_reset_at: string | null }
-  const studentProfiles = (studentProfilesResult.data ?? []) as StudentRow[]
-  const activeStudents  = studentProfiles.filter(p => p.ai_quota_reset_at && new Date(p.ai_quota_reset_at) >= weekAgo).length
-  const atRiskStudents  = studentProfiles.filter(p => {
+  // ── Engagement segments ───────────────────────────────────────────────────
+  // ai_quota_reset_at is updated when a student makes an AI request on a new day.
+  // Recent signups (<7 days) may appear "active" even without AI use — that's expected.
+  const activeStudents  = students.filter(p =>
+    p.ai_quota_reset_at && new Date(p.ai_quota_reset_at) >= weekAgo
+  ).length
+  const atRiskStudents  = students.filter(p => {
     if (!p.ai_quota_reset_at) return false
     const d = new Date(p.ai_quota_reset_at)
     return d < weekAgo && d >= thirtyDaysAgo
   }).length
-  const dormantStudents = studentProfiles.filter(p =>
+  const dormantStudents = students.filter(p =>
     !p.ai_quota_reset_at || new Date(p.ai_quota_reset_at) < thirtyDaysAgo
   ).length
 
-  const totalTracked = masteredTopics + learningTopics + practicingTopics || 1
+  // ── Plan distribution ─────────────────────────────────────────────────────
+  const planCounts = {
+    free:    profiles.filter(p => p.plan === 'free').length,
+    starter: profiles.filter(p => p.plan === 'starter').length,
+    pro:     profiles.filter(p => p.plan === 'pro').length,
+    elite:   profiles.filter(p => p.plan === 'elite').length,
+  }
+  const paidUsers = planCounts.starter + planCounts.pro + planCounts.elite
+  const conversionRate = totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0'
+
+  // ── AI usage distribution ─────────────────────────────────────────────────
+  const heavyAiUsers  = students.filter(p => (p.ai_requests_today ?? 0) >= 8).length
+  const lightAiUsers  = students.filter(p => (p.ai_requests_today ?? 0) > 0 && (p.ai_requests_today ?? 0) < 8).length
+  const noAiToday     = students.filter(p => (p.ai_requests_today ?? 0) === 0).length
+
+  // ── Weekly signup chart (7 days) ──────────────────────────────────────────
+  const days: string[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i)
+    days.push(d.toISOString().slice(0, 10))
+  }
+  const signupsByDay = new Map<string, number>(days.map(d => [d, 0]))
+  for (const p of profiles) {
+    const day = p.created_at.slice(0, 10)
+    if (signupsByDay.has(day)) signupsByDay.set(day, (signupsByDay.get(day) ?? 0) + 1)
+  }
+  const maxDaySignups = Math.max(...Array.from(signupsByDay.values()), 1)
+  const todayKey = now.toISOString().slice(0, 10)
+
+  // ── Top enrolled subjects ─────────────────────────────────────────────────
+  const subjectEnrolCount = new Map<string, number>()
+  for (const row of enrolRows) {
+    subjectEnrolCount.set(row.subject_id, (subjectEnrolCount.get(row.subject_id) ?? 0) + 1)
+  }
+  const topSubjects = subjectsList
+    .map(s => ({ ...s, count: subjectEnrolCount.get(s.id) ?? 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+  const maxSubjectCount = topSubjects[0]?.count || 1
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -172,39 +152,60 @@ export default async function AdminEngagementPage() {
             <ArrowLeft size={13} /> Dashboard
           </Link>
           <h1 className="text-xl font-bold text-gray-900">Engagement Analytics</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Live activity — lessons, quizzes, AI tutoring, streaks &amp; mastery</p>
+          <p className="text-sm text-gray-500 mt-0.5">Live student activity — AI usage, signups &amp; plan distribution</p>
         </div>
 
-        {/* ── Today's Pulse ─────────────────────────────────────── */}
+        {/* ── Today snapshot ────────────────────────────────────────── */}
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Today</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Lessons Completed', value: lessonsToday, icon: BookOpen,  color: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-t-blue-500'   },
-              { label: 'Quizzes Taken',     value: quizzesToday, icon: Brain,     color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-t-purple-500' },
-              { label: 'AI Messages Sent',  value: aiMsgsToday,  icon: Zap,       color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-t-amber-500'  },
-              { label: 'Badges Earned',     value: badgesToday,  icon: Trophy,    color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-t-orange-500' },
-            ].map(({ label, value, icon: Icon, color, bg, border }) => (
+              {
+                label: 'Using AI Today',
+                value: aiActiveToday,
+                sub: `${totalStudents > 0 ? Math.round((aiActiveToday / totalStudents) * 100) : 0}% of students`,
+                icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-t-amber-500',
+              },
+              {
+                label: 'AI Requests Sent',
+                value: totalAiReqsToday,
+                sub: `avg ${aiActiveToday > 0 ? (totalAiReqsToday / aiActiveToday).toFixed(1) : 0} per active student`,
+                icon: Activity, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-t-indigo-500',
+              },
+              {
+                label: 'New Signups',
+                value: newSignupsToday,
+                sub: 'registered today',
+                icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-t-emerald-500',
+              },
+              {
+                label: 'At Daily Limit',
+                value: atLimitToday,
+                sub: 'upgrade candidates',
+                icon: TrendingUp, color: 'text-red-600', bg: 'bg-red-50', border: 'border-t-red-500',
+              },
+            ].map(({ label, value, sub, icon: Icon, color, bg, border }) => (
               <div key={label} className={`bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 border-t-4 ${border}`}>
                 <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
                   <Icon size={20} className={color} />
                 </div>
                 <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString()}</p>
                 <p className="text-xs text-gray-500 mt-1 font-medium">{label}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── This Week ─────────────────────────────────────────── */}
+        {/* ── This week ─────────────────────────────────────────────── */}
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Last 7 Days</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Lessons',         value: lessonsWeek,  icon: BookOpen, color: 'text-blue-600',   bg: 'bg-blue-50'   },
-              { label: 'Quizzes',         value: quizzesWeek,  icon: Brain,    color: 'text-purple-600', bg: 'bg-purple-50' },
-              { label: 'AI Conversations',value: aiMsgsWeek,   icon: Zap,      color: 'text-amber-600',  bg: 'bg-amber-50'  },
-              { label: 'Badges Earned',   value: badgesWeek,   icon: Trophy,   color: 'text-orange-600', bg: 'bg-orange-50' },
+              { label: 'New Users',      value: newSignupsWeek,  icon: Users,       color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'Paid This Week', value: paidThisWeek,    icon: CreditCard,  color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
+              { label: 'Active Students',value: activeStudents,  icon: Zap,         color: 'text-amber-600',   bg: 'bg-amber-50'   },
+              { label: 'Enrolled Subs',  value: enrolRows.length, icon: BookOpen,   color: 'text-blue-600',    bg: 'bg-blue-50'    },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
                 <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -219,174 +220,122 @@ export default async function AdminEngagementPage() {
           </div>
         </section>
 
-        {/* ── 7-Day Activity Chart ───────────────────────────────── */}
+        {/* ── Daily signup chart ────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <TrendingUp size={16} className="text-indigo-600" />
+            <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <TrendingUp size={16} className="text-emerald-600" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 text-sm">Daily Activity — Last 7 Days</h2>
-              <p className="text-xs text-gray-400">Lessons (blue) · Quizzes (purple)</p>
+              <h2 className="font-bold text-gray-900 text-sm">Daily Signups — Last 7 Days</h2>
+              <p className="text-xs text-gray-400">New user registrations per day</p>
             </div>
           </div>
           <div className="space-y-2.5">
-            {days.map((day, i) => {
-              const l = lessonsByDay.get(day) ?? 0
-              const q = quizzesByDay.get(day) ?? 0
-              const total = l + q
-              const pct = (total / dailyMax) * 100
+            {days.map((day) => {
+              const count = signupsByDay.get(day) ?? 0
+              const pct = (count / maxDaySignups) * 100
               const isToday = day === todayKey
+              const label = new Date(day).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })
               return (
                 <div key={day} className="flex items-center gap-3">
-                  <span className={`text-xs w-16 flex-shrink-0 font-medium ${isToday ? 'text-indigo-600' : 'text-gray-400'}`}>
-                    {dayLabels[i]}{isToday ? ' ●' : ''}
+                  <span className={`text-xs w-16 flex-shrink-0 font-medium ${isToday ? 'text-emerald-600' : 'text-gray-400'}`}>
+                    {label}{isToday ? ' ●' : ''}
                   </span>
                   <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
-                    {total > 0 && (
-                      <div className="h-full flex rounded-full overflow-hidden transition-all" style={{ width: `${pct}%` }}>
-                        <div className="bg-blue-400" style={{ width: `${(l / total) * 100}%` }} />
-                        <div className="bg-purple-400" style={{ width: `${(q / total) * 100}%` }} />
-                      </div>
+                    {count > 0 && (
+                      <div
+                        className="h-full bg-emerald-400 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
                     )}
                   </div>
-                  <div className="text-xs text-right w-20 flex-shrink-0 tabular-nums">
-                    {l > 0 && <span className="text-blue-600 font-medium">{l}L</span>}
-                    {l > 0 && q > 0 && <span className="text-gray-300"> · </span>}
-                    {q > 0 && <span className="text-purple-600 font-medium">{q}Q</span>}
-                    {total === 0 && <span className="text-gray-300">—</span>}
-                  </div>
+                  <span className="text-xs font-semibold text-gray-600 w-8 text-right tabular-nums">
+                    {count > 0 ? count : '—'}
+                  </span>
                 </div>
               )
             })}
           </div>
-          <div className="flex items-center gap-5 mt-4 pt-3 border-t border-gray-50">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-blue-400 rounded-full" /><span className="text-xs text-gray-500">Lessons</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-purple-400 rounded-full" /><span className="text-xs text-gray-500">Quizzes</span></div>
-            <span className="text-xs text-gray-400 ml-auto">Peak day: {dailyMax} actions</span>
-          </div>
         </div>
 
-        {/* ── Quiz Performance + Topic Mastery ──────────────────── */}
+        {/* ── Plan distribution ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-          {/* Quiz Performance */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Target size={16} className="text-purple-600" />
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
+                <CreditCard size={16} className="text-indigo-600" />
               </div>
               <div>
-                <h2 className="font-bold text-gray-900 text-sm">Quiz Performance</h2>
-                <p className="text-xs text-gray-400">Average score: <span className="font-semibold text-gray-600">{avgScorePct}%</span></p>
+                <h2 className="font-bold text-gray-900 text-sm">Plan Distribution</h2>
+                <p className="text-xs text-gray-400">{conversionRate}% paid conversion · {totalUsers} users total</p>
               </div>
             </div>
             <div className="space-y-3">
-              {[
-                { label: 'Excellent ≥75%', count: excellent, color: 'bg-emerald-500', textColor: 'text-emerald-700', bg: 'bg-emerald-50' },
-                { label: 'Passing 50–74%', count: passing,   color: 'bg-amber-400',   textColor: 'text-amber-700',   bg: 'bg-amber-50'   },
-                { label: 'Failing <50%',   count: failing,   color: 'bg-red-400',     textColor: 'text-red-700',     bg: 'bg-red-50'     },
-              ].map(({ label, count, color, textColor }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className={`font-semibold ${textColor}`}>{label}</span>
-                    <span className="text-gray-400">{count} ({Math.round((count / scoredTotal) * 100)}%)</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${color} rounded-full`} style={{ width: `${(count / scoredTotal) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-50">
-              {totalQuizzes.toLocaleString()} total attempts · {scoredQuizzes.length.toLocaleString()} scored
-            </p>
-          </div>
-
-          {/* Topic Mastery */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-                <Star size={16} className="text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="font-bold text-gray-900 text-sm">Topic Mastery Progress</h2>
-                <p className="text-xs text-gray-400">{(masteredTopics + learningTopics + practicingTopics).toLocaleString()} topics tracked</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: 'Mastered',   count: masteredTopics,   color: 'bg-emerald-500', textColor: 'text-emerald-700' },
-                { label: 'Practicing', count: practicingTopics, color: 'bg-blue-400',    textColor: 'text-blue-700'    },
-                { label: 'Learning',   count: learningTopics,   color: 'bg-amber-400',   textColor: 'text-amber-700'   },
-              ].map(({ label, count, color, textColor }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className={`font-semibold ${textColor}`}>{label}</span>
-                    <span className="text-gray-400">{count.toLocaleString()} ({Math.round((count / totalTracked) * 100)}%)</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${color} rounded-full`} style={{ width: `${(count / totalTracked) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-50">
-              {totalLessons.toLocaleString()} lessons completed all-time
-            </p>
-          </div>
-        </div>
-
-        {/* ── Streaks & XP ──────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Flame size={16} className="text-orange-500" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-sm">Streaks &amp; XP</h2>
-              <p className="text-xs text-gray-400">{activeStreaks} students currently on a streak</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {[
-              { label: 'On Active Streak', value: activeStreaks,           color: 'text-orange-600' },
-              { label: 'Avg Streak (days)', value: avgStreak,              color: 'text-blue-600'   },
-              { label: 'Total XP Earned',  value: totalXp.toLocaleString(), color: 'text-yellow-600' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="text-center py-3 bg-gray-50 rounded-xl">
-                <p className={`text-xl font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
-          {topEarners.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Top XP Earners</p>
-              <div className="space-y-2.5">
-                {topEarners.map((earner, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-gray-300 w-6 flex-shrink-0">#{i + 1}</span>
-                    <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
-                        style={{ width: `${(earner.total_xp / maxXp) * 100}%` }}
-                      />
+              {([
+                { label: 'Free',    count: planCounts.free,    color: 'bg-gray-400',    textColor: 'text-gray-700'    },
+                { label: 'Starter ($2)', count: planCounts.starter, color: 'bg-blue-400', textColor: 'text-blue-700' },
+                { label: 'Pro ($5)', count: planCounts.pro,    color: 'bg-emerald-500', textColor: 'text-emerald-700' },
+                { label: 'Elite ($8)', count: planCounts.elite, color: 'bg-purple-500', textColor: 'text-purple-700' },
+              ] as const).map(({ label, count, color, textColor }) => {
+                const pct = totalUsers > 0 ? Math.round((count / totalUsers) * 100) : 0
+                return (
+                  <div key={label}>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className={`font-semibold ${textColor}`}>{label}</span>
+                      <span className="text-gray-400">{count} ({pct}%)</span>
                     </div>
-                    <span className="text-xs font-bold text-yellow-600 w-24 text-right tabular-nums">
-                      {earner.total_xp.toLocaleString()} XP
-                    </span>
-                    {earner.current_streak > 0 && (
-                      <span className="text-xs text-orange-500 w-10 flex-shrink-0">🔥{earner.current_streak}d</span>
-                    )}
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                ))}
+                )
+              })}
+            </div>
+            <div className="mt-4 pt-3 border-t border-gray-50 flex justify-between text-xs text-gray-400">
+              <span>Paid users: <span className="font-bold text-indigo-600">{paidUsers}</span></span>
+              <span>Free users: <span className="font-bold text-gray-600">{planCounts.free}</span></span>
+            </div>
+          </div>
+
+          {/* AI Usage Distribution */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Zap size={16} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="font-bold text-gray-900 text-sm">AI Usage Today</h2>
+                <p className="text-xs text-gray-400">{totalAiReqsToday.toLocaleString()} total requests sent</p>
               </div>
             </div>
-          )}
+            <div className="space-y-3">
+              {([
+                { label: 'Heavy (8+ requests)', count: heavyAiUsers,  color: 'bg-amber-500',   textColor: 'text-amber-700'   },
+                { label: 'Light (1–7 requests)', count: lightAiUsers, color: 'bg-blue-400',    textColor: 'text-blue-700'    },
+                { label: 'No activity today',   count: noAiToday,     color: 'bg-gray-300',    textColor: 'text-gray-500'    },
+              ] as const).map(({ label, count, color, textColor }) => {
+                const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0
+                return (
+                  <div key={label}>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className={`font-semibold ${textColor}`}>{label}</span>
+                      <span className="text-gray-400">{count} ({pct}%)</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-50">
+              {atLimitToday} student{atLimitToday !== 1 ? 's' : ''} at daily limit — prime upgrade candidates
+            </p>
+          </div>
         </div>
 
-        {/* ── Engagement Segments ───────────────────────────────── */}
+        {/* ── Engagement Segments ───────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -394,30 +343,17 @@ export default async function AdminEngagementPage() {
             </div>
             <div>
               <h2 className="font-bold text-gray-900 text-sm">Student Engagement Segments</h2>
-              <p className="text-xs text-gray-400">Based on AI Tutor usage as activity signal · {totalStudents} students total</p>
+              <p className="text-xs text-gray-400">
+                Based on last AI-tutor activity · {totalStudents} students total
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {[
-              {
-                label: 'Active',
-                sublabel: 'Used AI last 7 days',
-                count: activeStudents,
-                bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-700', bar: 'bg-emerald-500',
-              },
-              {
-                label: 'At Risk',
-                sublabel: 'No activity 7–30 days',
-                count: atRiskStudents,
-                bg: 'bg-amber-50', border: 'border-amber-200', color: 'text-amber-700', bar: 'bg-amber-400',
-              },
-              {
-                label: 'Dormant',
-                sublabel: 'No activity 30+ days',
-                count: dormantStudents,
-                bg: 'bg-red-50', border: 'border-red-200', color: 'text-red-700', bar: 'bg-red-400',
-              },
-            ].map(({ label, sublabel, count, bg, border, color, bar }) => {
+            {([
+              { label: 'Active',   sublabel: 'AI used last 7 days',   count: activeStudents,  bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-700', bar: 'bg-emerald-500' },
+              { label: 'At Risk',  sublabel: 'No activity 7–30 days', count: atRiskStudents,  bg: 'bg-amber-50',   border: 'border-amber-200',   color: 'text-amber-700',   bar: 'bg-amber-400'   },
+              { label: 'Dormant',  sublabel: 'No activity 30+ days',  count: dormantStudents, bg: 'bg-red-50',     border: 'border-red-200',     color: 'text-red-700',     bar: 'bg-red-400'     },
+            ] as const).map(({ label, sublabel, count, bg, border, color, bar }) => {
               const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0
               return (
                 <div key={label} className={`${bg} border ${border} rounded-xl p-4 text-center`}>
@@ -436,65 +372,57 @@ export default async function AdminEngagementPage() {
             href="/admin/cohort"
             className="mt-4 flex items-center justify-between px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition text-xs font-medium text-indigo-700"
           >
-            <span>View detailed cohort analysis & conversion opportunities</span>
+            <span>View full cohort analysis &amp; conversion funnel</span>
             <span>→</span>
           </Link>
         </div>
 
-        {/* ── AI Tutor Usage ────────────────────────────────────── */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-5 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Zap size={16} className="text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-sm">AI Tutor Activity</h2>
-              <p className="text-xs text-gray-500">Student questions sent to the AI tutor</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { label: 'Today',     value: aiMsgsToday,  color: 'text-indigo-700' },
-              { label: 'This Week', value: aiMsgsWeek,   color: 'text-indigo-600' },
-              { label: 'All Time',  value: totalAiMsgs,  color: 'text-indigo-500' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="text-center bg-white/60 rounded-xl py-4">
-                <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+        {/* ── Top enrolled subjects ─────────────────────────────────── */}
+        {topSubjects.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen size={16} className="text-blue-600" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── All-Time Totals ────────────────────────────────────── */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">All-Time Platform Totals</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Lessons Completed', value: totalLessons,  icon: BookOpen, color: 'text-blue-600',   bg: 'bg-blue-50'   },
-              { label: 'Quiz Attempts',     value: totalQuizzes,  icon: Brain,    color: 'text-purple-600', bg: 'bg-purple-50' },
-              { label: 'AI Interactions',   value: totalAiMsgs,   icon: Zap,      color: 'text-amber-600',  bg: 'bg-amber-50'  },
-              { label: 'Badges Awarded',    value: totalBadges,   icon: Trophy,   color: 'text-orange-600', bg: 'bg-orange-50' },
-            ].map(({ label, value, icon: Icon, color, bg }) => (
-              <div key={label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                  <Icon size={18} className={color} />
-                </div>
-                <div>
-                  <p className={`text-xl font-bold ${color}`}>{value.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 font-medium">{label}</p>
-                </div>
+              <div>
+                <h2 className="font-bold text-gray-900 text-sm">Most Enrolled Subjects</h2>
+                <p className="text-xs text-gray-400">{enrolRows.length.toLocaleString()} total enrolments across {subjectsList.length} subjects</p>
               </div>
-            ))}
+            </div>
+            <div className="space-y-2.5">
+              {topSubjects.map((subject) => {
+                const pct = (subject.count / maxSubjectCount) * 100
+                const levelColor = subject.zimsec_level === 'primary'
+                  ? 'text-emerald-600' : subject.zimsec_level === 'olevel'
+                  ? 'text-blue-600' : 'text-purple-600'
+                return (
+                  <div key={subject.id} className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-700 w-36 flex-shrink-0 truncate">{subject.name}</span>
+                    <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-400 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 w-20 flex-shrink-0 justify-end">
+                      <span className="text-xs font-bold text-gray-700 tabular-nums">{subject.count}</span>
+                      <span className={`text-[10px] uppercase font-semibold ${levelColor}`}>
+                        {subject.zimsec_level === 'primary' ? 'Pri' : subject.zimsec_level === 'olevel' ? 'O' : 'A'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </section>
+        )}
 
-        {/* Footer note */}
+        {/* Footer */}
         <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Activity size={14} className="text-gray-300 flex-shrink-0" />
           <p className="text-xs text-gray-400">
-            All figures are live database counts — no caching or estimates.
-            Refresh the page to see the latest activity.
+            Live database counts — refresh to see latest activity.
+            AI usage resets daily at midnight UTC.
           </p>
           <Clock size={14} className="text-gray-300 flex-shrink-0 ml-auto" />
           <span className="text-xs text-gray-300">
