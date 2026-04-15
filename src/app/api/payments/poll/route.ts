@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { pollPaynowStatus } from '@/lib/paynow'
+import { pollPaynowStatus, PLANS } from '@/lib/paynow'
 
 export async function GET(req: NextRequest) {
   const supabase = createClient()
@@ -64,31 +64,19 @@ export async function GET(req: NextRequest) {
         .update({ status: 'paid', paid_at: new Date().toISOString() })
         .eq('id', payment.id)
 
-      // Upgrade user
-      const { data: currentProfile } = await supabase
+      // Activate the correct plan tier based on what was purchased
+      const planMeta = PLANS[payment.plan_id as keyof typeof PLANS]
+      const tierToActivate = planMeta?.tier ?? 'pro'
+      const daysToGrant = planMeta?.days ?? 30
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + daysToGrant)
+
+      await supabase
         .from('profiles')
-        .select('plan')
+        .update({ plan: tierToActivate, pro_expires_at: expiresAt.toISOString() })
         .eq('id', user.id)
-        .single()
 
-      if (currentProfile?.plan !== 'pro') {
-        // Get plan days from payment plan_id
-        const planDays: Record<string, number> = {
-          pro_monthly: 30,
-          pro_quarterly: 90,
-          pro_yearly: 365,
-        }
-        const days = planDays[payment.plan_id] ?? 30
-        const expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + days)
-
-        await supabase
-          .from('profiles')
-          .update({ plan: 'pro', pro_expires_at: expiresAt.toISOString() })
-          .eq('id', user.id)
-      }
-
-      return NextResponse.json({ status: 'paid', plan: 'pro' })
+      return NextResponse.json({ status: 'paid', plan: tierToActivate })
     }
 
     if (live.status.toLowerCase() === 'cancelled' || live.status.toLowerCase() === 'failed') {

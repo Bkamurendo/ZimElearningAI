@@ -22,6 +22,13 @@ function Logo({ src, alt, className = 'h-8 w-auto object-contain' }: {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+const STARTER_FEATURES = [
+  { icon: '🤖', text: '50 AI requests per day (5× more than free)' },
+  { icon: '📥', text: 'Download resources & past papers' },
+  { icon: '📚', text: '10 subjects (up from 5)' },
+  { icon: '🎯', text: 'Grade predictor & study planner' },
+]
+
 const PRO_FEATURES = [
   { icon: '🤖', text: 'Unlimited AI requests every day' },
   { icon: '💬', text: 'Full AI Tutor sessions — no limits' },
@@ -32,13 +39,15 @@ const PRO_FEATURES = [
   { icon: '✨', text: 'Every new Pro feature, automatically' },
 ]
 
-const PLAN_META: Record<PlanId, { perMonth: string; period: string; popular?: boolean }> = {
-  pro_monthly:   { perMonth: '$5.00', period: 'per month' },
-  pro_quarterly: { perMonth: '$4.00', period: 'per month, billed quarterly', popular: true },
-  pro_yearly:    { perMonth: '$2.92', period: 'per month, billed annually' },
+const PLAN_META: Record<PlanId, { perMonth: string; period: string; popular?: boolean; tier: 'starter' | 'pro' }> = {
+  starter_monthly: { perMonth: '$2.00', period: 'per month', tier: 'starter' },
+  pro_monthly:     { perMonth: '$5.00', period: 'per month', tier: 'pro' },
+  pro_quarterly:   { perMonth: '$4.00', period: 'per month, billed quarterly', popular: true, tier: 'pro' },
+  pro_yearly:      { perMonth: '$2.92', period: 'per month, billed annually', tier: 'pro' },
 }
 
 const PLAN_ORDER: { id: PlanId; badge?: string }[] = [
+  { id: 'starter_monthly', badge: 'Most Affordable' },
   { id: 'pro_monthly' },
   { id: 'pro_quarterly', badge: 'Save 20%' },
   { id: 'pro_yearly',    badge: 'Best Value' },
@@ -101,7 +110,7 @@ const CARD_METHODS = [
 export default function UpgradePage() {
   const searchParams = useSearchParams()
 
-  const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('pro_quarterly')
+  const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('starter_monthly')
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('ecocash')
   const [gateway,        setGateway]        = useState<Gateway>('local')
   const [phone,          setPhone]          = useState('')
@@ -322,39 +331,59 @@ export default function UpgradePage() {
 
       <div className="max-w-3xl mx-auto px-4 pb-12 space-y-5">
 
-        {/* Pro features */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-          <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">Everything in Pro</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {PRO_FEATURES.map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-2.5">
-                <div className="w-7 h-7 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-base">
-                  {icon}
+        {/* Features — changes based on selected tier */}
+        {PLAN_META[selectedPlan]?.tier === 'starter' ? (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+            <p className="text-xs font-bold text-sky-300 uppercase tracking-widest mb-4">What you get with Starter</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {STARTER_FEATURES.map(({ icon, text }) => (
+                <div key={text} className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 bg-sky-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-base">
+                    {icon}
+                  </div>
+                  <span className="text-sm text-slate-300">{text}</span>
                 </div>
-                <span className="text-sm text-slate-300">{text}</span>
-              </div>
-            ))}
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-4">Want unlimited AI? Select Pro Monthly or above ↓</p>
           </div>
-        </div>
+        ) : (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+            <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">Everything in Pro</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {PRO_FEATURES.map(({ icon, text }) => (
+                <div key={text} className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-base">
+                    {icon}
+                  </div>
+                  <span className="text-sm text-slate-300">{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Plan selector */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">Choose Your Plan</h2>
-            <p className="text-xs text-slate-400 mt-0.5">All plans include every Pro feature. Cancel anytime.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Start from $2/mo. Cancel anytime.</p>
           </div>
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {PLAN_ORDER.map(({ id, badge }) => {
               const p          = PLANS[id]
               const meta       = PLAN_META[id]
               const isSelected = selectedPlan === id
+              const isStarter  = meta.tier === 'starter'
               return (
                 <button
                   key={id}
                   onClick={() => setSelectedPlan(id)}
                   className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-150 ${
                     isSelected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
+                      ? isStarter
+                        ? 'border-sky-500 bg-sky-50 shadow-md shadow-sky-100'
+                        : 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
                       : 'border-slate-200 hover:border-indigo-300 bg-white'
                   }`}
                 >
@@ -364,14 +393,14 @@ export default function UpgradePage() {
                     </span>
                   )}
                   {badge && !meta.popular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full whitespace-nowrap shadow-sm">
+                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold px-3 py-0.5 rounded-full whitespace-nowrap shadow-sm ${isStarter ? 'bg-sky-500' : 'bg-emerald-500'}`}>
                       {badge}
                     </span>
                   )}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-slate-500">{p.label}</span>
                     {isSelected && (
-                      <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${isStarter ? 'bg-sky-500' : 'bg-indigo-600'}`}>
                         <Check size={11} className="text-white" strokeWidth={3} />
                       </div>
                     )}
@@ -381,7 +410,7 @@ export default function UpgradePage() {
                   </div>
                   <div className="text-[10px] text-slate-400 mt-1 leading-tight">{meta.period}</div>
                   <div className="mt-3 pt-3 border-t border-slate-100">
-                    <div className="text-sm font-bold text-indigo-600">${p.amountUsd.toFixed(2)} USD total</div>
+                    <div className={`text-sm font-bold ${isStarter ? 'text-sky-600' : 'text-indigo-600'}`}>${p.amountUsd.toFixed(2)} USD total</div>
                   </div>
                 </button>
               )

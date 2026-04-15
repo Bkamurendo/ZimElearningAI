@@ -164,11 +164,20 @@ export function parsePaynowCallback(
 // ── Plan pricing ──────────────────────────────────────────────────────────────
 
 export const PLANS = {
+  starter_monthly: {
+    id: 'starter_monthly',
+    label: 'Starter',
+    amountUsd: 2.00,
+    days: 30,
+    tier: 'starter' as const,
+    description: 'ZimLearn Starter — 1 Month Access',
+  },
   pro_monthly: {
     id: 'pro_monthly',
     label: 'Pro Monthly',
     amountUsd: 5.00,
     days: 30,
+    tier: 'pro' as const,
     description: 'ZimLearn Pro — 1 Month Access',
   },
   pro_quarterly: {
@@ -176,6 +185,7 @@ export const PLANS = {
     label: 'Pro Quarterly',
     amountUsd: 12.00,
     days: 90,
+    tier: 'pro' as const,
     description: 'ZimLearn Pro — 3 Months Access',
   },
   pro_yearly: {
@@ -183,6 +193,7 @@ export const PLANS = {
     label: 'Pro Yearly',
     amountUsd: 35.00,
     days: 365,
+    tier: 'pro' as const,
     description: 'ZimLearn Pro — 1 Year Access',
   },
 } as const

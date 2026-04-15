@@ -5,9 +5,12 @@ import { TrendingUp, Users, CreditCard, RefreshCw, AlertCircle, ArrowLeft, Arrow
 
 type ProfileRow = {
   id: string
+  full_name: string | null
+  email: string | null
   created_at: string
   role: string
   plan: string
+  ai_requests_today: number
   ai_quota_reset_at: string | null
   pro_expires_at: string | null
 }
@@ -29,7 +32,7 @@ export default async function CohortAnalyticsPage() {
   const [profilesResult, paidPaymentsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, created_at, role, plan, ai_quota_reset_at, pro_expires_at')
+      .select('id, full_name, email, created_at, role, plan, ai_requests_today, ai_quota_reset_at, pro_expires_at')
       .order('created_at', { ascending: false }),
     supabase
       .from('payments')
@@ -107,6 +110,14 @@ export default async function CohortAnalyticsPage() {
 
   // Fetch profiles registered in last 12 months for chart scope
   const recentSignupCount = profiles.filter(p => new Date(p.created_at) >= twelveMonthsAgo).length
+
+  // Conversion opportunities: free users actively hitting their AI limit today
+  // ai_requests_today >= 8 means they're at or near the 10/day free limit
+  const FREE_DAILY_LIMIT = 10
+  const highIntentFreeUsers = profiles
+    .filter(p => p.plan === 'free' && p.ai_requests_today >= Math.floor(FREE_DAILY_LIMIT * 0.8))
+    .sort((a, b) => b.ai_requests_today - a.ai_requests_today)
+    .slice(0, 10)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -269,6 +280,41 @@ export default async function CohortAnalyticsPage() {
                   </div>
                 ))}
             </div>
+          </div>
+        )}
+
+        {/* Conversion Opportunities */}
+        {highIntentFreeUsers.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-base font-bold text-gray-900">Conversion Opportunities</h2>
+              <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">{highIntentFreeUsers.length}</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">
+              Free users hitting their daily AI limit — most likely to upgrade
+            </p>
+            <div className="divide-y divide-gray-50">
+              {highIntentFreeUsers.map(p => (
+                <div key={p.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {p.full_name ?? p.email ?? p.id.slice(0, 12)}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5 capitalize">{p.role}</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-amber-600">{p.ai_requests_today}/{FREE_DAILY_LIMIT}</p>
+                      <p className="text-[10px] text-gray-400">AI today</p>
+                    </div>
+                    <div className={`w-2 h-2 rounded-full ${p.ai_requests_today >= FREE_DAILY_LIMIT ? 'bg-red-500' : 'bg-amber-400'}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-50">
+              Consider sending a trial or upgrade offer to these users via Announcements.
+            </p>
           </div>
         )}
 

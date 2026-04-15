@@ -24,6 +24,7 @@ export default function AiTutorChat({
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
+  const [isAtLimit, setIsAtLimit] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -105,14 +106,18 @@ export default function AiTutorChat({
                 return next
               })
             } else if (parsed.type === 'error') {
-              setMessages((prev) => {
-                const next = [...prev]
-                next[next.length - 1] = {
-                  role: 'assistant',
-                  content: parsed.message ?? 'An error occurred.',
-                }
-                return next
-              })
+              const msg = parsed.message ?? 'An error occurred.'
+              if (msg.toLowerCase().includes('daily ai limit') || msg.toLowerCase().includes('quota')) {
+                // Remove empty placeholder and show upgrade prompt instead
+                setMessages((prev) => prev.filter((_, idx) => idx !== prev.length - 1))
+                setIsAtLimit(true)
+              } else {
+                setMessages((prev) => {
+                  const next = [...prev]
+                  next[next.length - 1] = { role: 'assistant', content: msg }
+                  return next
+                })
+              }
             }
           } catch {
             // skip unparsable lines
@@ -223,6 +228,37 @@ export default function AiTutorChat({
         ))}
         <div ref={bottomRef} />
       </div>
+
+      {/* Quota limit upgrade card */}
+      {isAtLimit && (
+        <div className="flex-shrink-0 px-4 pb-3">
+          <div className="max-w-3xl mx-auto bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 text-sm">You&apos;ve used all your AI requests today</p>
+                <p className="text-xs text-gray-500 mt-0.5">Upgrade to keep studying — resets at midnight if you wait</p>
+                <div className="flex gap-2 mt-3">
+                  <Link
+                    href="/student/upgrade"
+                    className="flex-1 text-center py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition"
+                  >
+                    Upgrade from $2/mo →
+                  </Link>
+                  <button
+                    onClick={() => setIsAtLimit(false)}
+                    className="px-3 py-2 text-xs text-gray-400 hover:text-gray-600 transition"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input area */}
       <div className="bg-white border-t border-gray-100 px-4 py-4 flex-shrink-0 shadow-sm">

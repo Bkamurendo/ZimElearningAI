@@ -41,8 +41,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Invalid plan: "${planId}"` }, { status: 400 })
     }
 
-    if (profile?.plan === 'pro') {
-      return NextResponse.json({ error: 'You are already on the Pro plan' }, { status: 400 })
+    // Prevent buying the exact same plan tier you already hold
+    const purchaseTier = plan.tier
+    if (profile?.plan === purchaseTier) {
+      return NextResponse.json(
+        { error: `You are already on the ${purchaseTier} plan. Your access will auto-renew on expiry.` },
+        { status: 400 }
+      )
     }
 
     if (method !== 'web' && !phone) {
