@@ -55,15 +55,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ============================================================
--- HELPER FUNCTION: get current user role
--- ============================================================
-
-CREATE OR REPLACE FUNCTION public.get_my_role()
-RETURNS user_role AS $$
-  SELECT role FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
-
--- ============================================================
 -- HELPER FUNCTION: auto-update updated_at
 -- ============================================================
 
@@ -115,6 +106,16 @@ DROP TRIGGER IF EXISTS profiles_updated_at ON public.profiles;
 CREATE TRIGGER profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ============================================================
+-- HELPER FUNCTION: get current user role
+-- (defined AFTER profiles table so the table reference resolves)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS user_role AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- ============================================================
 -- 2. STUDENT PROFILES
