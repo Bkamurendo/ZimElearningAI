@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 import { checkAIQuota } from '@/lib/ai-quota'
+import { embedText } from '@/lib/openai'
 
 export const maxDuration = 90
 
@@ -62,46 +63,41 @@ export async function POST(req: NextRequest) {
   const levelLabel =
     safeLevel === 'primary' ? 'Primary' : safeLevel === 'olevel' ? 'O-Level' : 'A-Level'
 
-  // Fetch published documents for this subject to inject as context
+  // Fetch relevant document chunks via semantic search, falling back to recency
   const subjectId = await getSubjectId(supabase, subjectCode)
   let documentContext = ''
-  if (subjectId) {
-    const { data: docs } = await supabase
-      .from('uploaded_documents')
-      .select('title, document_type, year, paper_number, ai_summary, topics, extracted_text')
-      .eq('subject_id', subjectId)
-      .eq('moderation_status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(3)
 
-    if (docs && docs.length > 0) {
-      const docSections = docs.map((d: {
-        title: string
-        document_type: string
-        year: number | null
-        paper_number: number | null
-        ai_summary: string | null
-        topics: string[] | null
-        extracted_text: string | null
-      }) => {
-        const typeLabel = d.document_type === 'past_paper' ? 'Past Exam Paper'
-          : d.document_type === 'marking_scheme' ? 'Marking Scheme'
-          : d.document_type === 'notes' ? 'Study Notes'
-          : d.document_type === 'textbook' ? 'Textbook'
-          : 'Resource'
-        const yearInfo = d.year ? ` (${d.year}${d.paper_number ? ` Paper ${d.paper_number}` : ''})` : ''
-        let section = `**${typeLabel}: ${d.title}${yearInfo}**\n`
-        if (d.ai_summary) section += `Summary: ${d.ai_summary}\n`
-        if (d.topics && d.topics.length > 0) section += `Key topics: ${d.topics.join(', ')}\n`
-        if (d.extracted_text) {
-          // Include first 1500 chars of extracted text for grounding
-          const textSnippet = d.extracted_text.slice(0, 1500).trim()
-          if (textSnippet) section += `Content excerpt:\n${textSnippet}${d.extracted_text.length > 1500 ? '…' : ''}\n`
+  const lastUserMessage = messages.filter(m => m.role === 'user').slice(-1)[0]?.content ?? ''
+
+  if (subjectId && lastUserMessage) {
+    const chunks = await getRelevantChunks(supabase, lastUserMessage, subjectId)
+
+    if (chunks.length > 0) {
+      // Group chunks by document for cleaner context
+      const byDoc = new Map<string, { title: string; type: string; year: number | null; snippets: string[] }>()
+      for (const chunk of chunks) {
+        if (!byDoc.has(chunk.document_id)) {
+          byDoc.set(chunk.document_id, {
+            title: chunk.doc_title,
+            type: chunk.doc_type,
+            year: chunk.doc_year,
+            snippets: [],
+          })
         }
-        return section
+        byDoc.get(chunk.document_id)!.snippets.push(chunk.content)
+      }
+
+      const docSections = Array.from(byDoc.values()).map(d => {
+        const typeLabel = d.type === 'past_paper' ? 'Past Exam Paper'
+          : d.type === 'marking_scheme' ? 'Marking Scheme'
+          : d.type === 'notes' ? 'Study Notes'
+          : d.type === 'textbook' ? 'Textbook'
+          : 'Resource'
+        const yearInfo = d.year ? ` (${d.year})` : ''
+        return `**${typeLabel}: ${d.title}${yearInfo}**\n${d.snippets.join('\n…\n')}`
       }).join('\n---\n')
 
-      documentContext = `\n\n## Real ZIMSEC Materials Available\nYou have access to the following authentic ZIMSEC materials uploaded for ${subjectName}. Reference these when relevant:\n\n${docSections}\n\nWhen answering questions, prioritise information from these real materials over general knowledge.`
+      documentContext = `\n\n## Relevant ZIMSEC Materials\nThe following passages from authentic uploaded ZIMSEC materials are most relevant to the student's question. Prioritise this content in your answer:\n\n${docSections}\n\nAlways ground your answer in these materials where applicable.`
     }
   }
 
@@ -237,4 +233,55 @@ async function getSubjectId(
     .eq('code', subjectCode)
     .single()
   return data?.id ?? null
+}
+
+interface DocumentChunk {
+  document_id: string
+  content: string
+  similarity: number
+  doc_title: string
+  doc_type: string
+  doc_year: number | null
+}
+
+async function getRelevantChunks(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  query: string,
+  subjectId: string,
+): Promise<DocumentChunk[]> {
+  // If OpenAI key not configured, fall back to most recent docs
+  if (!process.env.OPENAI_API_KEY) {
+    const { data: docs } = await supabase
+      .from('uploaded_documents')
+      .select('id, title, document_type, year, extracted_text')
+      .eq('subject_id', subjectId)
+      .eq('moderation_status', 'published')
+      .not('extracted_text', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(3)
+
+    return (docs ?? []).map((d: { id: string; title: string; document_type: string; year: number | null; extracted_text: string }) => ({
+      document_id: d.id,
+      content: d.extracted_text.slice(0, 1500),
+      similarity: 1,
+      doc_title: d.title,
+      doc_type: d.document_type,
+      doc_year: d.year,
+    }))
+  }
+
+  try {
+    const embedding = await embedText(query)
+    const { data: chunks } = await supabase.rpc('match_document_chunks', {
+      query_embedding: JSON.stringify(embedding),
+      match_threshold: 0.4,
+      match_count: 10,
+      filter_subject_id: subjectId,
+    })
+    return (chunks ?? []) as DocumentChunk[]
+  } catch {
+    // Semantic search failed — fall back silently
+    return []
+  }
 }

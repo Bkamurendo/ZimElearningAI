@@ -15,6 +15,7 @@ export const env = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
+  openaiApiKey: process.env.OPENAI_API_KEY,
   paynowIntegrationId: process.env.PAYNOW_INTEGRATION_ID,
   paynowIntegrationKey: process.env.PAYNOW_INTEGRATION_KEY,
   flutterwaveSecretKey: process.env.FLUTTERWAVE_SECRET_KEY,
