@@ -5,7 +5,7 @@ import { chunkText } from '@/lib/chunking'
 
 export const maxDuration = 300
 
-// GET — return embedding status across all published documents
+// GET — full pipeline status across all documents
 export async function GET() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,36 +14,37 @@ export async function GET() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { data: docs } = await supabase
+  // All uploaded documents
+  const { data: allDocs } = await supabase
     .from('uploaded_documents')
-    .select('id, title, extracted_text, moderation_status')
-    .eq('moderation_status', 'published')
-    .not('extracted_text', 'is', null)
+    .select('id, title, moderation_status, extracted_text')
+    .order('created_at', { ascending: false })
 
-  if (!docs) return NextResponse.json({ total: 0, embedded: 0, pending: 0, docs: [] })
-
+  // Which document IDs have chunks
   const { data: chunked } = await supabase
     .from('document_chunks')
     .select('document_id')
 
   const embeddedIds = new Set((chunked ?? []).map((c: { document_id: string }) => c.document_id))
 
-  const result = docs.map(d => ({
+  const docs = (allDocs ?? []).map(d => ({
     id: d.id,
     title: d.title,
+    status: d.moderation_status,
     hasText: !!d.extracted_text,
     embedded: embeddedIds.has(d.id),
   }))
 
   return NextResponse.json({
-    total: result.length,
-    embedded: result.filter(d => d.embedded).length,
-    pending: result.filter(d => !d.embedded).length,
-    docs: result,
+    total: docs.length,
+    unprocessed: docs.filter(d => !d.hasText).length,
+    processed: docs.filter(d => d.hasText && !d.embedded).length,
+    embedded: docs.filter(d => d.embedded).length,
+    docs,
   })
 }
 
-// POST — generate embeddings for all or specific documents
+// POST — generate embeddings for processed documents
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -58,11 +59,10 @@ export async function POST(req: NextRequest) {
 
   const { documentIds, reprocess = false } = await req.json().catch(() => ({}))
 
-  // Fetch documents to embed
+  // Fetch documents that have extracted text
   let query = supabase
     .from('uploaded_documents')
     .select('id, title, extracted_text, ai_summary, topics')
-    .eq('moderation_status', 'published')
     .not('extracted_text', 'is', null)
 
   if (Array.isArray(documentIds) && documentIds.length > 0) {
@@ -71,9 +71,11 @@ export async function POST(req: NextRequest) {
 
   const { data: docs, error } = await query.limit(50)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!docs || docs.length === 0) return NextResponse.json({ processed: 0, message: 'No documents to embed' })
+  if (!docs || docs.length === 0) {
+    return NextResponse.json({ processed: 0, message: 'No documents with extracted text found. Process documents with Claude first.' })
+  }
 
-  // Filter out already-embedded docs unless reprocessing
+  // Skip already-embedded unless reprocessing
   let toProcess = docs
   if (!reprocess) {
     const { data: existing } = await supabase
@@ -93,7 +95,6 @@ export async function POST(req: NextRequest) {
 
   for (const doc of toProcess) {
     try {
-      // Build rich text: summary + topics + full extracted text
       const fullText = [
         doc.ai_summary ? `Summary: ${doc.ai_summary}` : '',
         doc.topics?.length ? `Topics: ${doc.topics.join(', ')}` : '',
@@ -106,12 +107,10 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      // Delete existing chunks if reprocessing
       if (reprocess) {
         await supabase.from('document_chunks').delete().eq('document_id', doc.id)
       }
 
-      // Generate embeddings in batches of 20
       const BATCH = 20
       let totalInserted = 0
 
@@ -138,12 +137,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const succeeded = results.filter(r => r.status === 'ok').length
-  const failed = results.filter(r => r.status.startsWith('error')).length
-
   return NextResponse.json({
-    processed: succeeded,
-    failed,
+    processed: results.filter(r => r.status === 'ok').length,
+    failed: results.filter(r => r.status.startsWith('error')).length,
     total: toProcess.length,
     results,
   })

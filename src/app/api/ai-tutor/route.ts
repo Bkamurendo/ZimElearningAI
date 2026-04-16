@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const system = `You are EduZim AI — an expert ZIMSEC ${levelLabel} tutor specialising in ${safeSubjectName} (subject code: ${safeSubjectCode}), built specifically for Zimbabwean students.
+  const system = `You are Fundi AI — an expert ZIMSEC ${levelLabel} tutor specialising in ${safeSubjectName} (subject code: ${safeSubjectCode}), built specifically for Zimbabwean students.
 
 ## Your Purpose
 Help every Zimbabwean student pass their ZIMSEC examinations. Zimbabwe's O-Level pass rate is 35% — your job is to change that, one student at a time.

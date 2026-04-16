@@ -2,19 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Brain, ChevronLeft, RefreshCw, Zap, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react'
+import { Brain, ChevronLeft, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, Sparkles, BookOpen, Cpu } from 'lucide-react'
 
 interface DocStatus {
   id: string
   title: string
+  status: string
   hasText: boolean
   embedded: boolean
 }
 
-interface StatusData {
+interface PipelineStatus {
   total: number
+  unprocessed: number
+  processed: number
   embedded: number
-  pending: number
   docs: DocStatus[]
 }
 
@@ -25,10 +27,13 @@ interface EmbedResult {
   status: string
 }
 
+type Stage = 'idle' | 'processing' | 'embedding' | 'done'
+
 export default function KnowledgePage() {
-  const [status, setStatus] = useState<StatusData | null>(null)
+  const [status, setStatus] = useState<PipelineStatus | null>(null)
   const [loading, setLoading] = useState(true)
-  const [running, setRunning] = useState(false)
+  const [stage, setStage] = useState<Stage>('idle')
+  const [stageMessage, setStageMessage] = useState('')
   const [results, setResults] = useState<EmbedResult[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reprocess, setReprocess] = useState(false)
@@ -48,30 +53,71 @@ export default function KnowledgePage() {
 
   useEffect(() => { fetchStatus() }, [fetchStatus])
 
-  async function runEmbeddings(ids?: string[]) {
-    setRunning(true)
+  async function teachFundiEverything() {
+    setStage('processing')
     setResults(null)
     setError(null)
+
     try {
-      const body: Record<string, unknown> = { reprocess }
-      if (ids) body.documentIds = ids
-      const res = await fetch('/api/admin/generate-embeddings', {
+      // Step 1: Find all unprocessed documents and process them with Claude
+      const enrichRes = await fetch('/api/admin/enrich', { method: 'GET' })
+      const enrichData = await enrichRes.json()
+      const pendingIds = (enrichData.documents ?? []).map((d: { id: string }) => d.id)
+
+      if (pendingIds.length > 0) {
+        setStageMessage(`Step 1/2 — Extracting text from ${pendingIds.length} documents with Claude…`)
+        const processRes = await fetch('/api/admin/enrich', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: pendingIds }),
+        })
+        if (!processRes.ok) throw new Error('Claude text extraction failed')
+
+        // Wait for processing to complete (poll every 3s, max 2 minutes)
+        setStageMessage('Step 1/2 — Waiting for Claude to finish reading all documents…')
+        await waitForProcessing(30)
+      } else {
+        setStageMessage('Step 1/2 — All documents already read by Claude ✓')
+        await new Promise(r => setTimeout(r, 800))
+      }
+
+      // Step 2: Generate embeddings for all processed docs
+      setStage('embedding')
+      setStageMessage('Step 2/2 — Generating semantic embeddings with OpenAI…')
+
+      const embedRes = await fetch('/api/admin/generate-embeddings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ reprocess }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed')
-      setResults(data.results ?? [])
+      const embedData = await embedRes.json()
+      if (!embedRes.ok) throw new Error(embedData.error ?? 'Embedding failed')
+
+      setResults(embedData.results ?? [])
       await fetchStatus()
+      setStage('done')
+      setStageMessage('')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Embedding failed')
-    } finally {
-      setRunning(false)
+      setError(e instanceof Error ? e.message : 'Pipeline failed')
+      setStage('idle')
+      setStageMessage('')
     }
   }
 
-  const progressPct = status ? Math.round((status.embedded / Math.max(status.total, 1)) * 100) : 0
+  async function waitForProcessing(maxAttempts: number) {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 4000))
+      const res = await fetch('/api/admin/enrich?filter=all_unprocessed')
+      const data = await res.json()
+      if ((data.documents ?? []).length === 0) return
+    }
+  }
+
+  const progressPct = status
+    ? Math.round((status.embedded / Math.max(status.total, 1)) * 100)
+    : 0
+
+  const isRunning = stage === 'processing' || stage === 'embedding'
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -84,14 +130,14 @@ export default function KnowledgePage() {
             <Brain size={18} className="text-white" />
           </div>
           <div>
-            <span className="font-bold text-gray-900">Knowledge Engine</span>
-            <p className="text-xs text-gray-400">Semantic search over all ZIMSEC materials</p>
+            <span className="font-bold text-gray-900">Fundi AI — Knowledge Engine</span>
+            <p className="text-xs text-gray-400">Train Fundi AI on all your ZIMSEC materials</p>
           </div>
         </div>
         <button
           onClick={fetchStatus}
-          disabled={loading}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition"
+          disabled={loading || isRunning}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition disabled:opacity-40"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -100,58 +146,85 @@ export default function KnowledgePage() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-        {/* How it works banner */}
+        {/* How it works */}
         <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5">
-          <h2 className="font-semibold text-violet-900 mb-1 flex items-center gap-2">
-            <Zap size={16} /> How the Knowledge Engine works
+          <h2 className="font-semibold text-violet-900 mb-2 flex items-center gap-2">
+            <Sparkles size={16} /> How Fundi AI learns your materials
           </h2>
-          <p className="text-sm text-violet-800">
-            Each uploaded document is split into chunks and converted into AI embeddings using OpenAI.
-            When a student asks the tutor a question, the system finds the most semantically relevant
-            chunks from across all documents — not just the 3 newest — and feeds them to Claude as context.
-            This makes the AI tutor far more accurate and grounded in your actual ZIMSEC materials.
-          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+            <div className="bg-white rounded-xl p-3 border border-violet-100">
+              <div className="flex items-center gap-2 mb-1">
+                <BookOpen size={14} className="text-violet-500" />
+                <span className="text-xs font-semibold text-violet-800">Step 1 — Read</span>
+              </div>
+              <p className="text-xs text-gray-600">Claude reads every PDF and extracts all the text and key topics</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-violet-100">
+              <div className="flex items-center gap-2 mb-1">
+                <Cpu size={14} className="text-violet-500" />
+                <span className="text-xs font-semibold text-violet-800">Step 2 — Understand</span>
+              </div>
+              <p className="text-xs text-gray-600">OpenAI converts each passage into a semantic embedding vector</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-violet-100">
+              <div className="flex items-center gap-2 mb-1">
+                <Brain size={14} className="text-violet-500" />
+                <span className="text-xs font-semibold text-violet-800">Step 3 — Answer</span>
+              </div>
+              <p className="text-xs text-gray-600">When a student asks a question, Fundi finds the most relevant passages and answers from them</p>
+            </div>
+          </div>
         </div>
 
-        {/* Status card */}
+        {/* Pipeline status */}
         {status && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900">Embedding Status</h2>
+            <h2 className="font-semibold text-gray-900">Training Status</h2>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-3">
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{status.total}</p>
                 <p className="text-xs text-gray-500 mt-1">Total documents</p>
               </div>
+              <div className="bg-amber-50 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-amber-700">{status.unprocessed}</p>
+                <p className="text-xs text-gray-500 mt-1">Not yet read</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-blue-700">{status.processed}</p>
+                <p className="text-xs text-gray-500 mt-1">Read, not embedded</p>
+              </div>
               <div className="bg-emerald-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-emerald-700">{status.embedded}</p>
-                <p className="text-xs text-gray-500 mt-1">Embedded</p>
-              </div>
-              <div className="bg-amber-50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-amber-700">{status.pending}</p>
-                <p className="text-xs text-gray-500 mt-1">Pending</p>
+                <p className="text-xs text-gray-500 mt-1">Fully trained</p>
               </div>
             </div>
 
-            {/* Progress bar */}
             <div>
               <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Coverage</span>
-                <span>{progressPct}%</span>
+                <span>Training coverage</span>
+                <span>{status.embedded} of {status.total} documents ({progressPct}%)</span>
               </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-violet-500 rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-violet-500 to-violet-400 rounded-full transition-all duration-700"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
             </div>
+
+            {status.embedded === status.total && status.total > 0 && (
+              <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 rounded-xl p-3">
+                <CheckCircle size={16} />
+                Fundi AI has learned all {status.total} documents. Students are getting the best possible answers.
+              </div>
+            )}
           </div>
         )}
 
-        {/* Actions */}
+        {/* Main action */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">Generate Embeddings</h2>
+          <h2 className="font-semibold text-gray-900">Train Fundi AI</h2>
 
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -161,33 +234,44 @@ export default function KnowledgePage() {
               className="w-4 h-4 rounded accent-violet-600"
             />
             <span className="text-sm text-gray-700">
-              Re-embed already embedded documents (use when documents have been updated)
+              Re-train already learned documents (use after updating document content)
             </span>
           </label>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => runEmbeddings()}
-              disabled={running || !status || (status.pending === 0 && !reprocess)}
-              className="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition text-sm"
-            >
-              {running ? (
-                <><RefreshCw size={16} className="animate-spin" /> Processing…</>
-              ) : (
-                <><Brain size={16} /> Embed {reprocess ? 'all' : `${status?.pending ?? 0} pending`} documents</>
-              )}
-            </button>
-          </div>
-
-          {status?.pending === 0 && !reprocess && (
-            <p className="text-sm text-emerald-600 flex items-center gap-2">
-              <CheckCircle size={14} /> All documents are already embedded. Enable re-embed above to refresh them.
-            </p>
+          {/* Running state */}
+          {isRunning && (
+            <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 flex items-start gap-3">
+              <RefreshCw size={16} className="text-violet-600 animate-spin mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-violet-800 text-sm">Training in progress…</p>
+                <p className="text-violet-700 text-xs mt-0.5">{stageMessage}</p>
+                <p className="text-violet-500 text-xs mt-1">This can take several minutes for large document sets. Do not close this page.</p>
+              </div>
+            </div>
           )}
 
-          <p className="text-xs text-gray-400">
-            Processes up to 50 documents per run. Run multiple times if you have more than 50.
-            Each document costs ~$0.0001 in OpenAI embedding fees.
+          {stage === 'done' && !error && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+              <CheckCircle size={16} className="text-emerald-600" />
+              <p className="text-emerald-800 text-sm font-semibold">Training complete! Fundi AI has learned your latest documents.</p>
+            </div>
+          )}
+
+          <button
+            onClick={teachFundiEverything}
+            disabled={isRunning || (status?.total === 0)}
+            className="w-full flex items-center justify-center gap-3 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-4 px-6 rounded-xl transition text-sm"
+          >
+            {isRunning ? (
+              <><RefreshCw size={16} className="animate-spin" /> Training Fundi AI…</>
+            ) : (
+              <><Brain size={16} /> Teach Fundi AI Everything</>
+            )}
+          </button>
+
+          <p className="text-xs text-gray-400 text-center">
+            Processes up to 20 documents per run with Claude, then embeds up to 50 at a time.
+            Run again if you have more documents. Cost: ~$0.0001 per document for embeddings.
           </p>
         </div>
 
@@ -207,29 +291,24 @@ export default function KnowledgePage() {
           </div>
         )}
 
-        {/* Results */}
-        {results && (
+        {/* Embedding results */}
+        {results && results.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
             <h2 className="font-semibold text-gray-900">
-              Results — {results.filter(r => r.status === 'ok').length}/{results.length} succeeded
+              Embedding results — {results.filter(r => r.status === 'ok').length}/{results.length} succeeded
             </h2>
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+            <div className="space-y-1 max-h-60 overflow-y-auto">
               {results.map(r => (
-                <div key={r.id} className="flex items-center gap-3 text-sm py-1.5 border-b border-gray-50 last:border-0">
-                  {r.status === 'ok' ? (
-                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
-                  ) : r.status.includes('skipped') ? (
-                    <Clock size={14} className="text-amber-500 flex-shrink-0" />
-                  ) : (
-                    <XCircle size={14} className="text-red-500 flex-shrink-0" />
-                  )}
+                <div key={r.id} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0 text-sm">
+                  {r.status === 'ok'
+                    ? <CheckCircle size={13} className="text-emerald-500 flex-shrink-0" />
+                    : r.status.includes('skipped')
+                    ? <Clock size={13} className="text-amber-500 flex-shrink-0" />
+                    : <XCircle size={13} className="text-red-500 flex-shrink-0" />}
                   <span className="flex-1 text-gray-700 truncate">{r.title}</span>
-                  {r.status === 'ok' && (
-                    <span className="text-gray-400 text-xs flex-shrink-0">{r.chunks} chunks</span>
-                  )}
-                  {r.status !== 'ok' && (
-                    <span className="text-xs text-gray-400 flex-shrink-0">{r.status}</span>
-                  )}
+                  {r.status === 'ok'
+                    ? <span className="text-gray-400 text-xs flex-shrink-0">{r.chunks} chunks</span>
+                    : <span className="text-xs text-gray-400 flex-shrink-0">{r.status}</span>}
                 </div>
               ))}
             </div>
@@ -239,30 +318,25 @@ export default function KnowledgePage() {
         {/* Document list */}
         {status && status.docs.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
-            <h2 className="font-semibold text-gray-900">All Published Documents</h2>
+            <h2 className="font-semibold text-gray-900">All Documents</h2>
             <div className="space-y-1 max-h-96 overflow-y-auto">
               {status.docs.map(d => (
                 <div key={d.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  {d.embedded ? (
-                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
-                  ) : (
-                    <Clock size={14} className="text-amber-400 flex-shrink-0" />
-                  )}
+                  {d.embedded
+                    ? <CheckCircle size={13} className="text-emerald-500 flex-shrink-0" />
+                    : d.hasText
+                    ? <Clock size={13} className="text-blue-400 flex-shrink-0" />
+                    : <Clock size={13} className="text-amber-400 flex-shrink-0" />}
                   <span className="flex-1 text-sm text-gray-700 truncate">{d.title}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                    d.embedded ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                    d.embedded
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : d.hasText
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'bg-amber-50 text-amber-700'
                   }`}>
-                    {d.embedded ? 'embedded' : 'pending'}
+                    {d.embedded ? 'trained' : d.hasText ? 'read, not embedded' : 'not yet read'}
                   </span>
-                  {!d.embedded && (
-                    <button
-                      onClick={() => runEmbeddings([d.id])}
-                      disabled={running}
-                      className="text-xs text-violet-600 hover:text-violet-800 font-medium flex-shrink-0 disabled:opacity-40"
-                    >
-                      Embed
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
