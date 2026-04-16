@@ -13,6 +13,8 @@ interface Props {
   subjectCode: string
   level: string
   initialMessages: Message[]
+  isPaid: boolean
+  aiUsedToday: number
 }
 
 export default function AiTutorChat({
@@ -20,6 +22,8 @@ export default function AiTutorChat({
   subjectCode,
   level,
   initialMessages,
+  isPaid,
+  aiUsedToday,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
@@ -160,10 +164,20 @@ export default function AiTutorChat({
             <p className="text-xs text-gray-400">ZIMSEC {levelLabel} · Powered by Claude</p>
           </div>
         </div>
-        <div className="flex-shrink-0 hidden sm:flex items-center gap-1.5 bg-indigo-50 text-indigo-600 text-xs font-medium px-2.5 py-1 rounded-full">
-          <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-          Online
-        </div>
+        {!isPaid && (
+          <div className={`flex-shrink-0 hidden sm:flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+            aiUsedToday >= 5 ? 'bg-red-50 text-red-600' : aiUsedToday >= 3 ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${aiUsedToday >= 5 ? 'bg-red-500' : aiUsedToday >= 3 ? 'bg-amber-500 animate-pulse' : 'bg-indigo-500 animate-pulse'}`} />
+            {5 - aiUsedToday} of 5 free questions left today
+          </div>
+        )}
+        {isPaid && (
+          <div className="flex-shrink-0 hidden sm:flex items-center gap-1.5 bg-indigo-50 text-indigo-600 text-xs font-medium px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+            Online
+          </div>
+        )}
       </header>
 
       {/* Messages */}
@@ -238,14 +252,14 @@ export default function AiTutorChat({
                 <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 text-sm">You&apos;ve used all your AI requests today</p>
+                <p className="font-bold text-gray-900 text-sm">You&apos;ve used all 5 free questions today</p>
                 <p className="text-xs text-gray-500 mt-0.5">Upgrade to keep studying — resets at midnight if you wait</p>
                 <div className="flex gap-2 mt-3">
                   <Link
                     href="/student/upgrade"
                     className="flex-1 text-center py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition"
                   >
-                    Upgrade from $2/mo →
+                    Upgrade from $2/mo — unlimited questions →
                   </Link>
                   <button
                     onClick={() => setIsAtLimit(false)}

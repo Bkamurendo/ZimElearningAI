@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import StudyPlannerClient from './StudyPlannerClient'
+import UpgradeWall from '@/components/UpgradeWall'
 
 export default async function StudyPlannerPage() {
   const supabase = createClient()
@@ -14,6 +15,25 @@ export default async function StudyPlannerPage() {
     .single() as { data: { id: string; zimsec_level: string; grade: string } | null; error: unknown }
 
   if (!studentProfile) redirect('/student/dashboard')
+
+  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
+
+  if (!isPaid) {
+    return (
+      <UpgradeWall
+        feature="Study Planner"
+        description="Get a personalised AI-generated ZIMSEC revision schedule based on your weak topics and exam date."
+        benefits={[
+          'Personalised week-by-week revision plan',
+          'Automatically prioritises your weak topics',
+          'Adapts to your exam date countdown',
+          'ZIMSEC-aligned study tips and strategies',
+          'Unlimited plan regenerations',
+        ]}
+      />
+    )
+  }
 
   type SubjectRow = { name: string; code: string } | null
   const { data: enrolments } = await supabase

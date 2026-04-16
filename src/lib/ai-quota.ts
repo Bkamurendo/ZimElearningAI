@@ -18,8 +18,18 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
 
-export const FREE_DAILY_LIMIT = 25   // free users get 25 AI calls per day
+export const FREE_DAILY_LIMIT = 5    // free users get 5 AI calls per day
 export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getUserPlan(supabase: any, userId: string): Promise<string> {
+  const { data } = await supabase.from('profiles').select('plan').eq('id', userId).single()
+  return data?.plan ?? 'free'
+}
+
+export function isPaidPlan(plan: string): boolean {
+  return ['starter', 'pro', 'elite'].includes(plan)
+}
 
 export interface QuotaResult {
   allowed: boolean

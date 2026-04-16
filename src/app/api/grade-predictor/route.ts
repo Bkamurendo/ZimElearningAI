@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
-import { checkAIQuota } from '@/lib/ai-quota'
+import { checkAIQuota, getUserPlan, isPaidPlan } from '@/lib/ai-quota'
 
 export const maxDuration = 60
 import crypto from 'crypto'
@@ -22,6 +22,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
       { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
+    )
+  }
+
+  const plan = await getUserPlan(supabase, user.id)
+  if (!isPaidPlan(plan)) {
+    return NextResponse.json(
+      { error: 'Grade Predictor is a premium feature. Upgrade to Starter or Pro to access it.' },
+      { status: 403 }
     )
   }
 
