@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   Send, Loader2, Sparkles, RotateCcw, Zap, BookOpen,
   FileText, Book, HelpCircle, RefreshCw, CheckCircle,
-  ChevronDown, ChevronRight, AlertCircle, Copy, Check,
+  ChevronDown, ChevronRight, AlertCircle, Copy, Check, Lock, Star
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ interface Props {
   subjectCode: string
   quickPrompts: string[]
   preloaded?: CachedContent
+  isPremium?: boolean
+  isOwner?: boolean
 }
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -195,6 +198,7 @@ function DifficultyBadge({ level }: { level: string }) {
 
 export default function StudyPanel({
   documentId, documentTitle, documentType, quickPrompts, preloaded = {},
+  isPremium = false, isOwner = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>('chat')
   const [cached, setCached] = useState<CachedContent>(preloaded)
@@ -364,6 +368,7 @@ export default function StudyPanel({
   // ── Render tab content ────────────────────────────────────────────────────
 
   function renderTabContent() {
+    if (!isPremium && !isOwner) return renderLockedState()
     if (activeTab === 'chat') return renderChat()
 
     const key = activeTab as keyof CachedContent
@@ -654,6 +659,49 @@ export default function StudyPanel({
           </div>
           <p className="text-center text-[10px] text-gray-400 mt-2">Grounded in the actual document content</p>
         </div>
+      </div>
+    )
+  }
+
+  // ── Locked State renderer ────────────────────────────────────────────────
+  
+  function renderLockedState() {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 mt-12 text-center">
+        <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-600 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-amber-100 mb-8 transform -rotate-6">
+          <Lock size={40} fill="white" />
+        </div>
+        
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Unlock Study Engine</h3>
+        <p className="text-sm text-gray-500 mb-8 max-w-[280px]">
+          Join thousands of students using AI to master {documentType.replace('_', ' ')}s.
+        </p>
+
+        <div className="space-y-4 w-full mb-10">
+          {[
+            { icon: Zap, text: 'Snap Notes for 5-min revision', color: 'text-amber-500' },
+            { icon: Sparkles, text: 'AI Chat that reads your documents', color: 'text-indigo-500' },
+            { icon: FileText, text: 'Detailed Step-by-Step Model Answers', color: 'text-rose-500' },
+            { icon: HelpCircle, text: 'Exam-style Practice Questions', color: 'text-blue-500' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-3 text-left bg-gray-50 p-3 rounded-2xl border border-gray-100">
+              <div className={`p-2 bg-white rounded-lg shadow-sm ${item.color}`}>
+                <item.icon size={16} />
+              </div>
+              <span className="text-xs font-semibold text-gray-700">{item.text}</span>
+              <Star size={12} className="ml-auto text-amber-400 fill-amber-400" />
+            </div>
+          ))}
+        </div>
+
+        <Link
+          href="/student/upgrade"
+          className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <Sparkles size={18} />
+          Upgrade to Unlock All
+        </Link>
+        <p className="text-[10px] text-gray-400 mt-4 uppercase tracking-widest font-bold">Starting from $2 USD / month</p>
       </div>
     )
   }

@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Lock, Sparkles } from 'lucide-react'
+import { isPremium } from '@/lib/subscription'
 import StudyPanel from './StudyPanel'
 import BookmarkToggle from '@/app/(dashboard)/student/bookmarks/BookmarkToggle'
 import ReprocessButton from './ReprocessButton'
@@ -59,6 +60,14 @@ export default async function StudentDocumentDetailPage({
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, plan, pro_expires_at, trial_ends_at')
+    .eq('id', user.id)
+    .single()
+
+  const isUserPremium = isPremium(profile)
 
   const { data: doc } = await supabase
     .from('uploaded_documents')
@@ -253,14 +262,56 @@ export default async function StudentDocumentDetailPage({
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-700">📄 Document Preview</p>
-                {signedUrl && (
+                {signedUrl && (isUserPremium || isOwner) && (
                   <a href={signedUrl} target="_blank" rel="noopener noreferrer"
                     className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition">
                     Open full screen ↗
                   </a>
                 )}
               </div>
-              {signedUrl ? (
+              
+              {!isUserPremium && !isOwner ? (
+                <div className="relative group">
+                  {/* Blurred preview background */}
+                  <div className="w-full h-[640px] bg-slate-100 flex items-center justify-center overflow-hidden grayscale blur-sm opacity-50 select-none pointer-events-none">
+                     <div className="space-y-4 w-full px-12">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                        <div className="h-32 bg-gray-200 rounded w-full animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                        <div className="h-64 bg-gray-200 rounded w-full animate-pulse" />
+                     </div>
+                  </div>
+                  
+                  {/* Lock Overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-white/60 backdrop-blur-[2px]">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-amber-500 mb-6 border border-amber-100 animate-bounce">
+                      <Lock size={32} fill="currentColor" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Full Document Locked</h3>
+                    <p className="text-sm text-gray-600 text-center max-w-xs mb-8">
+                      Free users can view 3 summaries per day. Upgrade to view the full PDF and unlock all AI Study Tools.
+                    </p>
+                    
+                    <div className="flex flex-col w-full gap-3 max-w-[240px]">
+                      <Link
+                        href="/student/upgrade"
+                        className="flex items-center justify-center gap-2 py-3 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all transform hover:scale-105 active:scale-95"
+                      >
+                        <Sparkles size={18} />
+                        Unlock for $2/mo
+                      </Link>
+                      <Link
+                        href={`/student/resources/${subjectCode}`}
+                        className="text-center py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+                      >
+                        Back to library
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ) : signedUrl ? (
                 <iframe src={signedUrl} className="w-full" style={{ height: '640px' }} title={doc.title} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -280,6 +331,8 @@ export default async function StudentDocumentDetailPage({
             subjectCode={subjectCode}
             quickPrompts={quickPrompts}
             preloaded={preloaded}
+            isPremium={isUserPremium}
+            isOwner={isOwner}
           />
         </div>
       </div>

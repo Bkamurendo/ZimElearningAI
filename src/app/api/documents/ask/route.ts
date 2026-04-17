@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
+import { isPremium } from '@/lib/subscription'
 
 export const maxDuration = 60
 
@@ -19,6 +20,15 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
+  // 1. Fetch user profile to check subscription status
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, plan, pro_expires_at, trial_ends_at')
+    .eq('id', user.id)
+    .single()
+
+  const isUserPremium = isPremium(profile)
+
   const {
     documentId,
     question,
@@ -34,12 +44,18 @@ export async function POST(req: NextRequest) {
   // Fetch document (user must own it or it must be published)
   const { data: docOrNull } = await supabase
     .from('uploaded_documents')
-    .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number, file_path')
+    .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number, file_path, uploaded_by')
     .eq('id', documentId)
     .or(`uploaded_by.eq.${user.id},moderation_status.eq.published`)
     .single()
 
   if (!docOrNull) return new Response('Document not found or access denied', { status: 404 })
+
+  // 2. Access control: User must be premium OR the one who uploaded it
+  const isOwner = docOrNull.uploaded_by === user.id
+  if (!isUserPremium && !isOwner) {
+    return new Response('Premium subscription required to chat with documents', { status: 403 })
+  }
 
   // Re-bind to a definitely-non-null const so TypeScript's closure analysis
   // keeps the narrowed type inside nested helper functions below.
