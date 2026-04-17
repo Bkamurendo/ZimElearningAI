@@ -52,16 +52,7 @@ const MODES = {
 }
 type Mode = keyof typeof MODES
 
-const STARTERS = [
-  'Explain photosynthesis for Form 2',
-  'Help me solve quadratic equations step by step',
-  'What are the causes of the First Chimurenga?',
-  'How do I write a good O-Level English essay?',
-  'Explain supply and demand with a Zimbabwean example',
-  'What is the difference between mitosis and meiosis?',
-  'Help me understand compound interest with ZiG examples',
-  'How do I balance chemical equations?',
-]
+// Starters are now dynamic based on user profile
 
 // ── Inline Quiz Component ─────────────────────────────────────────────────────
 function InlineQuiz({ questions }: { questions: QuizQuestion[] }) {
@@ -216,6 +207,7 @@ export default function AITeacherPage() {
   const [selectedSubject, setSelectedSubject] = useState('')
   const [solutionMode, setSolutionMode] = useState<'scaffolded' | 'direct'>('scaffolded')
   const [preferredLanguage, setPreferredLanguage] = useState<'english' | 'shona' | 'ndebele'>('english')
+  const [studentProfile, setStudentProfile] = useState<any>(null)
   const [_isPrimary, setIsPrimary] = useState(false)
   const [showLanguageModal, setShowLanguageModal] = useState(false)
 
@@ -258,6 +250,7 @@ export default function AITeacherPage() {
       setSubjects(sd.subjects ?? [])
       if (pd.profile) {
         setPreferredLanguage(pd.profile.preferred_language || 'english')
+        setStudentProfile(pd.student_profile)
         setIsPrimary(pd.student_profile?.zimsec_level === 'primary')
         // Show language modal if primary and not set
         if (pd.student_profile?.zimsec_level === 'primary' && !pd.profile.preferred_language) {
@@ -505,6 +498,86 @@ export default function AITeacherPage() {
   const modeConfig = MODES[mode]
   const ModeIcon = modeConfig.icon
 
+  // ── Dynamic Starters ────────────────────────────────────────────────────────
+  function getStarters() {
+    const level = studentProfile?.zimsec_level || 'olevel'
+    const grade = studentProfile?.grade || ''
+    const userSubjects = subjects.map(s => s.name)
+
+    const levelStarters: Record<string, string[]> = {
+      primary: [
+        'Explain how rain is formed',
+        'Help me with my long division homework',
+        'Who was Mbuya Nehanda?',
+        'What are the parts of a plant?',
+        'Explain the importance of hygiene',
+        'How do I write a friendly letter?',
+        'Help me understand fractions',
+        'Tell me about the early inhabitants of Zimbabwe'
+      ],
+      olevel: [
+        'Explain the causes of the First Chimurenga',
+        'Help me solve quadratic equations step by step',
+        'How do I write a good O-Level English essay?',
+        'Explain supply and demand with a Zimbabwean example',
+        'What is the difference between mitosis and meiosis?',
+        'Explain the water cycle for Geography',
+        'How do I balance chemical equations?',
+        'State the importance of Heritage Studies'
+      ],
+      alevel: [
+        'Discuss the impact of fiscal policy on economic growth',
+        'Explain the molecular biology of gene expression',
+        'Help me with advanced calculus derivations',
+        'Analysis of post-colonial literature in Zimbabwe',
+        'Explain complex chemical bonding and orbital theory',
+        'Discuss the significance of the 1896-97 Uprising',
+        'Advanced theories of plate tectonics',
+        'The role of pan-Africanism in modern history'
+      ]
+    }
+
+    const subjectStarters: Record<string, string[]> = {
+      'Mathematics': ['Solve quadratic equations', 'Calculate circle area', 'Pythagoras theorem help'],
+      'Biology': ['Explain photosynthesis', 'Mitosis vs Meiosis', 'How the heart works'],
+      'History': ['First Chimurenga causes', 'Mutapa Empire rise', 'Great Zimbabwe significance'],
+      'Geography': ['Victoria Falls formation', 'Climate change in Zimbabwe', 'Plate tectonics'],
+      'English': ['English essay tips', 'Metaphors and similes', 'Formal letter writing'],
+      'Chemistry': ['Balance chemical equations', 'Periodic table guide', 'Acids and bases'],
+      'Physics': ['Newton laws of motion', 'Electricity circuits', 'Gravity concept'],
+      'Economics': ['Supply and demand examples', 'Inflation impact', 'RBZ role'],
+      'Accounts': ['Double entry bookkeeping', 'Balance sheet help', 'Profit and loss'],
+      'Commerce': ['Types of business ownership', 'Insurance principles', 'Banking services'],
+      'Heritage Studies': ['Zimbabwe Bird meaning', 'Traditional dances', 'Second Chimurenga heroes'],
+    }
+
+    let results = [...(levelStarters[level] || levelStarters['olevel'])]
+
+    // If we have subjects, try to inject some subject-specific ones
+    if (userSubjects.length > 0) {
+      const subjectSpecifics: string[] = []
+      userSubjects.forEach(sName => {
+        const matches = Object.keys(subjectStarters).filter(k => sName.toLowerCase().includes(k.toLowerCase()))
+        matches.forEach(m => subjectSpecifics.push(...subjectStarters[m]))
+      })
+
+      if (subjectSpecifics.length > 0) {
+        // Shuffle and pick 3 subject specifics, then 5 general ones
+        const shuffledSub = subjectSpecifics.sort(() => 0.5 - Math.random()).slice(0, 3)
+        const filteredLevel = results.filter(q => !shuffledSub.includes(q)).slice(0, 5)
+        results = [...shuffledSub, ...filteredLevel]
+      }
+    }
+
+    // Append level/grade context to some questions if available
+    return results.map(q => {
+      if (grade && !q.includes(grade) && Math.random() > 0.5) {
+        return `${q} for ${grade}`
+      }
+      return q
+    }).slice(0, 8)
+  }
+
   return (
     <div className="flex h-[calc(100vh-56px)] lg:h-screen overflow-hidden bg-gray-50">
 
@@ -716,7 +789,7 @@ export default function AITeacherPage() {
                   <BookOpen size={12} /> Try asking
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {STARTERS.map((s, i) => (
+                  {getStarters().map((s, i) => (
                     <button key={i} onClick={() => sendMessage(s)}
                       className="text-left text-sm text-gray-700 bg-white border border-gray-100 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 rounded-xl px-4 py-3 transition shadow-sm">
                       {s}
