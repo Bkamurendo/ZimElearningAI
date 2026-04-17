@@ -19,6 +19,7 @@ export default async function PastPaperPage({
     .single() as { data: { id: string; name: string; code: string; zimsec_level: string } | null; error: unknown }
 
   if (!subject) redirect('/student/dashboard')
+  const subjectData = subject as { id: string; name: string; code: string; zimsec_level: string }
 
   const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
   const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
@@ -57,7 +58,7 @@ export default async function PastPaperPage({
 
   return (
     <PastPaperClient
-      subject={subject}
+      subject={subjectData}
       recentAttempts={recentAttempts ?? []}
     />
   )
