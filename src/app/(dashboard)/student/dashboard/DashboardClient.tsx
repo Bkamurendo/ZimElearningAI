@@ -19,6 +19,7 @@ import {
   ListTodo,
   Brain,
   Star,
+  MessageSquare,
 } from 'lucide-react'
 
 // Icons mapped by stat label — avoids passing component functions across the server/client boundary
@@ -323,6 +324,29 @@ export default function DashboardClient({
                        <ChevronRight className="text-slate-600" />
                     </Card>
                   </Link>
+
+                  <div className="relative group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                    <Card className="relative p-5 group flex items-center justify-between border-emerald-500/30">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600">
+                             <MessageSquare size={18} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-sm">WhatsApp Tutor</p>
+                              <Badge variant="emerald" size="xs">OFFICIAL</Badge>
+                            </div>
+                            <p className="text-slate-400 text-xs uppercase font-black">Sync MaFundi: +263 78 287 6599</p>
+                          </div>
+                       </div>
+                       <Button variant="ghost" size="icon" className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50">
+                          <Link href="https://wa.me/263782876599?text=Mhoro MaFundi! I am registered on ZimLearn AI and I need help with my studies." target="_blank">
+                            <ChevronRight />
+                          </Link>
+                       </Button>
+                    </Card>
+                  </div>
 
                   <Link href="/student/progress">
                     <Card hover className="p-5 group flex items-center justify-between">
