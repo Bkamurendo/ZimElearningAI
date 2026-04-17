@@ -266,7 +266,10 @@ export default function StudyPanel({
         body: JSON.stringify({ documentId, question: msg, mode, conversationHistory: messages.slice(-10) }),
       })
       if (!res.ok || !res.body) {
-        setMessages((p) => [...p, { role: 'assistant', content: 'Something went wrong. Please try again.' }])
+        const msg = res.status === 403
+          ? '🔒 AI Chat is a premium feature. Upgrade from $2/month to unlock unlimited AI study tools on every document.'
+          : 'Something went wrong. Please try again.'
+        setMessages((p) => [...p, { role: 'assistant', content: msg }])
         return
       }
       setMessages((p) => [...p, { role: 'assistant', content: '' }])
