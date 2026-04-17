@@ -23,7 +23,7 @@ export interface PlanFeatures {
 
 export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
   free: {
-    aiDailyLimit: 25,
+    aiDailyLimit: 5,
     canDownloadResources: false,
     canAccessPastPapers: true,     // 2 per day via quota
     canUseGradePredictor: true,    // 1 per day via quota
