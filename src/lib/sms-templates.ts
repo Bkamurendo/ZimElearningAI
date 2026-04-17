@@ -101,6 +101,7 @@ export const SMS_TEMPLATES = {
   readyPulse: (studentName: string, averagePulse: number) =>
     `MaFundi Parent Alert: ${studentName}'s Ready Pulse is at ${averagePulse}%. Based on repetition cycles, they are ${averagePulse > 80 ? 'READY' : 'PROCEEDING WELL'} for exams.`,
 
+  /** Weekly detailed report for parents */
   parentWeeklyReport: (
     parentName: string,
     childName: string,

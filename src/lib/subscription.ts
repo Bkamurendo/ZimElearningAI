@@ -93,7 +93,7 @@ export function isPremium(profile: {
   pro_expires_at?: string | null
   trial_ends_at?: string | null
   role?: string | null
-}): boolean {
+} | null | undefined): boolean {
   if (!profile) return false
 
   // Admins and Teachers are always considered premium for UI testing/moderation

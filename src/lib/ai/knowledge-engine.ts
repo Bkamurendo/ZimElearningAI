@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse/lib/pdf-parse.js')
 
 let openaiInstance: OpenAI | null = null
@@ -133,7 +134,7 @@ export class KnowledgeEngine {
     try {
       const parsed = await pdfParse(buffer)
       text = parsed.text?.trim() || ''
-    } catch (err) {
+    } catch (_err) {
       console.warn(`[KNOWLEDGE ENGINE] PDF Parse failed for ${doc.title}`)
       return
     }
