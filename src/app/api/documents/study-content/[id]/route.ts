@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkAIQuota } from '@/lib/ai-quota'
+import { isPremium } from '@/lib/subscription'
 
 // Allow up to 120s — Claude needs time on large documents
 export const maxDuration = 120
@@ -213,6 +214,15 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // 1. Fetch profile to check subscription status
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, plan, pro_expires_at, trial_ends_at')
+    .eq('id', user.id)
+    .single()
+
+  const isUserPremium = isPremium(profile)
+
   const { content_type, force_regenerate = false } = await req.json() as {
     content_type: string
     force_regenerate?: boolean
@@ -254,12 +264,18 @@ export async function POST(
   // Fetch document (must be owner or published)
   const { data: doc } = await supabase
     .from('uploaded_documents')
-    .select('id, title, document_type, extracted_text, ai_summary, topics, year, paper_number, zimsec_level, file_path')
+    .select('id, title, document_type, extracted_text, ai_summary, topics, year, paper_number, zimsec_level, file_path, uploaded_by')
     .eq('id', params.id)
     .or(`uploaded_by.eq.${user.id},moderation_status.eq.published`)
     .single()
 
   if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+
+  // 2. Access control: User must be premium OR the one who uploaded it
+  const isOwner = doc.uploaded_by === user.id
+  if (!isUserPremium && !isOwner) {
+    return NextResponse.json({ error: 'Premium subscription required to generate study tools' }, { status: 403 })
+  }
 
   // Text limits per content type — detailed_notes needs much more context to cover all topics
   const TEXT_LIMITS: Record<string, number> = {

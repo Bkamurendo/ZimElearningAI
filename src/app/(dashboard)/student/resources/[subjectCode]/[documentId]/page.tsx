@@ -1,9 +1,19 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChevronRight, Lock } from 'lucide-react'
+import { ChevronRight, Lock, Sparkles } from 'lucide-react'
+import { isPremium } from '@/lib/subscription'
 import StudyPanel from './StudyPanel'
 import BookmarkToggle from '@/app/(dashboard)/student/bookmarks/BookmarkToggle'
+import ReprocessButton from './ReprocessButton'
+
+// Helper: resolve the real subject code. When the user arrives via a bookmark or search
+// link that used the "unknown" fallback, we substitute the subject code from the document
+// record itself so that breadcrumb links and back-navigation work correctly.
+function resolveSubjectCode(paramCode: string, docSubjectCode: string | null | undefined): string {
+  if (paramCode && paramCode !== 'unknown') return paramCode
+  return docSubjectCode ?? paramCode
+}
 
 type DocumentData = {
   id: string
@@ -14,6 +24,7 @@ type DocumentData = {
   year: number | null
   paper_number: number | null
   ai_summary: string | null
+  extracted_text: string | null
   topics: string[] | null
   moderation_notes: string | null
   moderation_status: string
@@ -50,6 +61,14 @@ export default async function StudentDocumentDetailPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, plan, pro_expires_at, trial_ends_at')
+    .eq('id', user.id)
+    .single()
+
+  const isUserPremium = isPremium(profile)
+
   const { data: doc } = await supabase
     .from('uploaded_documents')
     .select('*, subject:subjects(id, name, code, zimsec_level)')
@@ -63,8 +82,8 @@ export default async function StudentDocumentDetailPage({
     redirect(`/student/resources/${params.subjectCode}`)
   }
 
-  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
+  // Resolve the correct subject code (fixes "unknown" from bookmark/search links)
+  const subjectCode = resolveSubjectCode(params.subjectCode, doc.subject?.code)
 
   // Check bookmark status
   const { data: bookmarkData } = await supabase
@@ -92,14 +111,11 @@ export default async function StudentDocumentDetailPage({
     }
   }
 
-  // Signed URL for PDF viewer — only for paid users (owners also get access as their own upload)
-  let signedUrl: string | null = null
-  if (isPaid || isOwner) {
-    const { data: signedData } = await supabase.storage
-      .from('platform-documents')
-      .createSignedUrl(doc.file_path, 3600)
-    signedUrl = signedData?.signedUrl ?? null
-  }
+  // Signed URL for PDF viewer (1 hour)
+  const { data: signedData } = await supabase.storage
+    .from('platform-documents')
+    .createSignedUrl(doc.file_path, 3600)
+  const signedUrl = signedData?.signedUrl ?? null
 
   const levelLabel = doc.zimsec_level === 'primary' ? 'Primary'
     : doc.zimsec_level === 'olevel' ? 'O-Level' : 'A-Level'
@@ -147,11 +163,11 @@ export default async function StudentDocumentDetailPage({
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <Link href="/student/dashboard" className="text-gray-400 hover:text-gray-600 transition">Dashboard</Link>
           <ChevronRight size={14} className="text-gray-300" />
-          <Link href={`/student/subjects/${params.subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
-            {doc.subject?.name ?? params.subjectCode}
+          <Link href={`/student/subjects/${subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
+            {doc.subject?.name ?? subjectCode}
           </Link>
           <ChevronRight size={14} className="text-gray-300" />
-          <Link href={`/student/resources/${params.subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
+          <Link href={`/student/resources/${subjectCode}`} className="text-gray-400 hover:text-gray-600 transition">
             Resources
           </Link>
           <ChevronRight size={14} className="text-gray-300" />
@@ -216,6 +232,11 @@ export default async function StudentDocumentDetailPage({
                 </div>
               )}
 
+              {/* Re-process button — shown when text hasn't been extracted yet */}
+              {(!doc.extracted_text || doc.extracted_text.trim().length === 0) && isOwner && (
+                <ReprocessButton documentId={doc.id} />
+              )}
+
               {/* Study tools hint */}
               <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 flex items-start gap-3">
                 <span className="text-lg flex-shrink-0">🎓</span>
@@ -241,31 +262,57 @@ export default async function StudentDocumentDetailPage({
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-700">📄 Document Preview</p>
-                {signedUrl && (
+                {signedUrl && (isUserPremium || isOwner) && (
                   <a href={signedUrl} target="_blank" rel="noopener noreferrer"
                     className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition">
                     Open full screen ↗
                   </a>
                 )}
               </div>
-              {signedUrl ? (
-                <iframe src={signedUrl} className="w-full" style={{ height: '640px' }} title={doc.title} />
-              ) : !isPaid && !isOwner ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-                  <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
-                    <Lock size={24} className="text-indigo-400" />
+              
+              {!isUserPremium && !isOwner ? (
+                <div className="relative group">
+                  {/* Blurred preview background */}
+                  <div className="w-full h-[640px] bg-slate-100 flex items-center justify-center overflow-hidden grayscale blur-sm opacity-50 select-none pointer-events-none">
+                     <div className="space-y-4 w-full px-12">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                        <div className="h-32 bg-gray-200 rounded w-full animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                        <div className="h-64 bg-gray-200 rounded w-full animate-pulse" />
+                     </div>
                   </div>
-                  <p className="text-sm font-bold text-gray-800 mb-1">Full PDF — Premium</p>
-                  <p className="text-xs text-gray-500 mb-5 max-w-xs">
-                    Upgrade to read the full document, download it, and unlock all AI study tools.
-                  </p>
-                  <Link
-                    href="/student/upgrade"
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition"
-                  >
-                    Upgrade from $2/month →
-                  </Link>
+                  
+                  {/* Lock Overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-white/60 backdrop-blur-[2px]">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-amber-500 mb-6 border border-amber-100 animate-bounce">
+                      <Lock size={32} fill="currentColor" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Full Document Locked</h3>
+                    <p className="text-sm text-gray-600 text-center max-w-xs mb-8">
+                      Free users can view 3 summaries per day. Upgrade to view the full PDF and unlock all AI Study Tools.
+                    </p>
+                    
+                    <div className="flex flex-col w-full gap-3 max-w-[240px]">
+                      <Link
+                        href="/student/upgrade"
+                        className="flex items-center justify-center gap-2 py-3 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all transform hover:scale-105 active:scale-95"
+                      >
+                        <Sparkles size={18} />
+                        Unlock for $2/mo
+                      </Link>
+                      <Link
+                        href={`/student/resources/${subjectCode}`}
+                        className="text-center py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+                      >
+                        Back to library
+                      </Link>
+                    </div>
+                  </div>
                 </div>
+              ) : signedUrl ? (
+                <iframe src={signedUrl} className="w-full" style={{ height: '640px' }} title={doc.title} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <span className="text-4xl mb-3">📎</span>
@@ -281,10 +328,11 @@ export default async function StudentDocumentDetailPage({
             documentId={doc.id}
             documentTitle={doc.title}
             documentType={doc.document_type}
-            subjectCode={params.subjectCode}
+            subjectCode={subjectCode}
             quickPrompts={quickPrompts}
             preloaded={preloaded}
-            isPaid={isPaid || isOwner}
+            isPremium={isUserPremium}
+            isOwner={isOwner}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ChevronRight, Upload, Search, Sparkles, Lock } from 'lucide-react'
+import { isPremium } from '@/lib/subscription'
 
 const DOC_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string; bg: string; headingBg: string; headingText: string }> = {
   past_paper:     { label: 'Past Paper',     icon: '📝', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200',    headingBg: 'bg-blue-50 border-blue-200',    headingText: 'text-blue-800'   },
@@ -63,6 +64,14 @@ export default async function StudentResourcesPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, plan, pro_expires_at, trial_ends_at')
+    .eq('id', user.id)
+    .single()
+
+  const isUserPremium = isPremium(profile)
+
   const subjectCode = params.subjectCode
   const activeFilter = searchParams.filter ?? 'all'
   const yearFilter = searchParams.year ?? ''
@@ -75,9 +84,6 @@ export default async function StudentResourcesPage({
     .single() as { data: { id: string; name: string; code: string; zimsec_level: string } | null; error: unknown }
 
   if (!subject) redirect('/student/resources')
-
-  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
 
   // Build query — enforce zimsec_level match to prevent cross-level contamination
   // (e.g. Primary resources leaking into O-Level folders, or wrong-subject docs showing here)
@@ -100,10 +106,6 @@ export default async function StudentResourcesPage({
 
   // RLS handles visibility — no extra filter needed
   const docs = allDocs ?? []
-
-  const FREE_LIMIT = 3
-  const visibleDocs = isPaid ? docs : docs.slice(0, FREE_LIMIT)
-  const lockedCount = isPaid ? 0 : Math.max(0, docs.length - FREE_LIMIT)
 
   // Counts per type (always from full unfiltered for tab badges — same level guard)
   const { data: allDocsForCount } = await supabase
@@ -145,6 +147,10 @@ export default async function StudentResourcesPage({
 
   // For non-"all" views, just render flat list
   const showGrouped = activeFilter === 'all' && docs.length > 0
+
+  // Gate content for free users
+  const DISPLAY_LIMIT = 3
+  const isGated = !isUserPremium && docs.length > DISPLAY_LIMIT
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -280,41 +286,77 @@ export default async function StudentResourcesPage({
         ) : showGrouped ? (
           /* ── Grouped view (all filter) ── */
           <div className="space-y-6">
-            {presentTypes.map((type) => {
-              const cfg = DOC_TYPE_CONFIG[type] ?? DOC_TYPE_CONFIG.other
-              const typeDocs = groupedDocs[type] ?? []
-              return (
-                <div key={type}>
-                  {/* Section header */}
-                  <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border mb-2 ${cfg.headingBg}`}>
-                    <span className="text-base">{cfg.icon}</span>
-                    <span className={`font-bold text-sm ${cfg.headingText}`}>{cfg.label}s</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-white/60 ${cfg.headingText}`}>
-                      {typeDocs.length}
-                    </span>
-                  </div>
+            {(() => {
+              let totalDisplayed = 0
+              return presentTypes.map((type) => {
+                const cfg = DOC_TYPE_CONFIG[type] ?? DOC_TYPE_CONFIG.other
+                const typeDocs = groupedDocs[type] ?? []
 
-                  <div className="space-y-2">
-                    {typeDocs.map((doc) => (
-                      <DocumentCard
-                        key={doc.id}
-                        doc={doc}
-                        subjectCode={subjectCode}
-                        userId={user.id}
-                        config={cfg}
-                        levelAccent={levelAccent}
-                        formatSize={formatSize}
-                      />
-                    ))}
+                // If we've already hit the limit, don't show any more sections (or show empty ones?)
+                // Actually, let's keep showing sections but stop adding docs once limit reached.
+                if (isGated && totalDisplayed >= DISPLAY_LIMIT) return null
+
+                const docsToRender = isGated
+                  ? typeDocs.slice(0, Math.max(0, DISPLAY_LIMIT - totalDisplayed))
+                  : typeDocs
+
+                totalDisplayed += docsToRender.length
+
+                if (docsToRender.length === 0) return null
+
+                return (
+                  <div key={type}>
+                    {/* Section header */}
+                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border mb-2 ${cfg.headingBg}`}>
+                      <span className="text-base">{cfg.icon}</span>
+                      <span className={`font-bold text-sm ${cfg.headingText}`}>{cfg.label}s</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-white/60 ${cfg.headingText}`}>
+                        {typeDocs.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {docsToRender.map((doc) => (
+                        <DocumentCard
+                          key={doc.id}
+                          doc={doc}
+                          subjectCode={subjectCode}
+                          userId={user.id}
+                          config={cfg}
+                          levelAccent={levelAccent}
+                          formatSize={formatSize}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })
+            })()}
+
+            {isGated && (
+              <Link
+                href="/student/upgrade"
+                className="group flex items-center justify-between p-5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 transition-all text-center"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm text-amber-500">
+                    <Lock size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-indigo-900 text-sm">{docs.length - DISPLAY_LIMIT} more resources locked</p>
+                    <p className="text-xs text-indigo-600">Upgrade to Pro for full access from just $2/month</p>
                   </div>
                 </div>
-              )
-            })}
+                <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-lg group-hover:bg-indigo-700 transition">
+                  Unlock All
+                </div>
+              </Link>
+            )}
           </div>
         ) : (
           /* ── Flat view (filtered) ── */
           <div className="space-y-3">
-            {visibleDocs.map((doc) => {
+            {docs.slice(0, isGated ? DISPLAY_LIMIT : undefined).map((doc) => {
               const config = DOC_TYPE_CONFIG[doc.document_type] ?? DOC_TYPE_CONFIG.other
               return (
                 <DocumentCard
@@ -328,15 +370,25 @@ export default async function StudentResourcesPage({
                 />
               )
             })}
-            {lockedCount > 0 && (
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 text-center">
-                <Lock size={22} className="text-indigo-400 mx-auto mb-2" />
-                <p className="font-bold text-indigo-800 text-sm">{lockedCount} more resource{lockedCount !== 1 ? 's' : ''} available</p>
-                <p className="text-xs text-indigo-600 mt-1 mb-4">Upgrade to access all resources for this subject</p>
-                <Link href="/student/upgrade" className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
-                  Unlock all resources — from $2/month →
-                </Link>
-              </div>
+
+            {isGated && (
+              <Link
+                href="/student/upgrade"
+                className="group flex items-center justify-between p-5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 transition-all text-center"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm text-amber-500">
+                    <Lock size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-indigo-900 text-sm">{docs.length - DISPLAY_LIMIT} more resources locked</p>
+                    <p className="text-xs text-indigo-600">Upgrade to Pro for full access from just $2/month</p>
+                  </div>
+                </div>
+                <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-lg group-hover:bg-indigo-700 transition">
+                  Unlock All
+                </div>
+              </Link>
             )}
           </div>
         )}
