@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChevronRight, Upload, Search, Sparkles } from 'lucide-react'
+import { ChevronRight, Upload, Search, Sparkles, Lock } from 'lucide-react'
 
 const DOC_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string; bg: string; headingBg: string; headingText: string }> = {
   past_paper:     { label: 'Past Paper',     icon: '📝', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200',    headingBg: 'bg-blue-50 border-blue-200',    headingText: 'text-blue-800'   },
@@ -76,6 +76,9 @@ export default async function StudentResourcesPage({
 
   if (!subject) redirect('/student/resources')
 
+  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
+
   // Build query — enforce zimsec_level match to prevent cross-level contamination
   // (e.g. Primary resources leaking into O-Level folders, or wrong-subject docs showing here)
   let query = supabase
@@ -97,6 +100,10 @@ export default async function StudentResourcesPage({
 
   // RLS handles visibility — no extra filter needed
   const docs = allDocs ?? []
+
+  const FREE_LIMIT = 3
+  const visibleDocs = isPaid ? docs : docs.slice(0, FREE_LIMIT)
+  const lockedCount = isPaid ? 0 : Math.max(0, docs.length - FREE_LIMIT)
 
   // Counts per type (always from full unfiltered for tab badges — same level guard)
   const { data: allDocsForCount } = await supabase
@@ -307,7 +314,7 @@ export default async function StudentResourcesPage({
         ) : (
           /* ── Flat view (filtered) ── */
           <div className="space-y-3">
-            {docs.map((doc) => {
+            {visibleDocs.map((doc) => {
               const config = DOC_TYPE_CONFIG[doc.document_type] ?? DOC_TYPE_CONFIG.other
               return (
                 <DocumentCard
@@ -321,6 +328,16 @@ export default async function StudentResourcesPage({
                 />
               )
             })}
+            {lockedCount > 0 && (
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 text-center">
+                <Lock size={22} className="text-indigo-400 mx-auto mb-2" />
+                <p className="font-bold text-indigo-800 text-sm">{lockedCount} more resource{lockedCount !== 1 ? 's' : ''} available</p>
+                <p className="text-xs text-indigo-600 mt-1 mb-4">Upgrade to access all resources for this subject</p>
+                <Link href="/student/upgrade" className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+                  Unlock all resources — from $2/month →
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, ChevronLeft, Bot, Sparkles, User, Info } from 'lucide-react'
+import { Send, ChevronLeft, Bot, Sparkles, User, Info, Lock } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -16,6 +16,49 @@ interface Props {
   subjectCode: string
   level: string
   initialMessages: Message[]
+  isPaid: boolean
+  aiUsedToday: number
+  grade: string | null
+}
+
+function getSamplePrompts(subjectName: string, level: string, grade: string | null): string[] {
+  const sub = subjectName.toLowerCase()
+  const gradeNum = grade ? parseInt(grade.replace(/\D/g, ''), 10) : null
+  const isLowerPrimary = level === 'primary' && gradeNum !== null && gradeNum <= 4
+
+  if (level === 'primary') {
+    if (sub.includes('math')) return isLowerPrimary
+      ? ['Help me understand addition and subtraction', 'Teach me my times tables in a fun way', 'What are odd and even numbers?', 'Give me an easy maths exercise']
+      : ['Help me understand long division with examples', 'Can you explain fractions with pictures?', 'What shapes do I need to know for my exam?', 'Help me with word problems']
+    if (sub.includes('english')) return isLowerPrimary
+      ? ['Help me write a sentence about my family', 'What is a noun? Can you give examples?', 'Help me practise spelling common words', 'What is the difference between a and an?']
+      : ['Help me write a composition about my favourite animal', 'What is the difference between a noun, verb and adjective?', 'Help me understand comprehension passages', 'How do I use punctuation correctly?']
+    return [
+      `Can you explain something important in ${subjectName}?`,
+      `What are the key topics for Grade ${gradeNum ?? 5} ${subjectName}?`,
+      'Can you give me a simple example to help me understand?',
+      'What should I study to pass my exams?',
+    ]
+  }
+
+  if (level === 'olevel') {
+    if (sub.includes('math')) return ['Explain how to solve quadratic equations step by step', 'Help me understand trigonometry — sine, cosine and tangent', 'What are the most important topics for O-Level Maths?', 'Give me a practice algebra problem']
+    if (sub.includes('english')) return ['How do I structure a good ZIMSEC essay?', 'Help me analyse a poem for the exam', 'What grammar rules are most important for O-Level?', 'Give me a comprehension exercise']
+    if (sub.includes('biology') || (sub.includes('science') && !sub.includes('computer'))) return ['Explain photosynthesis and why it matters', 'What is the difference between mitosis and meiosis?', 'Help me understand the digestive system', 'What are the most tested O-Level Biology topics?']
+    if (sub.includes('history')) return ['What are the causes of the First Chimurenga?', 'How do I structure a ZIMSEC history essay?', "Help me understand Zimbabwe's road to independence", 'Give me practice source analysis']
+    if (sub.includes('physics')) return ["Explain Newton's laws of motion with examples", 'Help me understand electricity and circuits', 'How do I solve speed, distance and time problems?', 'What formulas must I know for O-Level Physics?']
+    if (sub.includes('chemistry')) return ['Explain the difference between acids and bases', 'Help me understand the periodic table', 'How do chemical equations and balancing work?', 'What are the key reactions to know?']
+    if (sub.includes('commerce') || sub.includes('economics') || sub.includes('accounts')) return ['Explain supply and demand with a Zimbabwean example', 'What is the difference between assets and liabilities?', 'Help me understand inflation and its effects on Zimbabwe', 'How do I answer a 20-mark question?']
+    if (sub.includes('geography')) return ['Explain the causes and effects of flooding', "Help me understand Zimbabwe's physical geography", 'What are the main types of farming practised in Zimbabwe?', 'Help me with map reading skills']
+    return [`What are the key topics in ${subjectName} for O-Level?`, 'How do I approach structured questions in the exam?', 'Can you explain the most important concept I need to know?', 'What ZIMSEC command words must I know?']
+  }
+
+  return [
+    `What are the key advanced concepts in ${subjectName} for A-Level?`,
+    'How do I write an A-Level essay that scores an A grade?',
+    'Explain a complex topic with real-world examples',
+    'What are the hardest areas to master in this subject?',
+  ]
 }
 
 export default function AiTutorChat({
@@ -23,6 +66,9 @@ export default function AiTutorChat({
   subjectCode,
   level,
   initialMessages,
+  isPaid,
+  aiUsedToday,
+  grade,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
@@ -62,10 +108,12 @@ export default function AiTutorChat({
       })
 
       if (!res.ok || !res.body) {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' },
-        ])
+        const msg = res.status === 403
+          ? '🔒 AI Tutor is a premium feature. Upgrade from $2/month to unlock unlimited ZIMSEC tutoring.'
+          : res.status === 429
+          ? '⏳ You\'ve reached your daily limit. Upgrade for unlimited access, or try again tomorrow.'
+          : 'Sorry, something went wrong. Please try again.'
+        setMessages((prev) => [...prev, { role: 'assistant', content: msg }])
         setIsThinking(false)
         return
       }
@@ -159,10 +207,17 @@ export default function AiTutorChat({
             </p>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-500/20">
-          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          Active Engine
-        </div>
+        {isPaid ? (
+          <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-500/20">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            Active Engine
+          </div>
+        ) : (
+          <div className={`hidden sm:flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${aiUsedToday >= 5 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${aiUsedToday >= 5 ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
+            {5 - Math.min(aiUsedToday, 5)} of 5 free left
+          </div>
+        )}
       </header>
 
       {/* Messages Scroll Area */}
@@ -189,12 +244,7 @@ export default function AiTutorChat({
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10 w-full max-w-lg mx-auto">
-                {[
-                  'Summarize the core syllabus',
-                  'Common exam pitfalls',
-                  'Explain a difficult topic',
-                  'Give me a quick quiz'
-                ].map((s, idx) => (
+                {getSamplePrompts(subjectName, level, grade).map((s, idx) => (
                   <motion.button
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -267,6 +317,21 @@ export default function AiTutorChat({
         </AnimatePresence>
         <div ref={bottomRef} className="h-4" />
       </div>
+
+      {/* Free user quota nudge */}
+      {!isPaid && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-t border-indigo-100 px-4 py-3 flex items-center justify-between gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <Lock size={14} className="text-indigo-500 flex-shrink-0" />
+            <span className="text-xs font-bold text-indigo-800 truncate">
+              {aiUsedToday >= 5 ? 'Daily limit reached — upgrade for unlimited AI' : `${5 - aiUsedToday} free question${5 - aiUsedToday !== 1 ? 's' : ''} left today`}
+            </span>
+          </div>
+          <Link href="/student/upgrade" className="text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-xl flex-shrink-0 transition">
+            Upgrade $2/mo →
+          </Link>
+        </div>
+      )}
 
       {/* Modern Chat Input Area */}
       <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 py-8 sm:px-8 flex-shrink-0">
