@@ -122,9 +122,9 @@ export default function LoginPage({
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2.5 mb-10">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-md shadow-emerald-200">
-            <GraduationCap size={20} className="text-white" />
+            <Sparkles size={20} className="text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-xl">ZimLearn</span>
+          <span className="font-bold text-gray-900 text-xl">ZimLearn<span className="text-emerald-500">AI</span></span>
         </div>
 
         <LoginForm error={searchParams.error} successMessage={successMessage} />
