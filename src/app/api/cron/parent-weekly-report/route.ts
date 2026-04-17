@@ -148,7 +148,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // Also check parent_profiles for phone numbers as fallback
-    const parentIds = [...new Set(pairs.map((p: any) => p.parent_id).filter(Boolean))]
+    const parentIds = Array.from(new Set(pairs.map((p: any) => p.parent_id).filter(Boolean)))
     const { data: parentProfiles } = await supabase
       .from('parent_profiles')
       .select('user_id, phone_number')
