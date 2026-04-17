@@ -22,7 +22,7 @@ export default async function AiTutorPage({
 
   if (!subject) redirect('/student/dashboard')
 
-  const [historyResult, profileResult] = await Promise.all([
+  const [historyResult, profileResult, studentResult] = await Promise.all([
     supabase
       .from('ai_chat_messages')
       .select('role, content, created_at')
@@ -34,6 +34,11 @@ export default async function AiTutorPage({
       .from('profiles')
       .select('plan, ai_requests_today, ai_quota_reset_at')
       .eq('id', user.id)
+      .single(),
+    supabase
+      .from('student_profiles')
+      .select('grade')
+      .eq('user_id', user.id)
       .single(),
   ])
 
@@ -51,11 +56,14 @@ export default async function AiTutorPage({
   const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000
   const aiUsedToday = isNewDay ? 0 : (profileData?.ai_requests_today ?? 0)
 
+  const grade = (studentResult.data as { grade: string | null } | null)?.grade ?? null
+
   return (
     <AiTutorChat
       subjectName={subject.name}
       subjectCode={subject.code}
       level={subject.zimsec_level}
+      grade={grade}
       initialMessages={initialMessages}
       isPaid={isPaid}
       aiUsedToday={aiUsedToday}

@@ -12,15 +12,83 @@ interface Props {
   subjectName: string
   subjectCode: string
   level: string
+  grade: string | null
   initialMessages: Message[]
   isPaid: boolean
   aiUsedToday: number
+}
+
+function getSamplePrompts(subjectName: string, level: string, grade: string | null): string[] {
+  const sub = subjectName.toLowerCase()
+  const gradeNum = grade ? parseInt(grade.replace(/\D/g, ''), 10) : null
+  const isLowerPrimary = level === 'primary' && gradeNum !== null && gradeNum <= 4
+
+  if (level === 'primary') {
+    if (sub.includes('math')) {
+      return isLowerPrimary
+        ? ['Help me understand addition and subtraction', 'Teach me my times tables in a fun way', 'What are odd and even numbers?']
+        : ['Help me understand long division with examples', 'Can you explain fractions with pictures?', 'What shapes do I need to know for my exam?']
+    }
+    if (sub.includes('english')) {
+      return isLowerPrimary
+        ? ['Help me write a sentence about my family', 'What is a noun? Can you give me examples?', 'Help me practise spelling common words']
+        : ['Help me write a composition about my favourite animal', 'What is the difference between a noun, verb and adjective?', 'Help me understand comprehension passages']
+    }
+    if (sub.includes('science') || sub.includes('environmental')) {
+      return [
+        'Can you explain what plants need to grow?',
+        'What is the difference between living and non-living things?',
+        'Help me understand how rain is formed',
+      ]
+    }
+    return [
+      `Can you explain something important in ${subjectName}?`,
+      'What should I study to pass my exams?',
+      'Can you give me a simple example to help me understand?',
+    ]
+  }
+
+  if (level === 'olevel') {
+    if (sub.includes('math')) {
+      return ['Explain how to solve quadratic equations step by step', 'Help me understand trigonometry — sine, cosine and tangent', 'What are the most important topics for O-Level Maths?']
+    }
+    if (sub.includes('english')) {
+      return ['How do I structure a good ZIMSEC essay?', 'Help me analyse a poem for the exam', 'What grammar rules are most important for O-Level?']
+    }
+    if (sub.includes('biology') || (sub.includes('science') && !sub.includes('computer'))) {
+      return ['Explain photosynthesis and why it matters', 'What is the difference between mitosis and meiosis?', 'Help me understand the digestive system']
+    }
+    if (sub.includes('history')) {
+      return ['What are the causes of the First Chimurenga?', 'How do I structure a ZIMSEC history essay?', "Help me understand Zimbabwe's road to independence"]
+    }
+    if (sub.includes('physics')) {
+      return ["Explain Newton's laws of motion with examples", 'Help me understand electricity and circuits', 'How do I solve speed, distance and time problems?']
+    }
+    if (sub.includes('chemistry')) {
+      return ['Explain the difference between acids and bases', 'Help me understand the periodic table', 'How do chemical equations and balancing work?']
+    }
+    if (sub.includes('commerce') || sub.includes('economics') || sub.includes('accounts')) {
+      return ['Explain supply and demand with a Zimbabwean example', 'What is the difference between assets and liabilities?', 'Help me understand inflation and its effects on Zimbabwe']
+    }
+    if (sub.includes('geography')) {
+      return ['Explain the causes and effects of flooding', "Help me understand Zimbabwe's physical geography", 'What are the main types of farming practised in Zimbabwe?']
+    }
+    return [`What are the key topics in ${subjectName} for O-Level?`, 'How do I approach structured questions in the exam?', 'Can you explain the most important concept I need to know?']
+  }
+
+  // A-Level
+  return [
+    `What are the key advanced concepts in ${subjectName} for A-Level?`,
+    'How do I write an A-Level essay that scores an A grade?',
+    'Explain a complex topic with real-world examples',
+  ]
 }
 
 export default function AiTutorChat({
   subjectName,
   subjectCode,
   level,
+  grade,
   initialMessages,
   isPaid,
   aiUsedToday,
@@ -194,16 +262,12 @@ export default function AiTutorChat({
             <p className="text-sm text-gray-400 mt-1 max-w-xs">
               I&apos;m trained on the ZIMSEC curriculum and here to help you excel
             </p>
-            <div className="flex flex-wrap gap-2 mt-5 justify-center">
-              {[
-                'Explain a key concept',
-                'How do I answer exam questions?',
-                'What should I study first?',
-              ].map((s) => (
+            <div className="flex flex-col gap-2 mt-5 w-full max-w-sm">
+              {getSamplePrompts(subjectName, level, grade).map((s) => (
                 <button
                   key={s}
                   onClick={() => setInput(s)}
-                  className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition border border-indigo-100"
+                  className="text-xs px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition border border-indigo-100 text-left font-medium"
                 >
                   {s}
                 </button>
