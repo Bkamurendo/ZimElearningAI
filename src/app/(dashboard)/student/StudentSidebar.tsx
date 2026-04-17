@@ -10,7 +10,7 @@ import {
   Flame, X, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
-  Accessibility, Gift, Users, AlertTriangle, ChevronDown, ChevronRight,
+  Accessibility, Gift, Users, AlertTriangle, ChevronDown, ChevronRight, Lock,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
@@ -49,16 +49,16 @@ const NAV_SECTIONS = [
     items: [
       { href: '/student/progress',        label: 'My Progress',     icon: TrendingUp,   badge: null },
       { href: '/student/exam-timetable',  label: 'Exam Timetable',  icon: CalendarCheck,badge: null },
-      { href: '/student/study-planner',   label: 'Study Planner',   icon: CalendarDays, badge: null },
-      { href: '/student/grade-predictor', label: 'Grade Predictor', icon: Target,       badge: null },
+      { href: '/student/study-planner',   label: 'Study Planner',   icon: CalendarDays, badge: 'pro-only' as const },
+      { href: '/student/grade-predictor', label: 'Grade Predictor', icon: Target,       badge: 'pro-only' as const },
     ],
   },
   {
     label: 'Compete',
     items: [
       { href: '/student/leaderboard',  label: 'Leaderboard',     icon: Trophy, badge: null },
-      { href: '/student/tournaments',  label: 'Tournaments 🏆',  icon: Trophy, badge: null },
-      { href: '/student/squads',       label: 'Study Squads 👥', icon: Users,  badge: null },
+      { href: '/student/tournaments',  label: 'Tournaments 🏆',  icon: Trophy, badge: 'pro-only' as const },
+      { href: '/student/squads',       label: 'Study Squads 👥', icon: Users,  badge: 'pro-only' as const },
     ],
   },
 ]
@@ -88,7 +88,7 @@ interface Props {
   hasChallenge?: boolean
 }
 
-const PLAN_LIMITS: Record<string, number> = { free: 25, starter: 100, pro: 9999, elite: 9999 }
+const PLAN_LIMITS: Record<string, number> = { free: 5, starter: 100, pro: 999, elite: 999 }
 const PLAN_LABELS: Record<string, string>  = { free: 'Free', starter: 'Starter', pro: 'Pro', elite: 'Elite' }
 const PLAN_COLORS: Record<string, string>  = {
   free:    'bg-slate-600 text-slate-200',
@@ -138,9 +138,11 @@ export default function StudentSidebar({
   function NavLink({ href, label, icon: Icon, badge }: { href: string; label: string; icon: React.ElementType; badge: string | null }) {
     const active = isActive(href)
     const count  = badge ? (badgeCounts[badge] ?? 0) : 0
+    const isLocked = !['pro', 'elite'].includes(plan) && (badge === 'pro-only')
+    
     return (
       <Link
-        href={href}
+        href={isLocked ? '/student/upgrade' : href}
         onClick={() => setOpen(false)}
         className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
           active
@@ -150,7 +152,10 @@ export default function StudentSidebar({
       >
         <Icon size={16} className={active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
         <span className="flex-1 truncate">{label}</span>
-        {count > 0 && (
+        
+        {isLocked && <Lock size={12} className="text-amber-500" />}
+
+        {count > 0 && !isLocked && (
           <span className={`h-[18px] text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5 shadow-sm ${
             badge === 'challenge' ? 'bg-amber-500 px-2' : 'min-w-[18px] bg-red-500'
           }`}>
@@ -278,21 +283,30 @@ export default function StudentSidebar({
 
           {/* AI quota bar */}
           {((plan || 'free') === 'free' || plan === 'starter') && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
-            const limit = PLAN_LIMITS[plan || 'free'] ?? 25
+            const limit = PLAN_LIMITS[plan || 'free'] ?? 5
             const currentUsage = aiUsed || 0
             const pct = Math.min(100, Math.round((currentUsage / limit) * 100))
-            const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
+            const barColor = pct >= 80 ? 'bg-red-500' : pct >= 50 ? 'bg-amber-400' : 'bg-emerald-500'
             return (
-              <div className="px-1 space-y-1">
+              <div className="px-1 space-y-2 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">AI Requests Today</span>
-                  <span className={`text-xs font-bold ${pct >= 90 ? 'text-red-400' : 'text-slate-400'}`}>{currentUsage}/{limit}</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+                    <Zap size={12} className="text-amber-500 fill-amber-500" />
+                    AI Daily Quota
+                  </div>
+                  <span className={`text-xs font-black ${pct >= 80 ? 'text-red-400' : 'text-slate-300'}`}>{currentUsage}/{limit}</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                <div className="h-2 w-full bg-slate-800/50 rounded-full overflow-hidden border border-slate-700">
+                  <div className={`h-full rounded-full transition-all duration-500 ${barColor} shadow-[0_0_8px_rgba(0,0,0,0.4)]`} style={{ width: `${pct}%` }} />
                 </div>
-                {pct >= 80 && (
-                  <p className="text-xs text-amber-400">Running low — <Link href="/student/upgrade" className="underline hover:text-amber-300">upgrade now</Link></p>
+                {pct >= 60 ? (
+                  <Link href="/student/upgrade" className="block text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/20 text-center animate-pulse">
+                    QUOTA ALMOST FULL — UNLOCK NOW
+                  </Link>
+                ) : (
+                   <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                     <Lock size={10} /> Limited account plan
+                   </p>
                 )}
               </div>
             )
