@@ -15,8 +15,9 @@ Always prefer local Zimbabwean examples.`
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
-    const from = formData.get('from')?.toString() // Student's phone
-    const text = formData.get('text')?.toString() // Student's message
+    // Support both Twilio (From/Body) and Africa's Talking (from/text)
+    const from = formData.get('From')?.toString() || formData.get('from')?.toString()
+    const text = formData.get('Body')?.toString() || formData.get('text')?.toString()
 
     if (!from || !text) {
       return NextResponse.json({ ok: false }, { status: 400 })
