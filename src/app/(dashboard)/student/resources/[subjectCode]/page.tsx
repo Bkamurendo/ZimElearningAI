@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChevronRight, Upload, Search, Sparkles } from 'lucide-react'
+import { ChevronRight, Upload, Search, Sparkles, Lock } from 'lucide-react'
 
 const DOC_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string; bg: string }> = {
   past_paper:     { label: 'Past Paper',     icon: '📝', color: 'text-blue-700',  bg: 'bg-blue-50 border-blue-200' },
@@ -58,6 +58,9 @@ export default async function StudentResourcesPage({
 
   if (!subject) redirect('/student/dashboard')
 
+  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
+
   // Build query — published docs for this subject OR own uploads
   let query = supabase
     .from('uploaded_documents')
@@ -74,12 +77,17 @@ export default async function StudentResourcesPage({
   // RLS policies on uploaded_documents handle visibility — no additional filter needed
   const docs = allDocs ?? []
 
-  // Counts per type for filter badges
+  // Counts per type for filter badges (use full list for accurate counts)
   const countByType: Record<string, number> = {}
   for (const d of docs) {
     countByType[d.document_type] = (countByType[d.document_type] ?? 0) + 1
   }
   const totalCount = docs.length
+
+  // Free users see 3 documents as a teaser; paid users see all
+  const FREE_LIMIT = 3
+  const visibleDocs = isPaid ? docs : docs.slice(0, FREE_LIMIT)
+  const lockedCount = isPaid ? 0 : Math.max(0, docs.length - FREE_LIMIT)
 
   function formatSize(bytes: number | null) {
     if (!bytes) return ''
@@ -185,7 +193,7 @@ export default async function StudentResourcesPage({
           </div>
         ) : (
           <div className="space-y-3">
-            {docs.map((doc) => {
+            {visibleDocs.map((doc) => {
               const config = DOC_TYPE_CONFIG[doc.document_type] ?? DOC_TYPE_CONFIG.other
               const isOwn = doc.uploaded_by === user.id
               return (
@@ -249,6 +257,28 @@ export default async function StudentResourcesPage({
                 </Link>
               )
             })}
+
+            {/* Locked resources upgrade card */}
+            {lockedCount > 0 && (
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 text-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Lock size={22} className="text-indigo-500" />
+                </div>
+                <p className="font-bold text-gray-900 text-sm mb-1">
+                  {lockedCount} more resource{lockedCount !== 1 ? 's' : ''} locked
+                </p>
+                <p className="text-xs text-gray-500 mb-4 max-w-xs mx-auto">
+                  Upgrade to access all {totalCount} resources for {subject.name}, plus AI study tools, model answers and practice questions.
+                </p>
+                <Link
+                  href="/student/upgrade"
+                  className="inline-block px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition"
+                >
+                  Unlock all resources — from $2/month →
+                </Link>
+                <p className="text-[10px] text-gray-400 mt-2">Less than the cost of one exercise book</p>
+              </div>
+            )}
           </div>
         )}
 

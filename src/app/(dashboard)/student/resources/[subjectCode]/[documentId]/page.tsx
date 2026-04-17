@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Lock } from 'lucide-react'
 import StudyPanel from './StudyPanel'
 import BookmarkToggle from '@/app/(dashboard)/student/bookmarks/BookmarkToggle'
 
@@ -63,6 +63,9 @@ export default async function StudentDocumentDetailPage({
     redirect(`/student/resources/${params.subjectCode}`)
   }
 
+  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
+
   // Check bookmark status
   const { data: bookmarkData } = await supabase
     .from('bookmarks')
@@ -89,11 +92,14 @@ export default async function StudentDocumentDetailPage({
     }
   }
 
-  // Signed URL for PDF viewer (1 hour)
-  const { data: signedData } = await supabase.storage
-    .from('platform-documents')
-    .createSignedUrl(doc.file_path, 3600)
-  const signedUrl = signedData?.signedUrl ?? null
+  // Signed URL for PDF viewer — only for paid users (owners also get access as their own upload)
+  let signedUrl: string | null = null
+  if (isPaid || isOwner) {
+    const { data: signedData } = await supabase.storage
+      .from('platform-documents')
+      .createSignedUrl(doc.file_path, 3600)
+    signedUrl = signedData?.signedUrl ?? null
+  }
 
   const levelLabel = doc.zimsec_level === 'primary' ? 'Primary'
     : doc.zimsec_level === 'olevel' ? 'O-Level' : 'A-Level'
@@ -244,6 +250,22 @@ export default async function StudentDocumentDetailPage({
               </div>
               {signedUrl ? (
                 <iframe src={signedUrl} className="w-full" style={{ height: '640px' }} title={doc.title} />
+              ) : !isPaid && !isOwner ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                  <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
+                    <Lock size={24} className="text-indigo-400" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-800 mb-1">Full PDF — Premium</p>
+                  <p className="text-xs text-gray-500 mb-5 max-w-xs">
+                    Upgrade to read the full document, download it, and unlock all AI study tools.
+                  </p>
+                  <Link
+                    href="/student/upgrade"
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition"
+                  >
+                    Upgrade from $2/month →
+                  </Link>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <span className="text-4xl mb-3">📎</span>
@@ -262,6 +284,7 @@ export default async function StudentDocumentDetailPage({
             subjectCode={params.subjectCode}
             quickPrompts={quickPrompts}
             preloaded={preloaded}
+            isPaid={isPaid || isOwner}
           />
         </div>
       </div>

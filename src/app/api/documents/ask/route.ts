@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
+import { getUserPlan, isPaidPlan } from '@/lib/ai-quota'
 
 export const maxDuration = 60
 
@@ -10,6 +11,11 @@ export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
+
+  const plan = await getUserPlan(supabase, user.id)
+  if (!isPaidPlan(plan)) {
+    return new Response('AI Chat on documents is a premium feature. Upgrade to access it.', { status: 403 })
+  }
 
   const {
     documentId,
@@ -51,7 +57,7 @@ ${doc.extracted_text || 'Full text not yet extracted'}
     examine: 'Analyse what ZIMSEC examiners are likely to test from this document. List high-frequency topics, typical question types, command words used, and mark allocations. Provide 3-5 practice questions a student should prepare.',
   }
 
-  const system = `You are EduZim AI — an expert ZIMSEC tutor built for Zimbabwean students.
+  const system = `You are Fundi AI — an expert ZIMSEC tutor built for Zimbabwean students.
 
 You are helping a student study from a specific uploaded document. Here is the document content:
 

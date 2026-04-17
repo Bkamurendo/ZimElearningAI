@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   Send, Loader2, Sparkles, RotateCcw, Zap, BookOpen,
   FileText, Book, HelpCircle, RefreshCw, CheckCircle,
-  ChevronDown, ChevronRight, AlertCircle, Copy, Check,
+  ChevronDown, ChevronRight, AlertCircle, Copy, Check, Lock,
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ interface Props {
   subjectCode: string
   quickPrompts: string[]
   preloaded?: CachedContent
+  isPaid: boolean
 }
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -149,7 +151,7 @@ function DifficultyBadge({ level }: { level: string }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function StudyPanel({
-  documentId, documentTitle, documentType, quickPrompts, preloaded = {},
+  documentId, documentTitle, documentType, quickPrompts, preloaded = {}, isPaid,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>('chat')
   const [cached, setCached] = useState<CachedContent>(preloaded)
@@ -663,7 +665,38 @@ export default function StudyPanel({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {renderTabContent()}
+        {isPaid ? renderTabContent() : (
+          <div className="flex flex-col items-center justify-center h-full py-16 px-6 text-center">
+            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
+              <Lock size={28} className="text-indigo-400" />
+            </div>
+            <p className="font-bold text-gray-900 text-base mb-1">AI Study Tools — Premium</p>
+            <p className="text-sm text-gray-500 max-w-xs mb-2">
+              Unlock AI Chat, Snap Notes, Study Notes, Model Answers, Glossary and Practice Questions for every document.
+            </p>
+            <ul className="text-xs text-gray-500 space-y-1 mb-6 text-left">
+              {[
+                'Ask the AI anything about this document',
+                'Auto-generated Snap Notes for quick revision',
+                'Full Study Notes with key concepts',
+                'Model answers with step-by-step working',
+                'ZIMSEC-style practice questions',
+              ].map((b) => (
+                <li key={b} className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/student/upgrade"
+              className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition text-center block"
+            >
+              Upgrade from $2/month →
+            </Link>
+            <p className="text-[10px] text-gray-400 mt-2">Less than the cost of one exercise book · Cancel anytime</p>
+          </div>
+        )}
       </div>
 
     </div>
