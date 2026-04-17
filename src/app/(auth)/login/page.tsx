@@ -1,4 +1,4 @@
-import { GraduationCap, Brain, Target, BookOpen, CheckCircle } from 'lucide-react'
+import { Sparkles, Brain, Target, BookOpen, CheckCircle } from 'lucide-react'
 import { LoginForm } from './LoginForm'
 import { PlatformTourButton } from '@/components/PlatformTourButton'
 
@@ -48,21 +48,21 @@ export default function LoginPage({
         {/* Top: logo + headline */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-14">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg shadow-black/20 border border-white/10">
-              <GraduationCap size={26} className="text-white" />
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg shadow-black/20 border border-white/10">
+              <Sparkles size={26} className="text-white" />
             </div>
             <div>
-              <span className="text-white font-extrabold text-xl tracking-tight">ZimLearn</span>
-              <p className="text-emerald-300 text-[11px] font-medium">ZIMSEC AI Platform</p>
+              <span className="text-white font-extrabold text-xl tracking-tight">ZimLearn<span className="text-emerald-300">AI</span></span>
+              <p className="text-emerald-400 text-[11px] font-black uppercase tracking-widest">Official ZIMSEC AI</p>
             </div>
           </div>
 
-          <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-4 tracking-tight">
-            Learn smarter<br />
-            <span className="text-emerald-300">with AI</span>
+          <h1 className="text-4xl xl:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight uppercase italic">
+            Meet MaFundi.<br />
+            <span className="text-emerald-300">Your AI Teacher.</span>
           </h1>
-          <p className="text-emerald-100 text-base leading-relaxed mb-10 opacity-90">
-            Zimbabwe&apos;s AI-powered ZIMSEC learning platform — built for students, teachers &amp; parents.
+          <p className="text-emerald-100 text-base font-medium leading-relaxed mb-10 opacity-90">
+            Master the Zimbabwe Heritage-Based Curriculum with the platform trusted by over 100 students nationwide.
           </p>
 
           {/* Feature cards */}
@@ -96,24 +96,24 @@ export default function LoginPage({
           {/* Stats row */}
           <div className="mt-6 flex items-center gap-4">
             {[
-              { value: '10K+', label: 'Students' },
-              { value: '500+', label: 'Lessons' },
-              { value: '4.9★', label: 'Rating' },
+              { value: '103+', label: 'Students' },
+              { value: '5K+', label: 'Topics' },
+              { value: '98%', label: 'Accuracy' },
             ].map(({ value, label }) => (
               <div
                 key={label}
-                className="flex-1 bg-white/10 rounded-2xl px-3 py-3 text-center border border-white/10 backdrop-blur-sm"
+                className="flex-1 bg-white/5 rounded-2xl px-3 py-3 text-center border border-white/5 backdrop-blur-sm"
               >
-                <p className="text-white font-bold text-lg leading-tight">{value}</p>
-                <p className="text-emerald-300 text-xs mt-0.5">{label}</p>
+                <p className="text-white font-black text-lg leading-tight uppercase tracking-tighter">{value}</p>
+                <p className="text-emerald-300 text-[10px] font-black uppercase tracking-widest mt-0.5">{label}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Bottom: tagline */}
-        <p className="relative z-10 text-emerald-500 text-xs">
-          © {new Date().getFullYear()} ZimLearn · Empowering Zimbabwean students
+        <p className="relative z-10 text-emerald-500 text-[10px] font-black uppercase tracking-[0.2em]">
+          © {new Date().getFullYear()} ZimLearn AI · The Official ZIMSEC AI Teacher
         </p>
       </div>
 
