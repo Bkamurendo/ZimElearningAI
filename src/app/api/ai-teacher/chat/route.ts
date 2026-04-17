@@ -542,10 +542,9 @@ export async function POST(req: NextRequest) {
     // AI QUOTA ENFORCEMENT
     const quota = await checkAIQuota(supabase, user.id)
     if (!quota.allowed) {
-      return NextResponse.json({ 
-        error: 'Daily AI limit reached', 
+      return NextResponse.json({
+        error: 'Daily AI limit reached',
         quota_exceeded: true,
-        trial_expired: quota.trialExpired,
         limit: quota.limit,
         used: quota.used,
         resets_at: quota.resetsAt

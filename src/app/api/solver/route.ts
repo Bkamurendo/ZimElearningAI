@@ -32,9 +32,8 @@ export async function POST(req: NextRequest) {
   if (!quota.allowed) {
     return new Response(
       `data: ${JSON.stringify({ 
-        type: 'error', 
-        message: `Daily AI limit reached (${quota.used}/${quota.limit}). Resets at midnight UTC.`,
-        trial_expired: quota.trialExpired
+        type: 'error',
+        message: `Daily AI limit reached (${quota.used}/${quota.limit}). Resets at midnight UTC.`
       })}\n\ndata: [DONE]\n\n`,
       { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } }
     )

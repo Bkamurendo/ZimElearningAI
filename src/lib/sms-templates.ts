@@ -98,7 +98,23 @@ export const SMS_TEMPLATES = {
     return messages[passNumber] || messages[1];
   },
 
-  readyPulse: (studentName: string, averagePulse: number) => 
+  readyPulse: (studentName: string, averagePulse: number) =>
     `MaFundi Parent Alert: ${studentName}'s Ready Pulse is at ${averagePulse}%. Based on repetition cycles, they are ${averagePulse > 80 ? 'READY' : 'PROCEEDING WELL'} for exams.`,
+
+  parentWeeklyReport: (
+    parentName: string,
+    childName: string,
+    subjectCount: number,
+    streak: number,
+    daysActive: number,
+    nextExamSubject: string | null,
+    nextExamDays: number | null,
+  ) => {
+    let msg = `ZimLearn Weekly: Hi ${parentName}, ${childName} studied ${subjectCount} subject${subjectCount === 1 ? '' : 's'} this week, active ${daysActive}/7 days (streak: ${streak}).`
+    if (nextExamSubject && nextExamDays != null) {
+      msg += ` Next exam: ${nextExamSubject} in ${nextExamDays} day${nextExamDays === 1 ? '' : 's'}.`
+    }
+    return msg
+  },
 } as const
 
