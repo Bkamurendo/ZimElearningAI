@@ -54,3 +54,37 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
     }
   }
 }
+
+export async function sendTrialExpiredEmail(
+  to: string,
+  name: string | null,
+): Promise<EmailResult> {
+  const displayName = name ?? 'Student'
+  const html = `
+    <h2>Your ZimLearn subscription has expired</h2>
+    <p>Hi ${displayName},</p>
+    <p>Your paid plan has expired and your account has been moved to the free tier.</p>
+    <p>Renew your subscription to regain full access to AI tutoring, past papers, and more.</p>
+    <p><a href="https://zim-elearningai.co.zw/student/upgrade">Renew now</a></p>
+    <p>The ZimLearn Team</p>
+  `
+  return sendEmail(to, 'Your ZimLearn subscription has expired', html)
+}
+
+export async function sendSubscriptionExpiringSoonEmail(
+  to: string,
+  name: string | null,
+  daysLeft: number,
+  planLabel: string,
+): Promise<EmailResult> {
+  const displayName = name ?? 'Student'
+  const html = `
+    <h2>Your ZimLearn ${planLabel} plan expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</h2>
+    <p>Hi ${displayName},</p>
+    <p>Your ${planLabel} subscription will expire in <strong>${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong>.</p>
+    <p>Renew now to keep uninterrupted access to AI tutoring, past papers, and all premium features.</p>
+    <p><a href="https://zim-elearningai.co.zw/student/upgrade">Renew my subscription</a></p>
+    <p>The ZimLearn Team</p>
+  `
+  return sendEmail(to, `Your ZimLearn ${planLabel} plan expires soon`, html)
+}
