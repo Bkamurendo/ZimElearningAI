@@ -1,7 +1,7 @@
 /**
  * Feature gating based on user subscription plan.
  *
- * FREE    — 25 AI calls/day, limited features
+ * FREE    — 5 AI calls/day, limited features
  * STARTER — $2/mo — 100 AI calls/day, downloads, 15 subjects
  * PRO     — $5/mo — unlimited AI, all tools, all subjects
  * ELITE   — $8/mo — unlimited AI + priority model + parent dashboard
