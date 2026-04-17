@@ -100,5 +100,21 @@ export const SMS_TEMPLATES = {
 
   readyPulse: (studentName: string, averagePulse: number) => 
     `MaFundi Parent Alert: ${studentName}'s Ready Pulse is at ${averagePulse}%. Based on repetition cycles, they are ${averagePulse > 80 ? 'READY' : 'PROCEEDING WELL'} for exams.`,
+  /** Weekly detailed report for parents */
+  parentWeeklyReport: (
+    parentName: string,
+    childName: string,
+    subjectCount: number,
+    streak: number,
+    daysActive: number,
+    nextExamSubject: string | null,
+    nextExamDays: number | null
+  ) => {
+    let msg = `Hi ${parentName}, ${childName}'s week: ${subjectCount} subjects, ${streak} day streak, active ${daysActive}/7 days.`;
+    if (nextExamSubject) {
+      msg += ` Next exam: ${nextExamSubject} in ${nextExamDays} days.`;
+    }
+    return msg;
+  },
 } as const
 

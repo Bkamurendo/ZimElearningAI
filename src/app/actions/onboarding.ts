@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { ZimsecLevel } from '@/types/database'
 
-export async function completeStudentOnboarding(formData: FormData): Promise<void> {
+export async function completeStudentOnboarding(formData: FormData): Promise<{ success: boolean }> {
   const supabase = createClient()
 
   const { data, error: authError } = await supabase.auth.getUser()
