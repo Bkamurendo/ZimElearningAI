@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
+import { getUserPlan, isPaidPlan } from '@/lib/ai-quota'
 
 export const maxDuration = 60
 
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
+
+  const plan = await getUserPlan(supabase, user.id)
+  if (!isPaidPlan(plan)) {
+    return new Response('AI Chat on documents is a premium feature. Upgrade to access it.', { status: 403 })
+  }
 
   const {
     documentId,

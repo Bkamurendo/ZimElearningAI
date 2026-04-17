@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PastPaperClient from './PastPaperClient'
+import UpgradeWall from '@/components/UpgradeWall'
 
 export default async function PastPaperPage({
   params,
@@ -18,6 +19,25 @@ export default async function PastPaperPage({
     .single() as { data: { id: string; name: string; code: string; zimsec_level: string } | null; error: unknown }
 
   if (!subject) redirect('/student/dashboard')
+
+  const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
+
+  if (!isPaid) {
+    return (
+      <UpgradeWall
+        feature="Past Papers"
+        description="Practice with AI-generated ZIMSEC-style exam papers and get instant marking and feedback."
+        benefits={[
+          'AI-generated full ZIMSEC-style past papers',
+          'Timed exam mode with countdown timer',
+          'Instant AI marking with detailed feedback',
+          'Grade prediction per question',
+          'Track your improvement over time',
+        ]}
+      />
+    )
+  }
 
   const { data: studentProfile } = await supabase
     .from('student_profiles')
