@@ -93,7 +93,7 @@ export class KnowledgeEngine {
         const chunk = chunks[i]
         const embedding = await this.generateEmbedding(chunk)
         
-        await supabase.from('knowledge_vectors').upsert({
+        const { error: insertError, status, statusText, data: insertResult } = await supabase.from('knowledge_vectors').insert({
             source_id: sourceId,
             source_type: sourceType,
             content: chunk,
@@ -104,7 +104,14 @@ export class KnowledgeEngine {
                 chunk_index: i,
                 total_chunks: chunks.length
             }
-        }, { onConflict: 'source_id, content' }) // Simple conflict handling
+        }).select()
+
+        if (insertError) {
+          console.error(`[KNOWLEDGE ENGINE] DB Error (URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL}) for "${title}":`, insertError.message)
+          throw new Error(insertError.message)
+        } else {
+          console.log(`[KNOWLEDGE ENGINE] OK [${status} ${statusText}]. Rows Inserted: ${insertResult?.length || 0}`)
+        }
     }
     
     console.log(`[KNOWLEDGE ENGINE] Successfully ingested ${chunks.length} chunks for ${title}.`)
