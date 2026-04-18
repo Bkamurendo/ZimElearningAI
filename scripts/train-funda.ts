@@ -31,9 +31,21 @@ async function trainFunda() {
   if (lErr) console.error('Error fetching lessons:', lErr)
 
   if (lessons) {
-    console.log(`Found ${lessons.length} lessons. Vectorizing...`)
+    console.log(`Found ${lessons.length} lessons. Checking ingestion status...`)
     for (const lesson of lessons) {
       try {
+        // Skip if already ingested
+        const { data: existing } = await supabase
+          .from('knowledge_vectors')
+          .select('id')
+          .eq('source_id', lesson.id)
+          .limit(1)
+
+        if (existing && existing.length > 0) {
+          console.log(`[SKIP] Lesson "${lesson.title}" already learned.`)
+          continue
+        }
+
         await KnowledgeEngine.ingestResource(
           lesson.id,
           'lesson',
@@ -57,9 +69,21 @@ async function trainFunda() {
   if (dErr) console.error('Error fetching documents:', dErr)
 
   if (docs) {
-    console.log(`Found ${docs.length} documents. Vectorizing...`)
+    console.log(`Found ${docs.length} documents. Checking ingestion status...`)
     for (const doc of docs) {
       try {
+        // Skip if already ingested
+        const { data: existing } = await supabase
+          .from('knowledge_vectors')
+          .select('id')
+          .eq('source_id', doc.id)
+          .limit(1)
+
+        if (existing && existing.length > 0) {
+          console.log(`[SKIP] Document "${doc.title}" already learned.`)
+          continue
+        }
+
         if (doc.extracted_text) {
           await KnowledgeEngine.ingestResource(
             doc.id,
