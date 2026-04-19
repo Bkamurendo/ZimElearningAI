@@ -61,17 +61,8 @@ const nextConfig = {
       allowedOrigins,
     },
   },
-  // Static redirect: ensures the root URL always sends users to /login
-  // even if Supabase/middleware has a hiccup. Middleware then handles
-  // authenticated users by redirecting them from /login to their dashboard.
   async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/login',
-        permanent: false,
-      },
-    ]
+    return []
   },
   async headers() {
     return [
