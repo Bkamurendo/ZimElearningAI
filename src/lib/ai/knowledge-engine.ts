@@ -112,6 +112,9 @@ export class KnowledgeEngine {
         } else {
           console.log(`[KNOWLEDGE ENGINE] OK [${status} ${statusText}]. Rows Inserted: ${insertResult?.length || 0}`)
         }
+
+        // Throttle: 1500ms between inserts — needed as table grows past 50k rows
+        await new Promise(resolve => setTimeout(resolve, 1500))
     }
     
     console.log(`[KNOWLEDGE ENGINE] Successfully ingested ${chunks.length} chunks for ${title}.`)
@@ -138,16 +141,26 @@ export class KnowledgeEngine {
     // 2. Extract text
     const buffer = Buffer.from(await fileData.arrayBuffer())
     let text = ''
+    let isScanned = false
     try {
       const parsed = await pdfParse(buffer)
       text = parsed.text?.trim() || ''
+      if (!text && parsed.numpages > 0) {
+        isScanned = true
+      }
     } catch (_err) {
       console.warn(`[KNOWLEDGE ENGINE] PDF Parse failed for ${doc.title}`)
       return
     }
 
     if (!text) {
-      console.warn(`[KNOWLEDGE ENGINE] No text found in ${doc.title}`)
+      if (isScanned) {
+        console.warn(`[KNOWLEDGE ENGINE] 📷 Scanned Image PDF skipping (OCR Required): ${doc.title}`)
+        // We update with a special placeholder so we don't keep retrying it
+        await supabase.from('uploaded_documents').update({ extracted_text: '[SCANNED_IMAGE_OCR_REQUIRED]' }).eq('id', doc.id)
+      } else {
+        console.warn(`[KNOWLEDGE ENGINE] No text found in ${doc.title}`)
+      }
       return
     }
 
