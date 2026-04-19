@@ -160,6 +160,14 @@ export default async function StudentDashboard() {
     const todayStr = new Date().toISOString().split('T')[0]
     const { data: upcomingExams } = await supabase.from('exam_timetable').select('id, exam_date, paper_number, subjects(name, code)').eq('student_id', studentProfile?.id ?? '').gte('exam_date', todayStr).order('exam_date', { ascending: true }).limit(3)
 
+    // Getting Started checklist signals
+    const hasExamDates = (upcomingExams?.length ?? 0) > 0
+    const { count: aiMsgCount } = await supabase
+      .from('ai_chat_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    const hasUsedMaFundi = (aiMsgCount ?? 0) > 0
+
     const stats = [
       { label: 'Subjects', value: subjects.length, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-t-emerald-500' },
       { label: 'Lessons done', value: lessonsCompleted ?? 0, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-t-blue-500' },
@@ -183,6 +191,8 @@ export default async function StudentDashboard() {
         dailyChallengeCompleted={dailyChallengeCompleted || false}
         dailyChallengeScore={dailyChallengeScore || null}
         learningMinutesToday={learningMinutesToday}
+        hasExamDates={hasExamDates}
+        hasUsedMaFundi={hasUsedMaFundi}
       />
     )
   } catch (err: any) {
