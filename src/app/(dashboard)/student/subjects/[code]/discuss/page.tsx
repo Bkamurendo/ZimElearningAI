@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { MessageSquare, Plus, X, Send, ChevronDown, ChevronUp, Pin } from 'lucide-react'
+import { MessageSquare, Plus, X, Send, ChevronDown, ChevronUp, Pin, Bot, Sparkles, Loader2 } from 'lucide-react'
 
 type Reply = {
   id: string
@@ -11,6 +11,7 @@ type Reply = {
   created_at: string
   user_id: string
   profiles: { full_name: string | null; role: string } | null
+  isAI?: boolean
 }
 
 type Discussion = {
@@ -40,6 +41,7 @@ export default function SubjectDiscussPage() {
   const [posting, setPosting] = useState(false)
   const [replyBodies, setReplyBodies] = useState<Record<string, string>>({})
   const [replyPosting, setReplyPosting] = useState<string | null>(null)
+  const [aiAnswering, setAiAnswering] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const LIMIT = 20
@@ -118,6 +120,76 @@ export default function SubjectDiscussPage() {
     setReplyPosting(null)
   }
 
+  /** Ask MaFundi AI to answer a discussion question */
+  async function askMaFundi(disc: Discussion) {
+    setAiAnswering(disc.id)
+    try {
+      // Use the ai-tutor streaming endpoint to get an answer
+      const prompt = `A student posted this question in the ${subjectName} discussion board:
+
+**Title:** ${disc.title}
+
+**Question:** ${disc.body}
+
+Please provide a clear, accurate, ZIMSEC-aligned answer as MaFundi AI. Format your response in markdown. Keep it focused and educational.`
+
+      const res = await fetch('/api/ai-tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          subjectName,
+          subjectCode: code,
+          level: 'olevel',
+        }),
+      })
+
+      if (!res.ok || !res.body) throw new Error('AI service unavailable')
+
+      // Stream the response
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let fullText = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const payload = line.slice(6).trim()
+            if (payload === '[DONE]') break
+            try {
+              const json = JSON.parse(payload)
+              if (json.type === 'text') fullText += json.text
+              if (json.type === 'error') throw new Error(json.message)
+            } catch { /* skip malformed lines */ }
+          }
+        }
+      }
+
+      if (fullText) {
+        const aiReply: Reply = {
+          id: `ai-${Date.now()}`,
+          body: fullText,
+          created_at: new Date().toISOString(),
+          user_id: 'mafundi-ai',
+          profiles: { full_name: 'MaFundi AI', role: 'ai' },
+          isAI: true,
+        }
+        setDiscussions(prev => prev.map(d =>
+          d.id === disc.id
+            ? { ...d, reply_count: d.reply_count + 1, replies: [...(d.replies ?? []), aiReply] }
+            : d
+        ))
+      }
+    } catch (err) {
+      console.error('MaFundi answer failed:', err)
+    }
+    setAiAnswering(null)
+  }
+
   function toggleExpand(id: string) {
     if (expandedId === id) { setExpandedId(null); return }
     setExpandedId(id)
@@ -151,7 +223,7 @@ export default function SubjectDiscussPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">{subjectName} Discussion</h1>
-                <p className="text-sky-100 text-sm">Ask questions, share answers</p>
+                <p className="text-sky-100 text-sm">Ask questions, share answers — MaFundi AI can help!</p>
               </div>
             </div>
             <button onClick={() => setShowNew(true)}
@@ -205,6 +277,7 @@ export default function SubjectDiscussPage() {
             {discussions.map(d => {
               const profile = d.profiles as { full_name: string | null; role: string } | null
               const isExpanded = expandedId === d.id
+              const hasUnansweredReplies = !d.replies || d.replies.length === 0
               return (
                 <div key={d.id} className={`bg-white rounded-2xl border shadow-sm transition-all ${isExpanded ? 'border-sky-200' : 'border-gray-100'}`}>
                   <div className="p-5 cursor-pointer" onClick={() => toggleExpand(d.id)}>
@@ -240,26 +313,62 @@ export default function SubjectDiscussPage() {
                     <div className="border-t border-gray-50 px-5 pb-5">
                       <p className="text-sm text-gray-700 whitespace-pre-wrap pt-4 pb-5">{d.body}</p>
 
+                      {/* MaFundi AI Answer Button */}
+                      {hasUnansweredReplies && d.replies !== undefined && (
+                        <div className="mb-4">
+                          <button
+                            onClick={() => askMaFundi(d)}
+                            disabled={aiAnswering === d.id}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm shadow-teal-200 disabled:opacity-60"
+                          >
+                            {aiAnswering === d.id ? (
+                              <><Loader2 size={13} className="animate-spin" /> MaFundi is thinking…</>
+                            ) : (
+                              <><Bot size={13} /><Sparkles size={11} className="text-yellow-300" /> Ask MaFundi AI</>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
                       {/* Replies */}
                       {d.replies ? (
                         <div className="space-y-3 mb-4">
                           {d.replies.map(r => {
                             const rProfile = r.profiles as { full_name: string | null; role: string } | null
+                            const isAIReply = r.isAI || rProfile?.role === 'ai'
                             return (
-                              <div key={r.id} className={`rounded-xl p-3.5 text-sm ${rProfile?.role === 'teacher' ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50'}`}>
+                              <div key={r.id} className={`rounded-xl p-3.5 text-sm ${
+                                isAIReply
+                                  ? 'bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100'
+                                  : rProfile?.role === 'teacher'
+                                  ? 'bg-blue-50 border border-blue-100'
+                                  : 'bg-gray-50'
+                              }`}>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold text-gray-800 text-xs">{rProfile?.full_name ?? 'Anonymous'}</span>
-                                  {rProfile?.role === 'teacher' && (
-                                    <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">Teacher</span>
+                                  {isAIReply ? (
+                                    <div className="flex items-center gap-1">
+                                      <Bot size={12} className="text-teal-600" />
+                                      <span className="font-semibold text-teal-800 text-xs">MaFundi AI</span>
+                                      <span className="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full uppercase tracking-tight">AI Answer</span>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="font-semibold text-gray-800 text-xs">{rProfile?.full_name ?? 'Anonymous'}</span>
+                                      {rProfile?.role === 'teacher' && (
+                                        <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">Teacher</span>
+                                      )}
+                                    </>
                                   )}
                                   <span className="text-xs text-gray-400">{timeAgo(r.created_at)}</span>
                                 </div>
-                                <p className="text-gray-700 whitespace-pre-wrap">{r.body}</p>
+                                <p className={`whitespace-pre-wrap ${isAIReply ? 'text-teal-900 text-xs leading-relaxed' : 'text-gray-700'}`}>
+                                  {r.body}
+                                </p>
                               </div>
                             )
                           })}
                           {d.replies.length === 0 && (
-                            <p className="text-xs text-gray-400 italic">No replies yet — be the first!</p>
+                            <p className="text-xs text-gray-400 italic">No replies yet — be the first, or ask MaFundi AI above!</p>
                           )}
                         </div>
                       ) : (
