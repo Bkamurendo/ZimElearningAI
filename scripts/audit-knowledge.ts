@@ -15,16 +15,25 @@ async function auditKnowledge() {
   // 1. Total Lessons vs Ingested
   const { count: totalLessons } = await supabase.from('lessons').select('*', { count: 'exact', head: true })
   
-  // Try counting regardless of case
-  const { data: kvLessons } = await supabase.from('knowledge_vectors').select('source_id, source_type')
-  
-  const learnedLessons = kvLessons?.filter(v => v.source_type?.toLowerCase() === 'lesson') || []
-  const learnedLessonsCount = new Set(learnedLessons.map(v => v.source_id)).size
+  // Helper to fetch EVERYTHING without 1000 row limit
+  async function getAllSourceIds(type: string) {
+    const ids: string[] = []
+    let offset = 0
+    const PAGE_SIZE = 1000
+    while (true) {
+        const { data } = await supabase.from('knowledge_vectors').select('source_id').eq('source_type', type).range(offset, offset + PAGE_SIZE - 1)
+        if (!data || data.length === 0) break
+        ids.push(...data.map(v => v.source_id))
+        offset += PAGE_SIZE
+    }
+    return new Set(ids).size
+  }
+
+  const learnedLessonsCount = await getAllSourceIds('lesson')
 
   // 2. Total Docs vs Ingested
-  const { count: totalDocs } = await supabase.from('uploaded_documents').select('*', { count: 'exact', head: true, filter: 'moderation_status=published' })
-  const learnedDocs = kvLessons?.filter(v => v.source_type?.toLowerCase() === 'document') || []
-  const learnedDocsCount = new Set(learnedDocs.map(v => v.source_id)).size
+  const { count: totalDocs } = await supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'published')
+  const learnedDocsCount = await getAllSourceIds('document')
 
   // 3. Total Vector Count
   const { count: totalVectors } = await supabase.from('knowledge_vectors').select('*', { count: 'exact', head: true })
@@ -33,16 +42,10 @@ async function auditKnowledge() {
   console.log(`📄 DOCUMENTS: ${learnedDocsCount} / ${totalDocs || 0} learned (${totalDocs ? Math.round((learnedDocsCount / totalDocs) * 100) : 0}%)`)
   console.log(`\n💎 BRAIN CAPACITY: ${(totalVectors || 0).toLocaleString()} Knowledge Fragments (Vectors) generated.`)
   
-  if (totalVectors && totalVectors > 0) {
-    console.log(`\n🔍 DEBUG: Table is NOT empty. Found ${kvLessons?.length} rows in memory.`)
+  if (learnedLessonsCount < (totalLessons || 0) || learnedDocsCount < (totalDocs || 0)) {
+    console.log('\n⚠️ STATUS: INCOMPLETE. MaFundi is still learning or some files are complex.')
   } else {
-    console.log(`\n🔍 DEBUG: Table is actually empty [Count: ${totalVectors}]. Investigating ingestion...`)
-  }
-  
-  if (learnedLessonsCount < totalLessons! || learnedDocsCount < totalDocs!) {
-    console.log('\n⚠️ STATUS: INCOMPLETE. MaFundi is still learning or requires more training.')
-  } else {
-    console.log('\n✨ STATUS: FULLY TRAINED. MaFundi has absorbed all platform knowledge!')
+    console.log('\n✨ STATUS: FULLY TRAINED. MaFundi has absorbed all readable resources!')
   }
 }
 
