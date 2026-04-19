@@ -21,21 +21,23 @@ const geistMono = localFont({
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://zim-elearning-ai.vercel.app'
 
 export const metadata: Metadata = {
-  title: 'ZimLearn — ZIMSEC E-Learning Platform',
-  description: 'AI-powered e-learning for Zimbabwe. Study ZIMSEC Primary, O-Level and A-Level with an AI teacher, past papers, quizzes and more.',
+  title: "ZimLearn AI — Zimbabwe's AI Teacher for ZIMSEC & the Heritage-Based Curriculum",
+  description: "Meet MaFundi, the AI teacher trained on Zimbabwe's Heritage-Based Curriculum and the full ZIMSEC syllabus. Adaptive tutoring, past papers with instant marking, and exam-ready study plans for ECD, Primary, O'Level and A'Level learners.",
+  keywords: "ZIMSEC, Heritage-Based Curriculum, Zimbabwe e-learning, AI tutor Zimbabwe, O'Level past papers, A'Level tutor, ZimLearn, MaFundi",
   metadataBase: new URL(siteUrl),
   openGraph: {
-    title: 'ZimLearn — ZIMSEC E-Learning Platform',
-    description: 'AI-powered e-learning for Zimbabwe. Study ZIMSEC Primary, O-Level and A-Level with an AI teacher, past papers, quizzes and more.',
+    title: "ZimLearn AI — Zimbabwe's AI Teacher",
+    description: "An AI teacher trained on ZIMSEC and Zimbabwe's Heritage-Based Curriculum. Study any subject, practise past papers, and get instant feedback — 24/7.",
     url: siteUrl,
-    siteName: 'ZimLearn',
+    siteName: 'ZimLearn AI',
     locale: 'en_ZW',
     type: 'website',
+    images: [{ url: `${siteUrl}/og-image.png` }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ZimLearn — ZIMSEC E-Learning Platform',
-    description: 'AI-powered e-learning for Zimbabwe. Study with an AI teacher, past papers and quizzes.',
+    title: "ZimLearn AI — Zimbabwe's AI Teacher",
+    description: "MaFundi: an AI teacher trained on ZIMSEC and the Heritage-Based Curriculum. Built for Zimbabwean learners.",
   },
   icons: {
     icon: '/favicon.ico',
