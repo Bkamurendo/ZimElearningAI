@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -32,6 +33,23 @@ export async function POST(req: Request) {
 
     const topicsToFix = gaps?.map(g => g.topic).join(', ') || 'General Syllabus Review'
 
+    // Fetch ZIMSEC syllabus curriculum directly from vector database
+    let ragContext = ''
+    try {
+      const searchStr = `${subjectName} syllabus topics, learning objectives, and concepts for: ${topicsToFix}`
+      const semanticChunks = await KnowledgeEngine.search(searchStr, { 
+        level: zimsecLevel, 
+        limit: 5,
+        threshold: 0.25 
+      })
+      if (semanticChunks && semanticChunks.length > 0) {
+        ragContext = "\n\n--- ZIMSEC CURRICULUM CONTEXT ---\n" + 
+          semanticChunks.map((c) => `[Source: ${c.metadata?.title || 'Syllabus'}]:\n${c.content}`).join('\n\n')
+      }
+    } catch (err) {
+      console.error('[autopilot] RAG Search Error:', err)
+    }
+
     // 2. Generate 30-day plan via AI
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20240620',
@@ -39,7 +57,8 @@ export async function POST(req: Request) {
       system: `You are a ZIMSEC Master Teacher specialized in increasing national pass rates. 
       Generate a 30-day intensive study plan (4 weeks) for a student preparing for their ${zimsecLevel} exams.
       Focus on the topics they have NOT mastered yet.
-      Format the response as a JSON array of objects: [{ week: 1, day: 1, topic: '...', task: '...', goal: 'Pass-Ready Threshold' }]`,
+      Ensure the topics and tasks map precisely to the official curriculum snippets provided in the curriculum context.
+      Format the response as a JSON array of objects: [{ week: 1, day: 1, topic: '...', task: '...', goal: 'Pass-Ready Threshold' }]${ragContext}`,
       messages: [
         { role: 'user', content: `Create a ZIMSEC Grade-C Transformation plan for ${subjectName}. Gaps identified: ${topicsToFix}.` }
       ],

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 import { checkAIQuota } from '@/lib/ai-quota'
+import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 
 export const maxDuration = 90
 
@@ -69,8 +70,8 @@ export async function POST(req: NextRequest) {
   const safeMode = ['step_by_step', 'essay', 'explain', 'mark_answer'].includes(mode) ? mode : 'explain'
 
   // Resolve document context: prefer server-side lookup via documentId over client-provided text
-  let resolvedDocumentContext = documentContext
-  if (documentId && !resolvedDocumentContext) {
+  let resolvedDocumentContext = documentContext || ''
+  if (documentId && !documentContext) {
     const { data: doc } = await supabase
       .from('uploaded_documents')
       .select('title, extracted_text, ai_summary')
@@ -83,9 +84,31 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // documentContext comes from the client — strip any injection attempts, cap at 3000 chars
+  // Inject RAG (Retrieval-Augmented Generation) from the Knowledge Engine
+  try {
+    const semanticChunks = await KnowledgeEngine.search(question, { 
+      level: safeLevel, 
+      limit: 5,
+      threshold: 0.3 // Grab moderately relevant context
+    })
+    
+    if (semanticChunks && semanticChunks.length > 0) {
+      const ragContext = semanticChunks
+        .map((c, i) => `[Source ${i + 1}: ${c.metadata?.title || 'Syllabus/Notes'}]:\n${c.content}`)
+        .join('\n\n')
+      
+      resolvedDocumentContext = resolvedDocumentContext 
+        ? `${resolvedDocumentContext}\n\n--- KNOWLEDGE BASE ---\n${ragContext}`
+        : `--- KNOWLEDGE BASE ---\n${ragContext}`
+    }
+  } catch (err) {
+    console.error('[solver] RAG Vector Search Error:', err)
+    // Fallback gracefully without vectors
+  }
+
+  // documentContext comes from the client — strip any injection attempts, cap at 5000 chars to accommodate chunks
   const safeDocumentContext = resolvedDocumentContext
-    ? String(resolvedDocumentContext).slice(0, 3000).replace(/\[INST\]|\[\/INST\]|<\|system\|>|<\|user\|>/gi, '')
+    ? String(resolvedDocumentContext).slice(0, 5000).replace(/\[INST\]|\[\/INST\]|<\|system\|>|<\|user\|>/gi, '')
     : undefined
 
   const levelLabel = safeLevel === 'primary' ? 'Primary' : safeLevel === 'olevel' ? 'O-Level' : 'A-Level'
