@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { Sparkles, Brain, Target, BookOpen, CheckCircle } from 'lucide-react'
 import { LoginForm } from './LoginForm'
 import { PlatformTourButton } from '@/components/PlatformTourButton'

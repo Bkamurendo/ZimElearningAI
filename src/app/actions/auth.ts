@@ -8,7 +8,13 @@ import { sendSMS } from '@/lib/sms'
 import { SMS_TEMPLATES } from '@/lib/sms-templates'
 
 export async function login(formData: FormData): Promise<void> {
-  const supabase = createClient()
+  let supabase
+  try {
+    supabase = createClient()
+  } catch (err: any) {
+    console.error('[Login Action] Configuration Error:', err.message)
+    redirect(`/login?error=${encodeURIComponent('System configuration error: Use the system diagnostics page to verify environment variables.')}`)
+  }
 
   const { error } = await supabase.auth.signInWithPassword({
     email: formData.get('email') as string,
@@ -74,7 +80,13 @@ export async function login(formData: FormData): Promise<void> {
 }
 
 export async function register(formData: FormData): Promise<void> {
-  const supabase = createClient()
+  let supabase
+  try {
+    supabase = createClient()
+  } catch (err: any) {
+    console.error('[Register Action] Configuration Error:', err.message)
+    redirect(`/register?error=${encodeURIComponent('System configuration error: Use the system diagnostics page to verify environment variables.')}`)
+  }
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
