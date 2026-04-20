@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * PATCH /api/admin/users/[id]  — update profile fields (name, role, onboarding)
  * POST  /api/admin/users/[id]  — generate a one-time password-reset link
