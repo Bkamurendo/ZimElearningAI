@@ -76,65 +76,22 @@ export async function updateSession(request: NextRequest) {
 
   // Define public paths that DON'T require a valid session
   const publicPaths = [
-    '/login', '/register', '/auth/callback', '/schools', 
+    '/', '/login', '/register', '/auth/callback', '/schools', 
     '/privacy', '/terms', '/forgot-password', '/reset-password', 
     '/api/schools', '/api/debug', '/admin/trials-test', '/debug-elearning'
   ]
-  const isPublicPath = publicPaths.some((p) => lowerPath.startsWith(p))
+  const isPublicPath = publicPaths.some((p) => pathname === p || lowerPath.startsWith(p))
 
-  // 2. UNAUTHENTICATED -> LOGIN (Except public paths & root)
-  if (!user && !isPublicPath && pathname !== '/') {
+  // 2. UNAUTHENTICATED -> LOGIN (Except public paths)
+  if (!user && !isPublicPath) {
     return redirectWithCookies('/login')
   }
 
-  // 3. AUTHENTICATED on public path OR root -> DASHBOARD
-  if (user && (isPublicPath || pathname === '/')) {
-    try {
-      // If already on a dashboard path or debug page, let it pass
-      if (lowerPath.includes('/dashboard') || lowerPath === '/debug-elearning') return supabaseResponse
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, onboarding_completed')
-        .eq('id', user.id)
-        .single()
-
-      if (profile) {
-        if (!profile.onboarding_completed && pathname !== '/onboarding') {
-          return redirectWithCookies('/onboarding')
-        }
-        
-        const safeRole = profile.role?.toLowerCase() || 'student'
-        const rolePart = safeRole === 'school_admin' ? 'school-admin' : safeRole
-        const dest = `/${rolePart}/dashboard`
-        
-        if (pathname === dest) return supabaseResponse
-        return redirectWithCookies(dest)
-      }
-    } catch (err) {
-      console.error('[Middleware] Profile lookup failed:', err)
-      // If profile lookup fails, let them stay where they are or fall through
-    }
-  }
-
-  // 4. ONBOARDING GUARD: If finished, go to dashboard
-  if (user && pathname === '/onboarding') {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('onboarding_completed, role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.onboarding_completed) {
-        const safeRole = profile.role?.toLowerCase() || 'student'
-        const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
-        return redirectWithCookies(dest)
-      }
-    } catch (err) {
-       console.error('[Middleware] Onboarding check failed:', err)
-    }
-  }
+  // 3. AUTHENTICATED -> Allow them to browse public pages or proceed to private ones
+  // We remove the automatic "Profile -> Dashboard" redirect from middleware
+  // because it requires a database lookup that causes timeouts on Vercel Edge.
+  
+  return supabaseResponse
 
   return supabaseResponse
 }
