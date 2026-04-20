@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 
 export const maxDuration = 60
 
@@ -40,10 +41,30 @@ export async function POST(req: NextRequest) {
     const strugglesText = memory
       .map(m => `- Topic: ${m.topic} (Mastery: ${m.mastery_level}%). Mistakes: ${JSON.stringify(m.common_mistakes)}`)
       .join('\n')
+      
+    const topicsList = memory.map(m => m.topic).join(', ')
+
+    // Fetch ZIMSEC syllabus concepts directly from vector database
+    let ragContext = ''
+    try {
+      const searchStr = `${subjectName} definitions, core concepts, and solutions for: ${topicsList}`
+      const semanticChunks = await KnowledgeEngine.search(searchStr, { 
+        level: studentProfile.zimsec_level ?? 'olevel', 
+        limit: 5,
+        threshold: 0.25 
+      })
+      if (semanticChunks && semanticChunks.length > 0) {
+        ragContext = "\n\n--- ZIMSEC CURRICULUM SYLLABUS REFERENCE ---\n" + 
+          semanticChunks.map((c) => `[Source: ${c.metadata?.title || 'Notes'}]:\n${c.content}`).join('\n\n')
+      }
+    } catch (err) {
+      console.error('[flashcards] RAG Search Error:', err)
+    }
 
     const prompt = `You are a ZIMSEC ${levelLabel} ${subjectName} teacher. 
     A student is struggling with specific concepts. Based on their common mistakes below, generate 8 high-impact flashcards (Active Recall) to help them overcome these gaps.
-    Focus exclusively on clarifying the areas they misunderstood.
+    Focus exclusively on clarifying the areas they misunderstood. Keep the "back" answer concise and easy to memorize. Use the curriculum reference to ensure accuracy.
+    ${ragContext}
 
     STUDENT STRUGGLES:
     ${strugglesText}

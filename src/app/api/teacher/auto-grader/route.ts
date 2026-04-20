@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
+import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -22,6 +23,19 @@ export async function POST(req: NextRequest) {
     const base64Data = image.split(',')[1] || image
     const mediaType = image.split(';')[0]?.split(':')[1] || 'image/jpeg'
 
+    // Fetch RAG context to enforce accurate factual grading
+    let ragContext = ''
+    try {
+      const gradingQuery = `ZIMSEC grading guidelines and core syllabus facts for: ${assignmentTitle || ''} ${rubric || ''}`
+      const semanticChunks = await KnowledgeEngine.search(gradingQuery, { limit: 4, threshold: 0.3 })
+      if (semanticChunks && semanticChunks.length > 0) {
+        ragContext = "\n\n--- OFFICIAL ZIMSEC KNOWLEDGE ALIGNMENT (Use this to fact-check the student's answer) ---\n" + 
+          semanticChunks.map(c => `[Source: ${c.metadata?.title || 'ZIMSEC Content'}]:\n${c.content}`).join('\n\n')
+      }
+    } catch (err) {
+      console.error('[Auto-Grader RAG Error]', err)
+    }
+
     const response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20240620',
       max_tokens: 2048,
@@ -32,7 +46,7 @@ export async function POST(req: NextRequest) {
       2. Strengths
       3. Areas for Improvement
       4. AI-suggested grade.
-      Format your entire response as a clean JSON object.`,
+      Format your entire response as a clean JSON object.${ragContext}`,
       messages: [
         {
           role: 'user',
