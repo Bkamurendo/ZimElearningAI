@@ -4,10 +4,19 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    // Prevent infinite recursive fetch loops on Vercel if ENV vars are missing
+    console.error('CRITICAL: Supabase URL or Key is missing. Skipping auth guard.')
+    return supabaseResponse
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createServerClient<any>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
