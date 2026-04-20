@@ -113,8 +113,8 @@ export class KnowledgeEngine {
           console.log(`[KNOWLEDGE ENGINE] OK [${status} ${statusText}]. Rows Inserted: ${insertResult?.length || 0}`)
         }
 
-        // Throttle: 1500ms between inserts — needed as table grows past 50k rows
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        // Safety Throttle: 2.5s between inserts — essential for Free Tier stability as table grows
+        await new Promise(resolve => setTimeout(resolve, 2500))
     }
     
     console.log(`[KNOWLEDGE ENGINE] Successfully ingested ${chunks.length} chunks for ${title}.`)
@@ -183,7 +183,7 @@ export class KnowledgeEngine {
     const { 
         grade = 'all', 
         level = 'all', 
-        limit = 5, 
+        limit = 4, 
         threshold = 0.5 
     } = options
 
