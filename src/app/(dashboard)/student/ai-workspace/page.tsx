@@ -40,6 +40,14 @@ export default async function AIWorkspacePage() {
 
   if (!studentProfile) redirect('/student/dashboard')
 
+  // PREMIUM CHECK: MaFundi AI Workspace is a premium feature
+  const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPremium = ['starter', 'pro', 'elite'].includes(profile?.plan || 'free')
+
+  if (!isPremium) {
+    redirect('/student/upgrade?feature=ai-workspace')
+  }
+
   const sid = studentProfile.id
 
   // Fetch student context from API (reuse the aggregated data)

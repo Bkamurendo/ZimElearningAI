@@ -1,3 +1,5 @@
+import { Plan, isUnlimitedAI } from './subscription'
+
 /**
  * Daily AI usage quota per user.
  *
@@ -18,7 +20,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
 
-export const FREE_DAILY_LIMIT = 5    // free users get 5 AI calls per day
+export const FREE_DAILY_LIMIT = 3    // free users get 3 AI calls per day
 export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,7 +35,7 @@ export function isPaidPlan(plan: string): boolean {
 
 export interface QuotaResult {
   allowed: boolean
-  plan: 'free' | 'pro'
+  plan: Plan
   used: number
   limit: number
   remaining: number
@@ -64,8 +66,8 @@ export async function checkAIQuota(
     return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
-  const plan: 'free' | 'pro' = profile.plan ?? 'free'
-  const limit = plan === 'pro' ? PRO_DAILY_LIMIT : FREE_DAILY_LIMIT
+  const plan = (profile.plan || 'free') as Plan
+  const limit = isUnlimitedAI(plan) ? PRO_DAILY_LIMIT : (plan === 'starter' ? 100 : FREE_DAILY_LIMIT)
 
   // Reset counter if it's a new day (UTC)
   const now = new Date()
@@ -74,8 +76,8 @@ export async function checkAIQuota(
 
   const used: number = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
 
-  if (plan === 'pro') {
-    // Pro users — just increment, no blocking
+  if (isUnlimitedAI(plan)) {
+    // Unlimited users — just increment, no blocking
     await supabase.from('profiles').update({
       ai_requests_today: used + 1,
       ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),

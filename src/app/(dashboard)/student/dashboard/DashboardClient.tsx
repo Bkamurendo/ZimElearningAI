@@ -20,6 +20,7 @@ import {
   Brain,
   Star,
   MessageSquare,
+  Lock,
 } from 'lucide-react'
 
 // Icons mapped by stat label — avoids passing component functions across the server/client boundary
@@ -310,20 +311,32 @@ export default function DashboardClient({
             <div className="space-y-6">
                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Growth Center</h3>
                <div className="grid grid-cols-1 gap-3">
-                  <Link href="/student/ai-workspace">
-                    <Card hover className="bg-slate-900 border-slate-800 p-5 group flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                             <Sparkles size={18} />
-                          </div>
-                          <div>
-                            <p className="text-white font-bold text-sm">Ask MaFundi AI</p>
-                            <p className="text-slate-400 text-xs uppercase font-black">24/7 Personal Tutor</p>
-                          </div>
-                       </div>
-                       <ChevronRight className="text-slate-600" />
-                    </Card>
-                  </Link>
+                  {(() => {
+                    const isPremiumUser = ['starter', 'pro', 'elite'].includes(profile?.plan || 'free')
+                    return (
+                      <Link href={isPremiumUser ? "/student/ai-workspace" : "/student/upgrade?feature=ai-workspace"}>
+                        <Card hover className="bg-slate-900 border-slate-800 p-5 group flex items-center justify-between relative overflow-hidden">
+                           {!isPremiumUser && (
+                             <div className="absolute top-2 right-2">
+                               <Badge variant="amber" size="xs" className="gap-1 bg-amber-500/10 text-amber-500 border-amber-500/20">
+                                 <Lock size={10} /> PRO
+                               </Badge>
+                             </div>
+                           )}
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                 <Sparkles size={18} />
+                              </div>
+                              <div>
+                                <p className="text-white font-bold text-sm">Ask MaFundi AI Workspace</p>
+                                <p className="text-slate-400 text-xs uppercase font-black">24/7 Personal Tutor</p>
+                              </div>
+                           </div>
+                           <ChevronRight className="text-slate-600" />
+                        </Card>
+                      </Link>
+                    )
+                  })()}
 
                   <div className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />

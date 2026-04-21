@@ -31,14 +31,14 @@ const NAV_SECTIONS = [
     label: 'MaFundi AI',
     items: [
       { href: '/student/ai-teacher',   label: 'AI Teacher',   icon: Bot,      badge: null },
-      { href: '/student/ai-workspace', label: 'AI Workspace', icon: Sparkles, badge: null },
+      { href: '/student/ai-workspace', label: 'AI Workspace', icon: Sparkles, badge: 'pro-only' as const },
     ],
   },
   {
     label: 'Learn',
     items: [
       { href: '/student/subjects',     label: 'My Subjects',      icon: BookOpen,     badge: null },
-      { href: '/student/resources',    label: 'Resource Library', icon: Library,      badge: null },
+      { href: '/student/resources',    label: 'Resource Library', icon: Library,      badge: 'pro-only' as const },
       { href: '/student/assignments',  label: 'Assignments',      icon: ClipboardList,badge: null },
       { href: '/student/notes',        label: 'My Notes',         icon: FileText,     badge: null },
       { href: '/student/flashcards',   label: 'Flashcards',       icon: Layers,       badge: null },
@@ -88,7 +88,7 @@ interface Props {
   hasChallenge?: boolean
 }
 
-const PLAN_LIMITS: Record<string, number> = { free: 5, starter: 100, pro: 999, elite: 999 }
+const PLAN_LIMITS: Record<string, number> = { free: 3, starter: 100, pro: 999, elite: 999 }
 const PLAN_LABELS: Record<string, string>  = { free: 'Free', starter: 'Starter', pro: 'Pro', elite: 'Elite' }
 const PLAN_COLORS: Record<string, string>  = {
   free:    'bg-slate-600 text-slate-200',
@@ -138,7 +138,7 @@ export default function StudentSidebar({
   function NavLink({ href, label, icon: Icon, badge }: { href: string; label: string; icon: React.ElementType; badge: string | null }) {
     const active = isActive(href)
     const count  = badge ? (badgeCounts[badge] ?? 0) : 0
-    const isLocked = !['pro', 'elite'].includes(plan) && (badge === 'pro-only')
+    const isLocked = !['starter', 'pro', 'elite'].includes(plan) && (badge === 'pro-only')
     
     return (
       <Link

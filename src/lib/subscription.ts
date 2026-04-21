@@ -1,7 +1,7 @@
 /**
  * Feature gating based on user subscription plan.
  *
- * FREE    — 5 AI calls/day, limited features
+ * FREE    — 3 AI calls/day, limited features
  * STARTER — $2/mo — 100 AI calls/day, downloads, 15 subjects
  * PRO     — $5/mo — unlimited AI, all tools, all subjects
  * ELITE   — $8/mo — unlimited AI + priority model + parent dashboard
@@ -16,6 +16,8 @@ export interface PlanFeatures {
   canUseGradePredictor: boolean
   canUseStudyPlanner: boolean
   canViewLeaderboard: boolean
+  canAccessAIWorkspace: boolean
+  canAccessResourceLibrary: boolean
   maxSubjects: number
   priorityAI: boolean       // Use Sonnet (smarter) instead of Haiku
   parentDashboard: boolean  // Parent can view child's progress reports
@@ -23,12 +25,14 @@ export interface PlanFeatures {
 
 export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
   free: {
-    aiDailyLimit: 5,
+    aiDailyLimit: 3,
     canDownloadResources: false,
     canAccessPastPapers: true,     // 2 per day via quota
     canUseGradePredictor: true,    // 1 per day via quota
     canUseStudyPlanner: true,      // 1 per day via quota
     canViewLeaderboard: true,
+    canAccessAIWorkspace: false,
+    canAccessResourceLibrary: false,
     maxSubjects: 5,
     priorityAI: false,
     parentDashboard: false,
@@ -40,6 +44,8 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     canUseGradePredictor: true,
     canUseStudyPlanner: true,
     canViewLeaderboard: true,
+    canAccessAIWorkspace: true,
+    canAccessResourceLibrary: true,
     maxSubjects: 15,
     priorityAI: false,
     parentDashboard: false,
@@ -51,6 +57,8 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     canUseGradePredictor: true,
     canUseStudyPlanner: true,
     canViewLeaderboard: true,
+    canAccessAIWorkspace: true,
+    canAccessResourceLibrary: true,
     maxSubjects: 999,
     priorityAI: false,
     parentDashboard: false,
@@ -62,6 +70,8 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     canUseGradePredictor: true,
     canUseStudyPlanner: true,
     canViewLeaderboard: true,
+    canAccessAIWorkspace: true,
+    canAccessResourceLibrary: true,
     maxSubjects: 999,
     priorityAI: true,
     parentDashboard: true,
