@@ -869,14 +869,26 @@ CREATE POLICY "chat_own" ON public.ai_chat_messages FOR ALL
 -- ============================================================
 
 INSERT INTO public.subjects (name, code, zimsec_level) VALUES
-  -- PRIMARY
-  ('Mathematics',           'PRI-MATH',  'primary'),
-  ('English Language',      'PRI-ENG',   'primary'),
-  ('Shona',                 'PRI-SHO',   'primary'),
-  ('Ndebele',               'PRI-NDE',   'primary'),
-  ('Environmental Science', 'PRI-ENV',   'primary'),
-  ('Social Studies',        'PRI-SS',    'primary'),
-  ('Heritage Studies',      'PRI-HER',   'primary'),
+  -- PRIMARY (Heritage-Based Curriculum 2024-2030)
+  ('Mathematics',               'PRI-MATH',  'primary'),
+  ('English Language',          'PRI-ENG',   'primary'),
+  ('Science and Technology',    'PRI-SCI',   'primary'),
+  ('Social Science',            'PRI-SS',    'primary'),
+  ('Physical Education & Arts', 'PRI-PEA',   'primary'),
+  -- Indigenous Languages (Primary)
+  ('Shona',                     'PRI-SHO',   'primary'),
+  ('Ndebele',                   'PRI-NDE',   'primary'),
+  ('Tonga',                     'PRI-TON',   'primary'),
+  ('Kalanga',                   'PRI-KAL',   'primary'),
+  ('Shangani',                  'PRI-SHA',   'primary'),
+  ('Venda',                     'PRI-VEN',   'primary'),
+  ('Sotho',                     'PRI-SOT',   'primary'),
+  ('Xhosa',                     'PRI-XHO',   'primary'),
+  ('Tswana',                    'PRI-TSW',   'primary'),
+  ('Nambya',                    'PRI-NAM',   'primary'),
+  ('Chewa',                     'PRI-CHE',   'primary'),
+  ('Barwe',                     'PRI-BAR',   'primary'),
+  ('Khoisan',                   'PRI-KHO',   'primary'),
   -- O-LEVEL
   ('Mathematics',           'OL-MATH',   'olevel'),
   ('English Language',      'OL-ENG',    'olevel'),
