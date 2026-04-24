@@ -10,7 +10,7 @@ import {
   Flame, X, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
-  Accessibility, Gift, Users, AlertTriangle, ChevronDown, ChevronRight,
+  Accessibility, Gift, Users, AlertTriangle, ChevronDown, ChevronRight, Package,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
@@ -68,6 +68,7 @@ const MORE_ITEMS = [
   { href: '/student/bookmarks',          label: 'Bookmarks',       icon: Bookmark,    badge: null },
   { href: '/student/search',             label: 'Search',          icon: Search,      badge: null },
   { href: '/student/projects',           label: 'Projects (SBP)',  icon: FlaskConical,badge: null },
+  { href: '/student/sbp-packages',       label: 'SBP Packages 📦', icon: Package,     badge: null },
   { href: '/student/projects/examples',  label: 'SBP Examples',   icon: BookOpen,    badge: null },
   { href: '/student/projects/templates', label: 'SBP Templates',  icon: Crown,       badge: null },
   { href: '/student/settings/security',  label: 'Security',       icon: Settings,    badge: null },
