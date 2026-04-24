@@ -92,6 +92,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const filteredSubjects = subjects.filter((s) => s.zimsec_level === level)
   const selectedLevel = LEVELS.find((l) => l.value === level)
@@ -106,16 +107,20 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
   async function handleStep2Submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsSaving(true)
+    setSaveError('')
     try {
-        const formData = new FormData(e.currentTarget)
-        const result = await (completeStudentOnboarding as any)(formData)
-        if (result?.success) {
-            setStep(3)
-        }
+      const formData = new FormData(e.currentTarget)
+      const result = await completeStudentOnboarding(formData)
+      if (result.success) {
+        setStep(3)
+      } else {
+        setSaveError(result.error ?? 'Something went wrong. Please try again.')
+      }
     } catch (err) {
-        console.error('Onboarding save failed:', err)
+      console.error('Onboarding save failed:', err)
+      setSaveError('Something went wrong. Please try again.')
     } finally {
-        setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
@@ -298,6 +303,12 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                   )
                 })}
               </div>
+
+              {saveError && (
+                <div className="mb-2 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 font-medium">
+                  {saveError}
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button
