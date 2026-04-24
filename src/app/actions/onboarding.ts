@@ -1,16 +1,15 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { ZimsecLevel } from '@/types/database'
 
-export async function completeStudentOnboarding(formData: FormData): Promise<void> {
+export async function completeStudentOnboarding(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient()
 
   const { data, error: authError } = await supabase.auth.getUser()
   const user = data?.user
-  if (authError || !user) redirect('/login')
+  if (authError || !user) return { success: false, error: 'Session expired. Please log in again.' }
 
   const zimsecLevel = formData.get('zimsec_level') as ZimsecLevel
   const grade = formData.get('grade') as string
@@ -24,7 +23,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<voi
     .single()
 
   if (spError || !studentProfile) {
-    redirect('/onboarding?error=Failed+to+save+student+profile')
+    return { success: false, error: 'Failed to save student profile. Please try again.' }
   }
 
   // Enrol in selected subjects — replace existing
@@ -36,13 +35,13 @@ export async function completeStudentOnboarding(formData: FormData): Promise<voi
       subject_id,
     }))
     const { error: subErr } = await supabase.from('student_subjects').insert(rows)
-    if (subErr) redirect('/onboarding?error=Failed+to+save+subjects')
+    if (subErr) return { success: false, error: 'Failed to save subjects. Please try again.' }
   }
 
-  // Mark onboarding complete
+  // Mark onboarding complete so the dashboard is accessible
   await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user.id)
 
-  revalidatePath('/', 'layout')
+  return { success: true }
 }
 
 export async function completeGeneralOnboarding(formData: FormData): Promise<void> {
