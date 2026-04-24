@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BookOpen, ClipboardList, LogOut, Menu, X,
   Library, MessageSquare, Sparkles, Users, BookMarked,
   HelpCircle, FlaskConical, CalendarCheck, BarChart3,
-  Award, Star,
+  Award, Star, Package,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -28,6 +28,7 @@ const NAV = [
 ]
 
 const TOOLS = [
+  { href: '/teacher/sbp-packages',   label: 'SBP Packages',           icon: Package },
   { href: '/teacher/lesson-planner', label: 'Lesson Planner',         icon: CalendarCheck },
   { href: '/teacher/resources',      label: 'AI Materials Generator',  icon: Sparkles },
   { href: '/teacher/cpd',            label: 'CPD Certificates',       icon: Award },
