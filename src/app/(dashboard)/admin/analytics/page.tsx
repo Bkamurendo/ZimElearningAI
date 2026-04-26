@@ -6,6 +6,7 @@ import {
   BarChart3, Users, ArrowLeft, CreditCard, Activity, 
   Target, Zap, DollarSign, Clock, TrendingUp, AlertTriangle, MousePointer2 
 } from 'lucide-react'
+import RealtimeActivityPulse from './RealtimeActivityPulse'
 
 export const metadata = { title: 'Analytics — ZimLearn Admin' }
 
@@ -71,6 +72,9 @@ export default async function AdminAnalyticsPage() {
   const monthlyRevenue = (starterCount * 2) + (proCount * 5) + (eliteCount * 8)
 
   // 3. Engagement Score
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString()
+  const onlineNow = new Set(engagementHistory?.filter(a => a.created_at >= fiveMinutesAgo).map(a => (a as any).user_id)).size
+  
   const active7d = activityStats?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)).length || 0
   const totalStudyMinutes = studySessionStats?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0
 
@@ -103,8 +107,8 @@ export default async function AdminAnalyticsPage() {
             </div>
             <div className="flex items-center gap-4">
                <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-2xl">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Students</p>
-                  <p className="text-3xl font-black text-white">{(totalStudents ?? 0).toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Online Now</p>
+                  <p className="text-3xl font-black text-amber-400">{onlineNow.toLocaleString()}</p>
                </div>
                <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-2xl">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active (7D)</p>
@@ -345,6 +349,8 @@ export default async function AdminAnalyticsPage() {
         </div>
 
       </div>
+
+      <RealtimeActivityPulse />
     </div>
   )
 }
