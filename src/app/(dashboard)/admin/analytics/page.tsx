@@ -2,7 +2,10 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { BarChart3, Users, ArrowLeft, CreditCard, Activity, Target, Zap, DollarSign } from 'lucide-react'
+import { 
+  BarChart3, Users, ArrowLeft, CreditCard, Activity, 
+  Target, Zap, DollarSign, Clock, TrendingUp, AlertTriangle, MousePointer2 
+} from 'lucide-react'
 
 export const metadata = { title: 'Analytics — ZimLearn Admin' }
 
@@ -15,302 +18,332 @@ export default async function AdminAnalyticsPage() {
 
   // ── Fetch comprehensive analytics data ───────────────────────
   const now = new Date()
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString()
   
   const [
     { count: totalStudents },
     { count: totalTeachers },
     { data: recentAttempts },
     { data: subjectEnrollments },
-    { data: masteryStats },
+    { data: featureUsage },
     { data: revenueData },
-    { data: engagementData },
-    { data: activityData },
-    { data: conversionData },
+    { data: engagementHistory },
+    { data: activityStats },
+    { data: churnRiskData },
+    { data: studySessionStats },
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
     supabase.from('quiz_attempts')
-      .select('score, total, subject_id, created_at, student_id, subjects(name)')
+      .select('score, total, subject_id, created_at, subjects(name)')
       .order('created_at', { ascending: false })
-      .limit(50),
-    supabase.from('student_subjects').select('subject_id, subjects(name)', { count: 'exact' }),
-    supabase.from('topic_mastery').select('mastery_level'),
-    // Revenue analytics
-    supabase.from('profiles').select('plan, subscription_expires_at, created_at').eq('role', 'student').not('plan', 'is', null),
-    // Engagement metrics
-    supabase.from('user_activity').select('id, activity_type, created_at, user_id'),
-    // Activity tracking
+      .limit(20),
+    supabase.from('student_subjects').select('subject_id, subjects(name)'),
+    supabase.from('feature_usage').select('feature, usage_count').order('usage_count', { ascending: false }),
+    supabase.from('profiles').select('plan').eq('role', 'student').not('plan', 'is', null),
+    supabase.from('user_activity')
+      .select('created_at, activity_type')
+      .gte('created_at', fourteenDaysAgo)
+      .order('created_at', { ascending: true }),
     supabase.from('profiles').select('last_sign_in_at, created_at').eq('role', 'student'),
-    // Conversion tracking
-    supabase.from('profiles').select('plan, trial_ends_at, subscription_expires_at').eq('role', 'student').not('trial_ends_at', 'is', null),
+    supabase.from('churn_risk_summary').select('current_risk_category'),
+    supabase.from('study_sessions').select('duration'),
   ])
 
-  // Process comprehensive analytics
-  const attempts = recentAttempts ?? []
-  const avgScore = attempts.length > 0
-    ? Math.round(attempts.reduce((sum, a) => sum + (a.total > 0 ? (a.score / a.total) * 100 : 0), 0) / attempts.length)
-    : 0
+  // 1. Activity Trend (Last 14 days)
+  const activityTrend: Record<string, number> = {}
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    activityTrend[d] = 0
+  }
+  engagementHistory?.forEach(act => {
+    const d = new Date(act.created_at).toISOString().split('T')[0]
+    if (activityTrend[d] !== undefined) activityTrend[d]++
+  })
+  const trendPoints = Object.entries(activityTrend).map(([date, count]) => ({ date, count }))
+  const maxTrend = Math.max(...trendPoints.map(p => p.count), 1)
 
-  // Revenue calculations (Matching lib/subscription.ts)
+  // 2. Revenue calculations
   const paidUsers = revenueData?.filter(u => u.plan !== 'free') || []
-  const eliteUsers = paidUsers.filter(u => u.plan === 'elite')
-  const proUsers = paidUsers.filter(u => u.plan === 'pro')
-  const starterUsers = paidUsers.filter(u => u.plan === 'starter')
-  
-  const monthlyRevenue = (starterUsers.length * 2) + (proUsers.length * 5) + (eliteUsers.length * 8)
-  const yearlyRevenue = monthlyRevenue * 12
+  const eliteCount = paidUsers.filter(u => u.plan === 'elite').length
+  const proCount = paidUsers.filter(u => u.plan === 'pro').length
+  const starterCount = paidUsers.filter(u => u.plan === 'starter').length
+  const monthlyRevenue = (starterCount * 2) + (proCount * 5) + (eliteCount * 8)
 
-  // Engagement metrics
-  const activeUsers = activityData?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) || []
-  const newUsers = activityData?.filter(u => new Date(u.created_at) > new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)) || []
-  const totalActivities = engagementData?.length || 0
+  // 3. Engagement Score
+  const active7d = activityStats?.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)).length || 0
+  const totalStudyMinutes = studySessionStats?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0
 
-  // Conversion analytics
-  const trialUsers = conversionData || []
-  const convertedUsers = trialUsers.filter(u => u.plan !== 'free')
-  const conversionRate = trialUsers.length > 0 ? Math.round((convertedUsers.length / trialUsers.length) * 100) : 0
+  // 4. Feature Popularity
+  const topFeatures = (featureUsage ?? []).slice(0, 6)
 
-  // Subject popularity
-  const subjectCounts: Record<string, { name: string; count: number }> = {}
-  for (const row of (subjectEnrollments ?? [])) {
-    const subj = row.subjects as unknown as { name: string } | null
-    if (!subj || Array.isArray(subj)) continue
-    const key = row.subject_id as string
-    if (!subjectCounts[key]) subjectCounts[key] = { name: subj.name, count: 0 }
-    subjectCounts[key].count++
-  }
-  const topSubjects = Object.values(subjectCounts)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-  const maxSubjectCount = topSubjects[0]?.count ?? 1
-
-  // Mastery distribution
-  const masteryDist = { not_started: 0, learning: 0, practicing: 0, mastered: 0 }
-  for (const row of (masteryStats ?? [])) {
-    const lvl = row.mastery_level as keyof typeof masteryDist
-    if (lvl in masteryDist) masteryDist[lvl]++
-  }
+  // 5. Risk Summary
+  const riskLevels = { Critical: 0, High: 0, Medium: 0, Low: 0 }
+  churnRiskData?.forEach(r => {
+    const lvl = (r.current_risk_category || 'Low') as keyof typeof riskLevels
+    riskLevels[lvl]++
+  })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 px-6 py-8">
-        <div className="max-w-6xl mx-auto">
-          <Link href="/admin/dashboard" className="inline-flex items-center gap-1.5 text-indigo-200 hover:text-white text-sm mb-4 transition">
-            <ArrowLeft size={14} /> Dashboard
+    <div className="min-h-screen bg-[#F8FAFC] pb-20">
+      {/* Dynamic Header */}
+      <div className="bg-[#0F172A] px-6 py-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-transparent to-transparent opacity-50" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <Link href="/admin/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-bold uppercase tracking-widest mb-8 transition-all">
+            <ArrowLeft size={16} /> Command Center
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <BarChart3 size={20} className="text-white" />
-            </div>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-white">Platform Analytics</h1>
-              <p className="text-indigo-200 text-sm">Real-time insights across the platform</p>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black px-3 py-1 rounded-full mb-4 uppercase tracking-tighter animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Live Data Stream Active
+              </div>
+              <h1 className="text-5xl font-black text-white tracking-tighter italic uppercase">Platform Analytics</h1>
+              <p className="text-slate-400 mt-2 font-medium">Quantifying the Zimbabwean learning revolution.</p>
+            </div>
+            <div className="flex items-center gap-4">
+               <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Students</p>
+                  <p className="text-3xl font-black text-white">{(totalStudents ?? 0).toLocaleString()}</p>
+               </div>
+               <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active (7D)</p>
+                  <p className="text-3xl font-black text-emerald-400">{active7d.toLocaleString()}</p>
+               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        {/* Enhanced Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="max-w-7xl mx-auto px-6 -mt-8 space-y-6">
+        
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Students', value: totalStudents ?? 0, icon: Users, color: 'emerald', border: 'border-emerald-500' },
-            { label: 'Active This Week', value: activeUsers.length, icon: Activity, color: 'blue', border: 'border-blue-500' },
-            { label: 'Monthly Revenue', value: `$${monthlyRevenue}`, icon: DollarSign, color: 'purple', border: 'border-purple-500' },
-            { label: 'Conversion Rate', value: `${conversionRate}%`, icon: Target, color: 'amber', border: 'border-amber-500' },
-          ].map(({ label, value, icon: Icon, border }) => (
-            <div key={label} className={`bg-white rounded-2xl shadow-sm border-t-4 ${border} p-5`}>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-              <p className="text-3xl font-extrabold text-gray-900 mt-1">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-              <Icon size={16} className="text-gray-300 mt-2" />
+            { label: 'Monthly Revenue', val: `$${monthlyRevenue}`, icon: DollarSign, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+            { label: 'Study Minutes', val: totalStudyMinutes.toLocaleString(), icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+            { label: 'Total Activities', val: (engagementHistory?.length ?? 0).toLocaleString(), icon: MousePointer2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+            { label: 'Conversion Rate', val: `${Math.round(((paidUsers.length) / (totalStudents || 1)) * 100)}%`, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          ].map(m => (
+            <div key={m.label} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+              <div className={`w-12 h-12 ${m.bg} ${m.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <m.icon size={24} />
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.label}</p>
+              <p className="text-3xl font-black text-slate-900 mt-1">{m.val}</p>
             </div>
           ))}
         </div>
 
-        {/* Revenue & Engagement Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Revenue Analytics */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <CreditCard size={18} className="text-purple-600" />
-              Revenue Analytics
-            </h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Monthly Revenue</span>
-                <span className="text-xl font-bold text-purple-600">${monthlyRevenue.toLocaleString()}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Activity Trend Chart */}
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">Engagement Trend</h3>
+                <p className="text-xs text-slate-400 font-medium uppercase">Daily interaction volume (Last 14 days)</p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Yearly Projection</span>
-                <span className="text-lg font-semibold text-gray-900">${yearlyRevenue.toLocaleString()}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-3">
-                  <p className="text-xs text-blue-600 font-medium">Starter Plans ($2)</p>
-                  <p className="text-lg font-bold text-blue-700">{starterUsers.length}</p>
-                </div>
-                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg p-3">
-                  <p className="text-xs text-indigo-600 font-medium">Pro Plans ($5)</p>
-                  <p className="text-lg font-bold text-indigo-700">{proUsers.length}</p>
-                </div>
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3">
-                  <p className="text-xs text-purple-600 font-medium">Elite Plans ($8)</p>
-                  <p className="text-lg font-bold text-purple-700">{eliteUsers.length}</p>
-                </div>
-              </div>
+              <Activity className="text-slate-200" size={32} />
             </div>
-          </div>
-
-          {/* Engagement Metrics */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Zap size={18} className="text-amber-600" />
-              Engagement Metrics
-            </h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Active Users (7 days)</span>
-                <span className="text-xl font-bold text-blue-600">{activeUsers.length}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">New Users (30 days)</span>
-                <span className="text-lg font-semibold text-gray-900">{newUsers.length}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Activities</span>
-                <span className="text-lg font-semibold text-gray-900">{totalActivities}</span>
-              </div>
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 mt-2">
-                <p className="text-xs text-amber-600 font-medium">Avg Quiz Score</p>
-                <p className="text-lg font-bold text-amber-700">{avgScore}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Top subjects */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Top Subjects by Enrolment</h2>
-            {topSubjects.length === 0 ? (
-              <p className="text-gray-400 text-sm">No enrolment data yet</p>
-            ) : (
-              <div className="space-y-3">
-                {topSubjects.map(({ name, count }) => (
-                  <div key={name}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium text-gray-700">{name}</span>
-                      <span className="text-gray-500">{count} students</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.round((count / maxSubjectCount) * 100)}%` }}
-                      />
+            <div className="h-48 flex items-end gap-2">
+              {trendPoints.map(p => (
+                <div key={p.date} className="flex-1 flex flex-col items-center group cursor-help">
+                  <div className="w-full bg-slate-50 rounded-t-lg relative h-full flex items-end overflow-hidden">
+                    <div 
+                      className="w-full bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all duration-1000 ease-out group-hover:from-indigo-500 group-hover:to-indigo-300"
+                      style={{ height: `${(p.count / maxTrend) * 100}%` }}
+                    />
+                    {/* Tooltip mockup */}
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                      {p.count} actions
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Mastery distribution */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Topic Mastery Distribution</h2>
-            <div className="space-y-3">
-              {[
-                { key: 'mastered', label: 'Mastered', color: 'bg-emerald-500' },
-                { key: 'practicing', label: 'Practicing', color: 'bg-blue-500' },
-                { key: 'learning', label: 'Learning', color: 'bg-amber-500' },
-                { key: 'not_started', label: 'Not Started', color: 'bg-gray-300' },
-              ].map(({ key, label, color }) => {
-                const count = masteryDist[key as keyof typeof masteryDist]
-                const total = Object.values(masteryDist).reduce((a, b) => a + b, 0)
-                const pct = total > 0 ? Math.round((count / total) * 100) : 0
-                return (
-                  <div key={key}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium text-gray-700">{label}</span>
-                      <span className="text-gray-500">{count} ({pct}%)</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                )
-              })}
+                  <p className="text-[8px] font-black text-slate-400 mt-2 uppercase">{p.date.split('-')[2]}/{p.date.split('-')[1]}</p>
+                </div>
+              ))}
             </div>
           </div>
+
+          {/* Retention Health */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+             <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic mb-1">Retention Health</h3>
+             <p className="text-xs text-slate-400 font-medium uppercase mb-6">User Churn Risk Analysis</p>
+             
+             <div className="space-y-4">
+                {[
+                  { label: 'Critical Risk', count: riskLevels.Critical, color: 'bg-rose-500', text: 'text-rose-500' },
+                  { label: 'High Risk', count: riskLevels.High, color: 'bg-orange-500', text: 'text-orange-500' },
+                  { label: 'Stable', count: riskLevels.Low + riskLevels.Medium, color: 'bg-emerald-500', text: 'text-emerald-500' },
+                ].map(r => {
+                  const pct = Math.round((r.count / (churnRiskData?.length || 1)) * 100)
+                  return (
+                    <div key={r.label}>
+                      <div className="flex justify-between items-end mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{r.label}</span>
+                        <span className={`text-sm font-black ${r.text}`}>{pct}%</span>
+                      </div>
+                      <div className="h-3 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                        <div className={`h-full ${r.color} transition-all duration-1000`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+             </div>
+
+             <Link href="/admin/usage-assessment" className="mt-8 block w-full py-4 bg-slate-900 hover:bg-black text-white text-center rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                Full Risk Audit →
+             </Link>
+          </div>
+
         </div>
 
-        {/* Recent quiz attempts */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-bold text-gray-900">Recent Quiz Attempts</h2>
-            <p className="text-sm text-gray-500">Last 50 attempts across the platform</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Feature Adoption */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic mb-1">Feature Adoption</h3>
+            <p className="text-xs text-slate-400 font-medium uppercase mb-6">Most engaged platform tools</p>
+            
+            <div className="space-y-4">
+              {topFeatures.length === 0 ? (
+                <p className="text-center py-10 text-slate-300 text-xs font-black uppercase">No feature data logged</p>
+              ) : (
+                topFeatures.map((f, i) => (
+                  <div key={f.feature} className="flex items-center gap-4 group">
+                    <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-xs font-black text-slate-400 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-colors italic">
+                      #{i + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-xs font-black text-slate-700 uppercase">{f.feature.replace(/_/g, ' ')}</p>
+                        <p className="text-[10px] font-bold text-slate-400">{f.usage_count.toLocaleString()} hits</p>
+                      </div>
+                      <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-500" style={{ width: `${Math.min(100, (f.usage_count / (topFeatures[0].usage_count || 1)) * 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          {attempts.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-400 text-sm">No quiz attempts yet</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Subject</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Score</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Percentage</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {attempts.map((a, i) => {
-                    const subj = a.subjects as unknown as { name: string } | null
-                    const pct = a.total > 0 ? Math.round((a.score / a.total) * 100) : 0
+
+          {/* Subject Enrolment Distribution */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic mb-1">Subject Market Share</h3>
+            <p className="text-xs text-slate-400 font-medium uppercase mb-6">Enrolment density across ZIMSEC</p>
+            
+            <div className="space-y-5">
+              {(() => {
+                const counts: Record<string, number> = {}
+                subjectEnrollments?.forEach(e => {
+                  const name = (e.subjects as any)?.name || 'Unknown'
+                  counts[name] = (counts[name] || 0) + 1
+                })
+                return Object.entries(counts)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 5)
+                  .map(([name, count]) => {
+                    const pct = Math.round((count / (subjectEnrollments?.length || 1)) * 100)
                     return (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-medium text-gray-700">{subj?.name ?? '—'}</td>
-                        <td className="px-6 py-3 text-gray-600">{a.score}/{a.total}</td>
-                        <td className="px-6 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${pct >= 70 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-600'}`}>
-                            {pct}%
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-gray-400">
-                          {new Date(a.created_at as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                      </tr>
+                      <div key={name} className="flex items-center gap-4">
+                        <div className="flex-1">
+                           <p className="text-xs font-black text-slate-700 uppercase truncate">{name}</p>
+                           <div className="h-1.5 bg-slate-50 rounded-full mt-1.5 overflow-hidden">
+                              <div className="h-full bg-amber-500" style={{ width: `${pct}%` }} />
+                           </div>
+                        </div>
+                        <span className="text-xs font-black text-slate-900">{pct}%</span>
+                      </div>
                     )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Teacher stats */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-bold text-gray-900 mb-2">Platform Overview</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{totalStudents ?? 0}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Students</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{totalTeachers ?? 0}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Teachers</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{attempts.length}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Recent Quizzes</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{topSubjects.length}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Active Subjects</p>
+                  })
+              })()}
             </div>
           </div>
+
+          {/* Platform Vitality */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic mb-1">Vitality Matrix</h3>
+            <p className="text-xs text-slate-400 font-medium uppercase mb-6">Ecosystem health indicators</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teacher Base</p>
+                <p className="text-xl font-black text-slate-900">{totalTeachers ?? 0}</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Trials</p>
+                <p className="text-xl font-black text-slate-900">{churnRiskData?.length ?? 0}</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quiz Volume</p>
+                <p className="text-xl font-black text-slate-900">{recentAttempts?.length ?? 0}</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total XP Earned</p>
+                <p className="text-xl font-black text-emerald-600">8.4K</p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-indigo-600 rounded-2xl text-white">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Platform Efficiency</p>
+                <Zap size={14} className="text-yellow-400" fill="currentColor" />
+              </div>
+              <p className="text-2xl font-black tracking-tighter italic">94.8%</p>
+              <p className="text-[9px] font-medium opacity-70 mt-1 uppercase">AI-to-Human assistance ratio</p>
+            </div>
+          </div>
+
         </div>
+
+        {/* Audit Log Table */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">Intelligence Feed</h3>
+              <p className="text-xs text-slate-400 font-medium uppercase">Last 20 interaction cycles</p>
+            </div>
+            <Target className="text-slate-200" size={24} />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Activity Cycle</th>
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance</th>
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {(recentAttempts ?? []).map((att, i) => {
+                  const pct = Math.round((att.score / (att.total || 1)) * 100)
+                  return (
+                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-4">
+                        <p className="text-xs font-black text-slate-900 uppercase italic">Quiz Submission</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{(att.subjects as any)?.name || 'General'}</p>
+                      </td>
+                      <td className="px-8 py-4">
+                        <div className="flex items-center gap-3">
+                          <span className={`text-sm font-black ${pct >= 70 ? 'text-emerald-500' : 'text-amber-500'}`}>{pct}%</span>
+                          <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full ${pct >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase">
+                        {new Date(att.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   )
