@@ -28,10 +28,10 @@ export default async function AdminEngagementPage() {
     { data: inactiveUsers },
   ] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, last_sign_in_at, created_at').eq('role', 'student'),
-    Promise.resolve({ data: [] as any[] }), // user_activity table not yet in schema
+    supabase.from('user_activity').select('*').order('created_at', { ascending: false }).limit(1000),
     supabase.from('profiles').select('id, last_sign_in_at').eq('role', 'student'),
-    Promise.resolve({ data: [] as any[] }), // feature_usage table not yet in schema
-    Promise.resolve({ data: [] as any[] }), // study_sessions table not yet in schema
+    supabase.from('feature_usage').select('*'),
+    supabase.from('study_sessions').select('*'),
     supabase.from('profiles').select('id, full_name, email, last_sign_in_at').eq('role', 'student').lt('last_sign_in_at', new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString()),
   ])
 

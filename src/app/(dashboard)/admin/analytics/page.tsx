@@ -38,8 +38,8 @@ export default async function AdminAnalyticsPage() {
     supabase.from('topic_mastery').select('mastery_level'),
     // Revenue analytics
     supabase.from('profiles').select('plan, subscription_expires_at, created_at').eq('role', 'student').not('plan', 'is', null),
-    // Engagement metrics (user_activity table may not exist yet)
-    Promise.resolve({ data: [] }),
+    // Engagement metrics
+    supabase.from('user_activity').select('id, activity_type, created_at, user_id'),
     // Activity tracking
     supabase.from('profiles').select('last_sign_in_at, created_at').eq('role', 'student'),
     // Conversion tracking

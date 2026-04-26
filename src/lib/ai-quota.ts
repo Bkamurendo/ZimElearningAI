@@ -1,4 +1,4 @@
-import { Plan, isUnlimitedAI } from './subscription'
+import { Plan, isUnlimitedAI, getPlanFeatures } from './subscription'
 
 /**
  * Daily AI usage quota per user.
@@ -14,13 +14,14 @@ import { Plan, isUnlimitedAI } from './subscription'
  *     ADD COLUMN IF NOT EXISTS ai_requests_today  INTEGER   DEFAULT 0,
  *     ADD COLUMN IF NOT EXISTS ai_quota_reset_at  TIMESTAMPTZ DEFAULT now(),
  *     ADD COLUMN IF NOT EXISTS plan               TEXT      DEFAULT 'free'
- *       CHECK (plan IN ('free', 'pro'));
+ *       CHECK (plan IN ('free', 'starter', 'pro', 'elite', 'ultimate'));
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
 
-export const FREE_DAILY_LIMIT = 3    // free users get 3 AI calls per day
+// Default fallback limits (should be ignored if subscription.ts is up to date)
+export const FREE_DAILY_LIMIT = 3
 export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,7 +68,8 @@ export async function checkAIQuota(
   }
 
   const plan = (profile.plan || 'free') as Plan
-  const limit = isUnlimitedAI(plan) ? PRO_DAILY_LIMIT : (plan === 'starter' ? 100 : FREE_DAILY_LIMIT)
+  const features = getPlanFeatures(plan)
+  const limit = features.aiDailyLimit
 
   // Reset counter if it's a new day (UTC)
   const now = new Date()

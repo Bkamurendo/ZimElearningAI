@@ -22,7 +22,7 @@ function Logo({ src, alt, className = 'h-8 w-auto object-contain' }: {
 
 // ─── Tier definitions ─────────────────────────────────────────────────────────
 
-type Tier = 'starter' | 'pro' | 'elite'
+type Tier = 'starter' | 'pro' | 'elite' | 'ultimate'
 
 const TIERS: {
   id: Tier
@@ -35,8 +35,7 @@ const TIERS: {
   icon: React.ReactNode
   features: { text: string; included: boolean }[]
   planOptions: PlanId[]
-}[] = [
-  {
+}[  {
     id: 'starter',
     name: 'Starter',
     tagline: 'Boost your studies',
@@ -44,7 +43,7 @@ const TIERS: {
     headerBg: 'bg-blue-600',
     icon: <Zap size={20} className="text-blue-500" />,
     features: [
-      { text: '100 AI requests / day', included: true },
+      { text: '10 AI requests / day', included: true },
       { text: 'Download study materials', included: true },
       { text: 'Up to 15 subjects', included: true },
       { text: 'Study planner & grade predictor', included: true },
@@ -54,7 +53,7 @@ const TIERS: {
       { text: 'Advanced AI model (smarter answers)', included: false },
       { text: 'Parent progress dashboard', included: false },
     ],
-    planOptions: ['starter_monthly', 'starter_quarterly'],
+    planOptions: ['starter_monthly', 'starter_yearly'],
   },
   {
     id: 'pro',
@@ -66,7 +65,7 @@ const TIERS: {
     badgeBg: 'bg-gradient-to-r from-indigo-600 to-purple-600',
     icon: <Star size={20} className="text-indigo-500" fill="currentColor" />,
     features: [
-      { text: 'Unlimited AI requests', included: true },
+      { text: '40 AI requests / day', included: true },
       { text: 'Download study materials', included: true },
       { text: 'All subjects (no limit)', included: true },
       { text: 'Notes & revision generation', included: true },
@@ -76,7 +75,7 @@ const TIERS: {
       { text: 'Advanced AI model (smarter answers)', included: false },
       { text: 'Parent progress dashboard', included: false },
     ],
-    planOptions: ['pro_monthly', 'pro_quarterly', 'pro_yearly'],
+    planOptions: ['pro_monthly', 'pro_yearly'],
   },
   {
     id: 'elite',
@@ -88,7 +87,7 @@ const TIERS: {
     badgeBg: 'bg-gradient-to-r from-amber-500 to-orange-500',
     icon: <Crown size={20} className="text-amber-500" />,
     features: [
-      { text: 'Unlimited AI requests', included: true },
+      { text: '120 AI requests / day', included: true },
       { text: 'Download study materials', included: true },
       { text: 'All subjects (no limit)', included: true },
       { text: 'Full mock exam generator', included: true },
@@ -100,18 +99,41 @@ const TIERS: {
     ],
     planOptions: ['elite_monthly', 'elite_yearly'],
   },
+  {
+    id: 'ultimate',
+    name: 'Ultimate',
+    tagline: 'Unstoppable learning',
+    color: 'text-rose-600',
+    headerBg: 'bg-gradient-to-r from-rose-500 to-red-600',
+    badge: '🚀 Limitless',
+    badgeBg: 'bg-gradient-to-r from-rose-500 to-red-600',
+    icon: <Zap size={20} className="text-rose-500" fill="currentColor" />,
+    features: [
+      { text: 'Unlimited AI requests', included: true },
+      { text: 'Download study materials', included: true },
+      { text: 'All subjects (no limit)', included: true },
+      { text: 'Full mock exam generator', included: true },
+      { text: 'AI flashcard creator', included: true },
+      { text: 'Advanced AI model (smarter answers)', included: true },
+      { text: 'Priority AI queue (fastest)', included: true },
+      { text: 'Parent progress dashboard', included: true },
+      { text: '1-on-1 human tutor support', included: true },
+    ],
+    planOptions: ['ultimate_monthly', 'ultimate_yearly'],
+  },
 ]
 
 // ─── Plan option metadata ─────────────────────────────────────────────────────
 
 const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: string }> = {
   starter_monthly:      { perMonth: '$2.00', period: 'per month' },
-  starter_quarterly:    { perMonth: '$1.67', period: 'per month, billed $5 quarterly', badge: 'Save 17%' },
+  starter_yearly:       { perMonth: '$1.25', period: 'per month, billed $15 yearly', badge: 'Save 37.5%' },
   pro_monthly:          { perMonth: '$5.00', period: 'per month' },
-  pro_quarterly:        { perMonth: '$4.00', period: 'per month, billed $12 quarterly', badge: 'Save 20%' },
-  pro_yearly:           { perMonth: '$2.92', period: 'per month, billed $35 yearly', badge: 'Best Value' },
-  elite_monthly:        { perMonth: '$8.00', period: 'per month' },
-  elite_yearly:         { perMonth: '$5.00', period: 'per month, billed $60 yearly', badge: 'Save 38%' },
+  pro_yearly:           { perMonth: '$3.33', period: 'per month, billed $40 yearly', badge: 'Save 33%' },
+  elite_monthly:        { perMonth: '$12.00', period: 'per month' },
+  elite_yearly:         { perMonth: '$7.50', period: 'per month, billed $90 yearly', badge: 'Save 37.5%' },
+  ultimate_monthly:     { perMonth: '$25.00', period: 'per month' },
+  ultimate_yearly:      { perMonth: '$16.67', period: 'per month, billed $200 yearly', badge: 'Save 33%' },
   bootcamp_2week:       { perMonth: '$3.00', period: '2-week access (ZIMSEC exam prep)', badge: 'One-time' },
   bootcamp_4week:       { perMonth: '$5.00', period: '4-week access (ZIMSEC exam prep)', badge: 'Best Bootcamp' },
   school_basic_monthly: { perMonth: '$50.00', period: 'per month (up to 50 students)' },

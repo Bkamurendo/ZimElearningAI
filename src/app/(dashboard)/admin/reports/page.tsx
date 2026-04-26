@@ -23,7 +23,7 @@ export default async function AdminReportsPage() {
   ] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, role, plan, created_at, last_sign_in_at'),
     supabase.from('profiles').select('plan, subscription_expires_at, created_at').not('plan', 'is', null),
-    Promise.resolve({ data: [] as any[] }), // user_activity table not yet in schema
+    supabase.from('user_activity').select('user_id, activity_type, created_at'),
     supabase.from('uploaded_documents').select('title, subject, created_at, moderation_status'),
     supabase.from('quiz_attempts').select('score, total, subject_id, created_at, student_id'),
   ])

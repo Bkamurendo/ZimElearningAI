@@ -1,13 +1,14 @@
 /**
  * Feature gating based on user subscription plan.
  *
- * FREE    — 3 AI calls/day, limited features
- * STARTER — $2/mo — 100 AI calls/day, downloads, 15 subjects
- * PRO     — $5/mo — unlimited AI, all tools, all subjects
- * ELITE   — $8/mo — unlimited AI + priority model + parent dashboard
+ * FREE    — 3 AI calls/day
+ * STARTER — $2/mo ($15/yr) — 10 AI calls/day, downloads, 15 subjects
+ * PRO     — $5/mo ($40/yr) — 40 AI calls/day, all tools, all subjects
+ * ELITE   — $12/mo ($90/yr) — 120 AI calls/day + priority model + parent dashboard
+ * ULTIMATE— $25/mo ($200/yr) — Unlimited AI + 1-on-1 support
  */
 
-export type Plan = 'free' | 'starter' | 'pro' | 'elite'
+export type Plan = 'free' | 'starter' | 'pro' | 'elite' | 'ultimate'
 
 export interface PlanFeatures {
   aiDailyLimit: number
@@ -27,9 +28,9 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
   free: {
     aiDailyLimit: 3,
     canDownloadResources: false,
-    canAccessPastPapers: true,     // 2 per day via quota
-    canUseGradePredictor: true,    // 1 per day via quota
-    canUseStudyPlanner: true,      // 1 per day via quota
+    canAccessPastPapers: true,
+    canUseGradePredictor: true,
+    canUseStudyPlanner: true,
     canViewLeaderboard: true,
     canAccessAIWorkspace: false,
     canAccessResourceLibrary: false,
@@ -38,7 +39,7 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     parentDashboard: false,
   },
   starter: {
-    aiDailyLimit: 100,
+    aiDailyLimit: 10,
     canDownloadResources: true,
     canAccessPastPapers: true,
     canUseGradePredictor: true,
@@ -51,7 +52,7 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     parentDashboard: false,
   },
   pro: {
-    aiDailyLimit: 9999,
+    aiDailyLimit: 40,
     canDownloadResources: true,
     canAccessPastPapers: true,
     canUseGradePredictor: true,
@@ -64,6 +65,19 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     parentDashboard: false,
   },
   elite: {
+    aiDailyLimit: 120,
+    canDownloadResources: true,
+    canAccessPastPapers: true,
+    canUseGradePredictor: true,
+    canUseStudyPlanner: true,
+    canViewLeaderboard: true,
+    canAccessAIWorkspace: true,
+    canAccessResourceLibrary: true,
+    maxSubjects: 999,
+    priorityAI: true,
+    parentDashboard: true,
+  },
+  ultimate: {
     aiDailyLimit: 9999,
     canDownloadResources: true,
     canAccessPastPapers: true,
@@ -90,9 +104,9 @@ export function isFeatureAllowed(plan: Plan, feature: keyof PlanFeatures): boole
   return false
 }
 
-/** Returns true if plan has unlimited AI (pro or elite) */
+/** Returns true if plan has unlimited AI (ultimate) */
 export function isUnlimitedAI(plan: Plan): boolean {
-  return plan === 'pro' || plan === 'elite'
+  return plan === 'ultimate'
 }
 
 /**
@@ -117,7 +131,7 @@ export function isPremium(profile: {
   }
 
   // 2. Check if paid plan is active
-  if (profile.plan && ['starter', 'pro', 'elite'].includes(profile.plan)) {
+  if (profile.plan && ['starter', 'pro', 'elite', 'ultimate'].includes(profile.plan)) {
     // If there's no expiration date, it's a legacy/manual lifetime or managed sub
     if (!profile.pro_expires_at) return true
 
