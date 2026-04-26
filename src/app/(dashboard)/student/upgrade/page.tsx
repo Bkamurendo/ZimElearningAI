@@ -35,7 +35,8 @@ const TIERS: {
   icon: React.ReactNode
   features: { text: string; included: boolean }[]
   planOptions: PlanId[]
-}[  {
+}[] = [
+  {
     id: 'starter',
     name: 'Starter',
     tagline: 'Boost your studies',
