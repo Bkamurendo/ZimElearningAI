@@ -49,14 +49,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       case 'revenue_report.csv':
         const { data: revenue } = await supabase
           .from('profiles')
-          .select('plan, subscription_expires_at, created_at')
+          .select('plan, pro_expires_at, created_at')
           .not('plan', 'is', null)
+          .not('plan', 'eq', 'free')
         
         csvContent = [
           'Plan,Subscription Expires,Created At,Monthly Value',
           ...(revenue || []).map(r => {
-            const monthlyValue = r.plan === 'premium' ? '$15' : r.plan === 'basic' ? '$5' : '$0'
-            return `${r.plan},${r.subscription_expires_at || 'Lifetime'},${r.created_at},${monthlyValue}`
+            let monthlyValue = '$0'
+            switch(r.plan) {
+              case 'starter': monthlyValue = '$2'; break;
+              case 'pro':     monthlyValue = '$5'; break;
+              case 'elite':   monthlyValue = '$12'; break;
+              case 'ultimate': monthlyValue = '$25'; break;
+            }
+            return `${r.plan},${r.pro_expires_at || 'Lifetime'},${r.created_at},${monthlyValue}`
           })
         ].join('\n')
         break

@@ -45,8 +45,8 @@ export default async function AdminDashboard() {
       supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }),
       supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'ai_reviewed'),
       supabase.from('uploaded_documents').select('*', { count: 'exact', head: true }).eq('moderation_status', 'published'),
-      supabase.from('profiles').select('id, full_name, email, plan, trial_ends_at, subscription_expires_at').eq('role', 'student').not('trial_ends_at', 'is', null),
-      supabase.from('profiles').select('plan, subscription_expires_at').eq('role', 'student').not('plan', 'is', null),
+      supabase.from('profiles').select('id, full_name, email, plan, trial_ends_at, pro_expires_at').eq('role', 'student').not('trial_ends_at', 'is', null),
+      supabase.from('profiles').select('plan, pro_expires_at').eq('role', 'student').not('plan', 'is', null),
       supabase.from('profiles').select('created_at, role').gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
     ])
 
@@ -109,13 +109,14 @@ export default async function AdminDashboard() {
     })
  
     const paidUsers = paymentStats?.filter((p: any) => p.plan !== 'free' && p.plan !== null) || []
-    const trulyActivePaidUsers = paidUsers.filter((p: any) => !p.subscription_expires_at || new Date(p.subscription_expires_at) >= now)
+    const trulyActivePaidUsers = paidUsers.filter((p: any) => !p.pro_expires_at || new Date(p.pro_expires_at) >= now)
     
+    const ultimateUsers = paidUsers.filter((p: any) => p.plan === 'ultimate')
     const eliteUsers = paidUsers.filter((p: any) => p.plan === 'elite')
     const proUsers = paidUsers.filter((p: any) => p.plan === 'pro')
     const starterUsers = paidUsers.filter((p: any) => p.plan === 'starter')
     
-    const currentMRR = (starterUsers.length * 2) + (proUsers.length * 5) + (eliteUsers.length * 8)
+    const currentMRR = (starterUsers.length * 2) + (proUsers.length * 5) + (eliteUsers.length * 12) + (ultimateUsers.length * 25)
     const potentialMRR = currentMRR + (activeTrials.length * 2)
  
     const cohortByMonth = cohortData?.reduce((acc: any, user: any) => {

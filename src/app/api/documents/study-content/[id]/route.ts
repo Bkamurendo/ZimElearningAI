@@ -218,7 +218,7 @@ export async function POST(
   // 1. Fetch profile to check subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, plan, pro_expires_at, trial_ends_at')
+    .select('role, plan, pro_expires_at, trial_ends_at, schools(subscription_plan, subscription_expires_at)')
     .eq('id', user.id)
     .single()
 
@@ -234,23 +234,48 @@ export async function POST(
   }
 
   // Check cache first — cached results don't consume quota
+  const { data: cached } = await supabase
+    .from('document_study_content')
+    .select('content, generated_at')
+    .eq('document_id', params.id)
+    .eq('content_type', content_type)
+    .maybeSingle()
 
-  if (!force_regenerate) {
-    const { data: cached } = await supabase
-      .from('document_study_content')
-      .select('content, generated_at')
-      .eq('document_id', params.id)
-      .eq('content_type', content_type)
-      .maybeSingle()
-
-    if (cached?.content) {
-      return NextResponse.json({
-        content: cached.content,
-        content_type,
-        cached: true,
-        generated_at: cached.generated_at,
-      })
+  // 2. If cached, we can allow free users to see a "Sample"
+  if (cached?.content) {
+    let finalContent = cached.content
+    
+    if (!isUserPremium && !isOwner) {
+      // Truncate/Mask for free users
+      try {
+        const parsed = JSON.parse(cached.content)
+        if (Array.isArray(parsed)) {
+          // Keep only first 2 items as a "Sample"
+          finalContent = JSON.stringify(parsed.slice(0, 2))
+        } else {
+          // Mask text content (detailed notes)
+          finalContent = cached.content.slice(0, 500) + "\n\n... [Content locked. Upgrade to Pro to read the full document notes] ..."
+        }
+      } catch {
+        finalContent = cached.content.slice(0, 500) + "\n\n... [Content locked] ..."
+      }
     }
+
+    return NextResponse.json({
+      content: finalContent,
+      content_type,
+      cached: true,
+      is_sample: !isUserPremium && !isOwner,
+      generated_at: cached.generated_at,
+    })
+  }
+
+  // 3. If NOT cached and user is NOT premium, they can't generate it
+  if (!isUserPremium && !isOwner) {
+    return NextResponse.json({ 
+      error: 'Premium subscription required to generate study tools',
+      is_premium_required: true 
+    }, { status: 403 })
   }
 
   // Check AI quota before hitting Anthropic (only for non-cached generation)
@@ -272,11 +297,7 @@ export async function POST(
 
   if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
 
-  // 2. Access control: User must be premium OR the one who uploaded it
-  const isOwner = doc.uploaded_by === user.id
-  if (!isUserPremium && !isOwner) {
-    return NextResponse.json({ error: 'Premium subscription required to generate study tools' }, { status: 403 })
-  }
+  // 2. Already verified premium/owner status for generation at the top
 
   // Text limits per content type — detailed_notes needs much more context to cover all topics
   const TEXT_LIMITS: Record<string, number> = {

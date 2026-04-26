@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   // 1. Fetch user profile to check subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, plan, pro_expires_at, trial_ends_at')
+    .select('role, plan, pro_expires_at, trial_ends_at, schools(subscription_plan, subscription_expires_at)')
     .eq('id', user.id)
     .single()
 
@@ -42,6 +42,17 @@ export async function POST(req: NextRequest) {
     conversationHistory?: { role: 'user' | 'assistant'; content: string }[]
   } = await req.json()
 
+  // Check AI quota before hitting Anthropic
+  const { checkAIQuota } = await import('@/lib/ai-quota')
+  const quota = await checkAIQuota(supabase, user.id)
+  if (!quota.allowed) {
+    return new Response(JSON.stringify({ 
+      type: 'error', 
+      message: `Daily AI limit reached (${quota.limit} requests/day). Upgrade to Pro for unlimited access.`,
+      quota 
+    }), { status: 429, headers: { 'Content-Type': 'application/json' } })
+  }
+
   // Fetch document (user must own it or it must be published)
   const { data: docOrNull } = await supabase
     .from('uploaded_documents')
@@ -52,11 +63,8 @@ export async function POST(req: NextRequest) {
 
   if (!docOrNull) return new Response('Document not found or access denied', { status: 404 })
 
-  // 2. Access control: User must be premium OR the one who uploaded it
+  // 2. Access control: Allow everyone (quota handles free tier)
   const isOwner = docOrNull.uploaded_by === user.id
-  if (!isUserPremium && !isOwner) {
-    return new Response('Premium subscription required to chat with documents', { status: 403 })
-  }
 
   // Re-bind to a definitely-non-null const so TypeScript's closure analysis
   // keeps the narrowed type inside nested helper functions below.

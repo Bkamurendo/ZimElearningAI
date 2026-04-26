@@ -14,17 +14,17 @@ export default async function StudentLayout({ children }: { children: React.Reac
   let streak = 0
   let unreadNotifications = 0
   let unreadMessages = 0
-  let plan: 'free' | 'starter' | 'pro' | 'elite' = 'free'
+  let plan: 'free' | 'starter' | 'pro' | 'elite' | 'ultimate' = 'free'
   let aiUsed = 0
   let trialEndsAt: string | null = null
   let subscriptionExpiresAt: string | null = null
   let hasChallenge = false
-
+ 
   if (user) {
     try {
       const { data: profile, error: pError } = await supabase
         .from('profiles')
-        .select('full_name, plan, ai_requests_today, ai_quota_reset_at, trial_ends_at, subscription_expires_at')
+        .select('full_name, plan, ai_requests_today, ai_quota_reset_at, trial_ends_at, pro_expires_at, schools(subscription_plan, subscription_expires_at)')
         .eq('id', user.id)
         .single()
       
@@ -32,9 +32,20 @@ export default async function StudentLayout({ children }: { children: React.Reac
         console.warn('[StudentLayout] Profile not found or quota columns missing:', pError?.message)
       } else {
         userName = profile.full_name ?? 'Student'
-        plan = (profile.plan ?? 'free') as typeof plan
+        
+        // Calculate effective plan
+        let effectivePlan = (profile.plan ?? 'free') as typeof plan
+        const schoolSub = (profile as any).schools
+        if (effectivePlan === 'free' && schoolSub?.subscription_plan === 'pro') {
+          const expiresAt = schoolSub.subscription_expires_at
+          if (!expiresAt || new Date(expiresAt) > new Date()) {
+            effectivePlan = 'pro'
+          }
+        }
+        plan = effectivePlan
+
         trialEndsAt = profile.trial_ends_at ?? null
-        subscriptionExpiresAt = profile.subscription_expires_at ?? null
+        subscriptionExpiresAt = profile.pro_expires_at ?? null
         
         // Calculate today's usage (reset if new day)
         const now = new Date()

@@ -67,7 +67,7 @@ export default async function StudentResourcesPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, plan, pro_expires_at, trial_ends_at')
+    .select('role, plan, pro_expires_at, trial_ends_at, schools(subscription_plan, subscription_expires_at)')
     .eq('id', user.id)
     .single()
 

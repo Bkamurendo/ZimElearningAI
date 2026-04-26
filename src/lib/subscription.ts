@@ -117,11 +117,16 @@ export function isPremium(profile: {
   pro_expires_at?: string | null
   trial_ends_at?: string | null
   role?: string | null
+  schools?: {
+    subscription_plan: string | null
+    subscription_expires_at: string | null
+  } | null
 } | null | undefined): boolean {
   if (!profile) return false
 
   // Admins and Teachers are always considered premium for UI testing/moderation
-  if (profile.role === 'admin' || profile.role === 'teacher') return true
+  const role = profile.role?.toLowerCase()
+  if (role === 'admin' || role === 'teacher' || role === 'school_admin') return true
 
   const now = new Date()
 
@@ -137,6 +142,12 @@ export function isPremium(profile: {
 
     // Otherwise check if it hasn't expired yet
     if (new Date(profile.pro_expires_at) > now) return true
+  }
+
+  // 3. Check if user belongs to a school with an active premium subscription
+  if (profile.schools && profile.schools.subscription_plan === 'pro') {
+    if (!profile.schools.subscription_expires_at) return true
+    if (new Date(profile.schools.subscription_expires_at) > now) return true
   }
 
   return false

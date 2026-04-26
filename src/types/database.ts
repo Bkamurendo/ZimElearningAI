@@ -8,6 +8,9 @@ export interface Profile {
   avatar_url: string | null
   role: UserRole
   school_id?: string | null
+  plan: string | null
+  pro_expires_at: string | null
+  trial_ends_at: string | null
   onboarding_completed: boolean
   created_at: string
   updated_at: string

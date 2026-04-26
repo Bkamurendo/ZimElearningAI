@@ -81,20 +81,21 @@ interface Props {
   streak: number
   unreadNotifications?: number
   unreadMessages?: number
-  plan?: 'free' | 'starter' | 'pro' | 'elite'
+  plan?: 'free' | 'starter' | 'pro' | 'elite' | 'ultimate'
   aiUsed?: number
   trialEndsAt?: string | null
   subscriptionExpiresAt?: string | null
   hasChallenge?: boolean
 }
 
-const PLAN_LIMITS: Record<string, number> = { free: 3, starter: 100, pro: 999, elite: 999 }
-const PLAN_LABELS: Record<string, string>  = { free: 'Free', starter: 'Starter', pro: 'Pro', elite: 'Elite' }
+const PLAN_LIMITS: Record<string, number> = { free: 3, starter: 10, pro: 40, elite: 120, ultimate: 9999 }
+const PLAN_LABELS: Record<string, string>  = { free: 'Free', starter: 'Starter', pro: 'Pro', elite: 'Elite', ultimate: 'Ultimate' }
 const PLAN_COLORS: Record<string, string>  = {
   free:    'bg-slate-600 text-slate-200',
   starter: 'bg-blue-600 text-blue-100',
   pro:     'bg-indigo-600 text-indigo-100',
   elite:   'bg-amber-500 text-amber-100',
+  ultimate: 'bg-purple-600 text-purple-100',
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -138,7 +139,7 @@ export default function StudentSidebar({
   function NavLink({ href, label, icon: Icon, badge }: { href: string; label: string; icon: React.ElementType; badge: string | null }) {
     const active = isActive(href)
     const count  = badge ? (badgeCounts[badge] ?? 0) : 0
-    const isLocked = !['starter', 'pro', 'elite'].includes(plan) && (badge === 'pro-only')
+    const isLocked = !['starter', 'pro', 'elite', 'ultimate'].includes(plan) && (badge === 'pro-only')
     
     return (
       <Link
@@ -326,14 +327,14 @@ export default function StudentSidebar({
                     <AlertTriangle size={14} className="text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-red-300 leading-tight">Elite Expired</div>
+                    <div className="text-xs font-bold text-red-300 leading-tight">Plan Expired</div>
                     <div className="text-xs text-red-500 leading-tight underline group-hover:text-red-400">Renew Now to unlock AI</div>
                   </div>
                 </Link>
               )
             }
 
-            if (plan === 'pro' || plan === 'elite') {
+            if (plan === 'pro' || plan === 'elite' || plan === 'ultimate') {
               return (
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800/60">
                   <Crown size={14} className="text-amber-400 flex-shrink-0" />

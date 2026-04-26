@@ -204,6 +204,7 @@ export default function StudyPanel({
   const [cached, setCached] = useState<CachedContent>(preloaded)
   const [loading, setLoading] = useState<Record<string, boolean>>({})
   const [errors, setErrors]   = useState<Record<string, string>>({})
+  const [isSample, setIsSample] = useState<Record<string, boolean>>({})
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([])
@@ -253,6 +254,10 @@ export default function StudyPanel({
         }
         setErrors((p) => ({ ...p, [contentType]: data.error ?? 'Generation failed' }))
         return
+      }
+
+      if (data.is_sample) {
+        setIsSample((p) => ({ ...p, [contentType]: true }))
       }
 
       // Parse JSON content for structured types
@@ -368,8 +373,10 @@ export default function StudyPanel({
   // ── Render tab content ────────────────────────────────────────────────────
 
   function renderTabContent() {
-    if (!isPremium && !isOwner) return renderLockedState()
     if (activeTab === 'chat') return renderChat()
+    if (!isPremium && !isOwner && !cached[activeTab as keyof CachedContent] && !loading[activeTab]) {
+      return renderLockedState()
+    }
 
     const key = activeTab as keyof CachedContent
     const isLoading = loading[activeTab]
@@ -410,12 +417,31 @@ export default function StudyPanel({
 
     if (!content) return null
 
-    if (activeTab === 'snap_notes') return renderSnapNotes(content as SnapNote[])
-    if (activeTab === 'detailed_notes') return renderDetailedNotes(content as string)
-    if (activeTab === 'model_answers') return renderModelAnswers(content as ModelAnswer[])
-    if (activeTab === 'glossary') return renderGlossary(content as GlossaryItem[])
-    if (activeTab === 'practice_questions') return renderPracticeQuestions(content as PracticeQuestion[])
-    return null
+    let view = null
+    if (activeTab === 'snap_notes') view = renderSnapNotes(content as SnapNote[])
+    if (activeTab === 'detailed_notes') view = renderDetailedNotes(content as string)
+    if (activeTab === 'model_answers') view = renderModelAnswers(content as ModelAnswer[])
+    if (activeTab === 'glossary') view = renderGlossary(content as GlossaryItem[])
+    if (activeTab === 'practice_questions') view = renderPracticeQuestions(content as PracticeQuestion[])
+
+    if ((!isPremium && !isOwner) || isSample[activeTab]) {
+      return (
+        <div className="relative">
+          {view}
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white/90 to-transparent flex flex-col items-center justify-end pb-6 px-6">
+            <div className="bg-indigo-600 text-white rounded-2xl p-4 shadow-xl border border-indigo-400 max-w-sm w-full text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Free Sample</p>
+               <p className="text-sm font-bold mb-3">Upgrade to unlock all {tabs.find(t => t.key === activeTab)?.label}</p>
+               <Link href="/student/upgrade" className="inline-flex items-center gap-2 bg-white text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-50 transition">
+                 <Sparkles size={14} /> Get Full Access
+               </Link>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return view
   }
 
   // ── Snap Notes renderer ───────────────────────────────────────────────────

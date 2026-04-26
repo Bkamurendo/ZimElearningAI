@@ -26,12 +26,26 @@ export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getUserPlan(supabase: any, userId: string): Promise<string> {
-  const { data } = await supabase.from('profiles').select('plan').eq('id', userId).single()
-  return data?.plan ?? 'free'
+  const { data } = await supabase
+    .from('profiles')
+    .select('plan, schools(subscription_plan, subscription_expires_at)')
+    .eq('id', userId)
+    .single()
+
+  // User's own plan takes precedence
+  if (data?.plan && data.plan !== 'free') return data.plan
+
+  // Fall back to school plan if active
+  if (data?.schools?.subscription_plan === 'pro') {
+    const expiresAt = data.schools.subscription_expires_at
+    if (!expiresAt || new Date(expiresAt) > new Date()) return 'pro'
+  }
+
+  return 'free'
 }
 
 export function isPaidPlan(plan: string): boolean {
-  return ['starter', 'pro', 'elite'].includes(plan)
+  return ['starter', 'pro', 'elite', 'ultimate'].includes(plan)
 }
 
 export interface QuotaResult {
@@ -51,10 +65,10 @@ export async function checkAIQuota(
   supabase: SupabaseClient,
   userId: string
 ): Promise<QuotaResult> {
-  // Fetch current usage
+  // Fetch current usage and school plan
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('plan, ai_requests_today, ai_quota_reset_at')
+    .select('plan, ai_requests_today, ai_quota_reset_at, schools(subscription_plan, subscription_expires_at)')
     .eq('id', userId)
     .single()
 
@@ -67,7 +81,16 @@ export async function checkAIQuota(
     return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
-  const plan = (profile.plan || 'free') as Plan
+  let plan = (profile.plan || 'free') as Plan
+  
+  // If user is free, check if school is pro
+  if (plan === 'free' && profile.schools?.subscription_plan === 'pro') {
+    const expiresAt = profile.schools.subscription_expires_at
+    if (!expiresAt || new Date(expiresAt) > now) {
+      plan = 'pro'
+    }
+  }
+
   const features = getPlanFeatures(plan)
   const limit = features.aiDailyLimit
 

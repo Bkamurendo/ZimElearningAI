@@ -64,7 +64,7 @@ export default async function StudentDocumentDetailPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, plan, pro_expires_at, trial_ends_at')
+    .select('role, plan, pro_expires_at, trial_ends_at, schools(subscription_plan, subscription_expires_at)')
     .eq('id', user.id)
     .single()
 
@@ -263,57 +263,43 @@ export default async function StudentDocumentDetailPage({
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-700">📄 Document Preview</p>
-                {signedUrl && (isUserPremium || isOwner) && (
-                  <a href={signedUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition">
-                    Open full screen ↗
-                  </a>
-                )}
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isUserPremium || isOwner ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {isUserPremium || isOwner ? 'Full Access' : 'Free Preview'}
+                  </span>
+                  {signedUrl && (isUserPremium || isOwner) && (
+                    <a href={signedUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition">
+                      Open full screen ↗
+                    </a>
+                  )}
+                </div>
               </div>
               
-              {!isUserPremium && !isOwner ? (
+              {signedUrl ? (
                 <div className="relative group">
-                  {/* Blurred preview background */}
-                  <div className="w-full h-[640px] bg-slate-100 flex items-center justify-center overflow-hidden grayscale blur-sm opacity-50 select-none pointer-events-none">
-                     <div className="space-y-4 w-full px-12">
-                        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
-                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
-                        <div className="h-32 bg-gray-200 rounded w-full animate-pulse" />
-                        <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
-                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
-                        <div className="h-64 bg-gray-200 rounded w-full animate-pulse" />
-                     </div>
-                  </div>
+                  <iframe 
+                    src={`${signedUrl}${!isUserPremium && !isOwner ? '#toolbar=0&navpanes=0&scrollbar=0' : ''}`} 
+                    className="w-full" 
+                    style={{ height: '640px' }} 
+                    title={doc.title} 
+                  />
                   
-                  {/* Lock Overlay */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-white/60 backdrop-blur-[2px]">
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-amber-500 mb-6 border border-amber-100 animate-bounce">
-                      <Lock size={32} fill="currentColor" />
+                  {!isUserPremium && !isOwner && (
+                    <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-white via-white/80 to-transparent flex flex-col items-center justify-end pb-8 px-6">
+                      <div className="bg-white p-4 rounded-2xl shadow-xl border border-gray-100 text-center max-w-sm">
+                        <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500 mx-auto mb-3">
+                           <Lock size={20} fill="currentColor" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-sm mb-1">Full Document Locked</h4>
+                        <p className="text-xs text-gray-500 mb-4">Upgrade to Pro to view all pages, download PDFs, and unlock full AI study tools.</p>
+                        <Link href="/student/upgrade" className="flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition">
+                           <Sparkles size={14} /> Unlock for $2/mo
+                        </Link>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Full Document Locked</h3>
-                    <p className="text-sm text-gray-600 text-center max-w-xs mb-8">
-                      Free users can view 3 summaries per day. Upgrade to view the full PDF and unlock all AI Study Tools.
-                    </p>
-                    
-                    <div className="flex flex-col w-full gap-3 max-w-[240px]">
-                      <Link
-                        href="/student/upgrade"
-                        className="flex items-center justify-center gap-2 py-3 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all transform hover:scale-105 active:scale-95"
-                      >
-                        <Sparkles size={18} />
-                        Unlock for $2/mo
-                      </Link>
-                      <Link
-                        href={`/student/resources/${subjectCode}`}
-                        className="text-center py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
-                      >
-                        Back to library
-                      </Link>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ) : signedUrl ? (
-                <iframe src={signedUrl} className="w-full" style={{ height: '640px' }} title={doc.title} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <span className="text-4xl mb-3">📎</span>
