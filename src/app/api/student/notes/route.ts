@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logActivity } from '@/lib/activity'
 
 async function getStudentId(supabase: ReturnType<typeof createClient>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -59,6 +60,15 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) throw new Error(error.message)
+
+    const { userId } = await getStudentId(supabase)
+    if (userId) {
+      logActivity(userId, 'generate_notes', `Created note: ${data.title}`, {
+        noteId: data.id,
+        subjectId: body.subject_id
+      })
+    }
+
     return NextResponse.json({ note: data }, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 })

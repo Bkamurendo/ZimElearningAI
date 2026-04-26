@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { logActivity } from '@/lib/activity'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -44,6 +45,16 @@ export async function POST(req: NextRequest) {
 
   // Update topic mastery
   const pct = safeTotal > 0 ? safeScore / safeTotal : 0
+
+  // Log activity
+  logActivity(user.id, 'complete_quiz', `Completed ${topic} quiz with ${score}/${total}`, {
+    subjectCode,
+    topic,
+    score,
+    total,
+    percentage: pct
+  })
+
   const mastery =
     pct >= 0.85 ? 'mastered' : pct >= 0.65 ? 'competent' : pct >= 0.35 ? 'learning' : 'not_started'
 

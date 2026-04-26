@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
 import { checkAIQuota } from '@/lib/ai-quota'
 import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
+import { logActivity } from '@/lib/activity'
 
 export const maxDuration = 90
 
@@ -246,6 +247,14 @@ Always:
             }
           }
         }
+        
+        // Log the activity for analytics
+        logActivity(user.id, 'use_solver', `Solved ${safeSubjectName} problem in ${safeMode} mode`, {
+          subject: safeSubjectName,
+          mode: safeMode,
+          level: safeLevel,
+          documentId
+        })
 
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))
       } catch (err) {

@@ -6,6 +6,7 @@ import { ShieldAlert } from 'lucide-react'
 import { isRedirectError } from 'next/dist/client/components/redirect'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
+import { logActivity } from '@/lib/activity'
 
 export default async function StudentDashboard() {
   const supabase = createClient()
@@ -175,6 +176,9 @@ export default async function StudentDashboard() {
       { label: 'Quizzes done', value: quizzesCompleted ?? 0, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-t-purple-500' },
       { label: 'Topics mastered', value: topicsMastered ?? 0, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-t-amber-500' },
     ]
+
+    // Log the visit for analytics
+    logActivity(user.id, 'dashboard_visit', 'Viewed student dashboard')
 
     return (
       <DashboardClient 
