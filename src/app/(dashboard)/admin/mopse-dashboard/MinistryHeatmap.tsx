@@ -45,7 +45,7 @@ export function MinistryHeatmap() {
               Mid: 40-69%
             </span>
             <span className="flex items-center gap-1.5 text-[10px] font-bold bg-red-500/20 text-red-400 px-2 py-1 rounded-full border border-red-500/30">
-              Low: <40%
+              Low: &lt;40%
             </span>
           </div>
         </div>

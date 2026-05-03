@@ -43,7 +43,6 @@ export const metadata: Metadata = {
   },
 }
 
-import { UpgradePopup } from '@/components/UpgradePopup'
 import MobileNavbar from '@/components/MobileNavbar'
 
 export default function RootLayout({

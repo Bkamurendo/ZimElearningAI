@@ -29,7 +29,7 @@ const STAT_ICONS: Record<string, React.ElementType> = {
   'Lessons done': CheckCircle2,
   'Quizzes done': Brain,
   'Topics mastered': Star,
-}
+}import MaFundiMissionCard from '@/components/dashboard/MaFundiMissionCard'
 import GettingStartedChecklist from '@/components/GettingStartedChecklist'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -90,28 +90,27 @@ export default function DashboardClient({
   hasUsedMaFundi = false,
   learningMinutesToday = 0,
 }: DashboardClientProps) {
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('learning') // Default to learning for better engagement
 
-  const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const levelLabel = studentProfile?.zimsec_level?.toUpperCase() ?? 'O-LEVEL'
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'  const levelLabel = studentProfile?.zimsec_level?.toUpperCase() ?? 'O-LEVEL'
 
   const dashboardTabs = [
-    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
-    { id: 'learning', label: 'My Learning', icon: <GraduationCap size={16} /> },
-    { id: 'tasks', label: 'Exams & Tasks', icon: <ListTodo size={16} /> }
+    { id: 'learning', label: 'My Lessons', icon: <GraduationCap size={16} /> },
+    { id: 'overview', label: 'Fun Zone', icon: <LayoutDashboard size={16} /> },
+    { id: 'tasks', label: 'Homework', icon: <ListTodo size={16} /> }
   ]
 
+  const primaryMission = continueItems[0]
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-8">
       
       {/* Parental Engagement Loop */}
       <ParentSyncDialog existingPhone={(profile as any)?.parent_phone} />
       
       {/* Trial Status Banner */}
       {profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date() && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-amber-200/20 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-amber-200/20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
               <Zap size={20} className="animate-pulse" />
@@ -124,219 +123,92 @@ export default function DashboardClient({
             </div>
           </div>
           <Link href="/student/upgrade">
-            <Button size="sm" className="bg-white text-orange-600 border-none font-black text-[10px] uppercase tracking-widest hover:bg-amber-50">
-              Keep Pro Features
+            <Button size="sm" className="bg-white text-orange-600 border-none font-black text-[10px] uppercase tracking-widest">
+              Keep Pro
             </Button>
           </Link>
         </div>
       )}
       
-      {/* Premium Welcome Header */}
-      <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 border border-slate-800 p-6 sm:p-10 shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 blur-[80px] translate-y-1/2 -translate-x-1/4" />
-        
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <Badge variant="emerald" size="sm" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 mb-2">
-               {studentProfile?.grade} · {levelLabel}
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              {greeting}, <span className="text-emerald-400">{firstName}</span>!
-            </h1>
-            <p className="text-slate-400 text-sm sm:text-base font-medium max-w-md">
-              You're making great progress. Ready to tackle today's ZIMSEC revision?
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
-             {/* Dynamic Stats Pill */}
-             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <Zap size={20} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
-                <p className="text-lg sm:text-xl font-black text-white">
-                  {stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0}
-                </p>
-                <p className="text-xs uppercase font-black text-slate-500 tracking-widest">Mastered</p>
-             </div>
-
-             {/* Streak Pill */}
-             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <p className="text-lg sm:text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
-                <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
-             </div>
-
-             <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <p className="text-lg sm:text-xl font-black text-indigo-400">⏱️ {learningMinutesToday}m</p>
-                <p className="text-xs uppercase font-black text-indigo-500/60 tracking-widest">Focus Time</p>
-              </div>
-
-             <Button 
-                onClick={() => {
-                  try {
-                    fireConfetti()
-                  } catch (e) {
-                    console.error('Confetti failed', e)
-                  }
-                }} 
-                variant="premium" 
-                size="icon" 
-                className="rounded-full w-12 h-12 shrink-0 animate-bounce"
-                title="Celebrate your progress!"
-              >
-                🎉
-              </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Getting Started Checklist — shown for new students */}
-      <GettingStartedChecklist
-        hasSubjects={subjects.length > 0}
-        hasExamDates={hasExamDates}
-        hasUsedMaFundi={hasUsedMaFundi}
+      {/* ── THE MAFUNDI COMMAND CENTER (CORE) ── */}
+      <MaFundiMissionCard 
+        studentName={firstName}
+        currentSubject={primaryMission?.subjectName}
+        nextLesson={primaryMission?.lessonTitle}
+        lessonId={primaryMission?.lessonId}
+        progress={Math.round((stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0) * 1.5) % 100 || 15}
       />
 
       {/* Modern Tabbed Navigation */}
       <div className="sticky top-4 z-40 flex justify-center">
-        <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} className="shadow-xl shadow-slate-900/5" />
+        <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} className="shadow-2xl shadow-slate-900/10" />
       </div>
 
       {/* Tab Contents */}
-      <div className="space-y-6">
-        <TabContent id="overview" activeTab={activeTab}>
-          <div className="space-y-6">
-            {/* Mission Hub (Mastery Heatmap) */}
-            <Card glass className="border-emerald-100/50 dark:border-emerald-900/20">
-               <CardHeader className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center">
-                       <CheckCircle2 size={16} className="text-white" />
-                    </div>
-                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Syllabus Mastery Hub</h2>
-                  </div>
-                  <Badge variant="blue">Real-time ZIMSEC Alignment</Badge>
-               </CardHeader>
-               <CardContent>
-                  <div className="min-h-[100px]">
-                    <PassPulseRings />
-                  </div>
-               </CardContent>
-            </Card>
-
-            {/* Daily Focus Tracker */}
-            <LearningMinutesTracker minutesToday={learningMinutesToday} targetMinutes={60} />
-
-            {/* Study Squads (Phase 5 Social) */}
-            <SquadsWidget />
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {stats.map(({ label, value, color, bg, border }, _idx) => {
-                  const Icon = STAT_ICONS[label] ?? BookOpen
-                  return (
-                  <Card key={label} hover className={`p-5 border-t-4 ${border}`}>
-                    <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3 shadow-inner`}>
-                      <Icon size={20} className={color} />
-                    </div>
-                    <p className={`text-3xl font-black ${color}`}>{value}</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{label}</p>
-                  </Card>
-                  )
-                })}
-            </div>
-
-            {/* Daily Challenge Promo */}
-            <Link href="/student/challenges">
-              <Card className="bg-gradient-to-r from-amber-500 to-orange-600 border-none relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-500" />
-                <CardContent className="flex items-center justify-between p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-[1.25rem] flex items-center justify-center shadow-lg">
-                       {dailyChallengeCompleted ? <Trophy size={24} className="text-yellow-300" /> : <Zap size={24} className="text-yellow-300 animate-bounce" />}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black text-white italic tracking-tight uppercase">DAILY SURVIVAL MISSION</h3>
-                      <p className="text-amber-100 text-sm font-black uppercase tracking-tight">
-                        {dailyChallengeCompleted 
-                          ? `COMPLETED: RECEIVED ${(_dailyChallengeScore || 0) * 10} XP` 
-                          : '5 Questions · 50 XP Reward · One Life.'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="secondary" size="md" className="bg-white text-orange-600 border-none font-black shadow-lg">
-                      <Link href="/student/challenges">
-                        {dailyChallengeCompleted ? 'Leaderboard' : 'Start Mission'}
-                      </Link>
-                    </Button>
-                    <Button variant="premium" size="md" className="bg-slate-900 text-white border-none font-black shadow-lg">
-                      <Link href="/student/rankings">
-                        National Rankings
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-        </TabContent>
-
+      <div className="space-y-8">
         <TabContent id="learning" activeTab={activeTab}>
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Adaptive Path & Continue Studying (Left) */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-8">
                <AdaptivePath />
 
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                 <PlayCircle size={14} /> Resume Learning Path
-               </h3>
+               <div className="flex items-center justify-between px-1">
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                   <PlayCircle size={14} /> Back to My Book
+                 </h3>
+               </div>
+
                {continueItems.length > 0 ? (
                  <div className="grid gap-3">
                     {continueItems.map((item, idx) => (
                       <Link key={item.lessonId} href={`/student/lessons/${item.lessonId}`}>
-                        <Card hover className="group p-4 flex items-center gap-4 hover:border-emerald-300">
-                          <div className={`w-12 h-12 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-2xl flex items-center justify-center shadow-md text-white font-black shrink-0`}>
+                        <Card hover className="group p-5 flex items-center gap-4 border-slate-100 hover:border-emerald-300 transition-all">
+                          <div className={`w-14 h-14 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-2xl flex items-center justify-center shadow-lg text-white font-black shrink-0`}>
                              {item.subjectCode.split('-')[1]?.slice(0, 2) ?? 'Z'}
                           </div>
                           <div className="flex-1 min-w-0">
-                             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{item.subjectName}</p>
-                             <h4 className="text-base font-bold text-slate-800 dark:text-white truncate">{item.lessonTitle}</h4>
+                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.subjectName}</p>
+                             <h4 className="text-lg font-black text-slate-800 dark:text-white truncate uppercase tracking-tight">{item.lessonTitle}</h4>
                           </div>
-                          <ChevronRight className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                          <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                            <ChevronRight size={18} />
+                          </div>
                         </Card>
                       </Link>
                     ))}
                  </div>
                ) : (
-                 <Card className="p-8 text-center border-dashed">
-                   <p className="text-slate-400 text-sm font-medium">Ready to start your journey? Pick a subject below.</p>
+                 <Card className="p-12 text-center border-dashed bg-slate-50/50">
+                   <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Pick a book below to start!</p>
                  </Card>
                )}
 
                {/* Subjects Grid */}
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 pt-4">
-                 <BookOpen size={14} /> My ZIMSEC Subjects
-               </h3>
+               <div className="flex items-center justify-between px-1 pt-4">
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                   <BookOpen size={14} /> My School Books
+                 </h3>
+                 <Link href="/student/subjects" className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">See All</Link>
+               </div>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {subjects.map((s, idx) => (
                     <Link key={s.code} href={`/student/subjects/${s.code}`}>
-                      <Card hover glass className="p-4 flex flex-col gap-4">
+                      <Card hover glass className="p-5 flex flex-col gap-4 border-slate-100">
                         <div className="flex items-center justify-between">
-                           <div className={`w-10 h-10 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-xs`}>
+                           <div className={`w-12 h-12 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-2xl flex items-center justify-center shadow-xl text-white font-black text-sm`}>
                               {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
                            </div>
-                           <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-xs uppercase">
-                              {/* Calculate a realistic proxy for progress */}
-                              {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% PREP
-                           </Badge>
+                           <div className="text-right">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.code}</p>
+                              <p className="text-sm font-black text-emerald-600 uppercase italic">
+                                {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% DONE
+                              </p>
+                           </div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">{s.name}</h4>
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
-                        </div>
-                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                        <h4 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-tight">{s.name}</h4>
+                        <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                            <div 
-                             className={`h-full bg-gradient-to-r ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-full`} 
+                             className={`h-full bg-gradient-to-r ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]`} 
                              style={{ width: `${Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}%` }} 
                            />
                         </div>
@@ -346,97 +218,144 @@ export default function DashboardClient({
                </div>
             </div>
 
-            {/* Quick Actions & Recent Achievements (Right) */}
+            {/* Growth Center (Right) */}
             <div className="space-y-6">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Growth Center</h3>
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Study Tools</h3>
                <div className="grid grid-cols-1 gap-3">
-                  {(() => {
-                    const isPremiumUser = ['starter', 'pro', 'elite'].includes(profile?.plan || 'free')
-                    return (
-                      <Link href={isPremiumUser ? "/student/ai-workspace" : "/student/upgrade?feature=ai-workspace"}>
-                        <Card hover className="bg-slate-900 border-slate-800 p-5 group flex items-center justify-between relative overflow-hidden">
-                           {!isPremiumUser && (
-                             <div className="absolute top-2 right-2">
-                               <Badge variant="amber" size="xs" className="gap-1 bg-amber-500/10 text-amber-500 border-amber-500/20">
-                                 <Lock size={10} /> PRO
-                               </Badge>
-                             </div>
-                           )}
-                           <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                 <Sparkles size={18} />
-                              </div>
-                              <div>
-                                <p className="text-white font-bold text-sm">Ask MaFundi AI Workspace</p>
-                                <p className="text-slate-400 text-xs uppercase font-black">24/7 Personal Tutor</p>
-                              </div>
-                           </div>
-                           <ChevronRight className="text-slate-600" />
-                        </Card>
-                      </Link>
-                    )
-                  })()}
-
                   <div className="relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-                    <Card className="relative p-5 group flex items-center justify-between border-emerald-500/30">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600">
-                             <MessageSquare size={18} />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-bold text-sm">WhatsApp Tutor</p>
-                              <Badge variant="emerald" size="xs">OFFICIAL</Badge>
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                    <Link href="https://wa.me/263782876599?text=Mhoro MaFundi! I am registered on ZimLearn AI and I need help with my studies." target="_blank">
+                      <Card className="relative p-6 group flex items-center justify-between border-emerald-500/30 bg-white/80 backdrop-blur-xl">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                               <MessageSquare size={20} />
                             </div>
-                            <p className="text-slate-400 text-xs uppercase font-black">Sync MaFundi: +263 78 287 6599</p>
-                          </div>
-                       </div>
-                       <Button variant="ghost" size="icon" className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50">
-                          <Link href="https://wa.me/263782876599?text=Mhoro MaFundi! I am registered on ZimLearn AI and I need help with my studies." target="_blank">
-                            <ChevronRight />
-                          </Link>
-                       </Button>
-                    </Card>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-black text-sm uppercase tracking-tight text-slate-900">WhatsApp Help</p>
+                                <Badge variant="emerald" size="xs">ACTIVE</Badge>
+                              </div>
+                              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Talk to MaFundi</p>
+                            </div>
+                         </div>
+                         <ChevronRight className="text-emerald-500 group-hover:translate-x-1 transition-transform" />
+                      </Card>
+                    </Link>
                   </div>
 
                   <Link href="/student/progress">
-                    <Card hover className="p-5 group flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                             <BarChart3 size={18} />
+                    <Card hover className="p-6 group flex items-center justify-between border-slate-100">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                             <BarChart3 size={20} />
                           </div>
                           <div>
-                            <p className="font-bold text-sm">My Progress</p>
-                            <p className="text-slate-400 text-xs uppercase font-black">In-depth Analytics</p>
+                            <p className="font-black text-sm uppercase tracking-tight text-slate-900">How am I doing?</p>
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">My Progress</p>
                           </div>
                        </div>
-                       <ChevronRight className="text-slate-300" />
+                       <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-transform" />
+                    </Card>
+                  </Link>
+
+                  <Link href="/student/offline">
+                    <Card hover className="p-6 group flex items-center justify-between border-slate-100">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-600">
+                             <LayoutDashboard size={20} />
+                          </div>
+                          <div>
+                            <p className="font-black text-sm uppercase tracking-tight text-slate-900">Saved Books</p>
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Study Offline</p>
+                          </div>
+                       </div>
+                       <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                     </Card>
                   </Link>
                </div>
 
-               {/* Recent Achievements Card */}
+               {/* Recent Trophies */}
                {recentBadges.length > 0 && (
-                 <Card glass className="border-amber-100/50 dark:border-amber-900/20">
-                   <CardHeader className="flex flex-row items-center justify-between">
-                      <h3 className="text-xs font-black text-amber-600 uppercase tracking-widest">Recent Trophies</h3>
-                      <Trophy size={14} className="text-amber-500" />
-                   </CardHeader>
-                   <CardContent className="space-y-3">
-                      {recentBadges.map((b, i) => (
-                        <div key={i} className="flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 p-2 rounded-xl border border-amber-50 dark:border-amber-900/10">
-                           <span className="text-xl">🏅</span>
-                           <div className="min-w-0">
-                              <p className="text-xs font-bold text-amber-900 dark:text-amber-100 truncate">{b.badge_name}</p>
-                              <p className="text-xs text-amber-600/60 font-bold uppercase tracking-tighter">Achievement Unlocked</p>
-                           </div>
-                        </div>
-                      ))}
-                   </CardContent>
+                 <Card glass className="border-slate-100 rounded-[2rem] overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6 flex flex-row items-center justify-between">
+                       <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">My Stars</h3>
+                       <Trophy size={14} className="text-amber-500" />
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                       {recentBadges.map((b, i) => (
+                         <div key={i} className="flex items-center gap-4 group">
+                            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">⭐</div>
+                            <div className="min-w-0">
+                               <p className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">{b.badge_name}</p>
+                               <p className="text-[10px] text-amber-600 font-black uppercase tracking-widest">You won a Star!</p>
+                            </div>
+                         </div>
+                       ))}
+                    </CardContent>
                  </Card>
                )}
             </div>
+          </div>
+        </TabContent>
+
+        <TabContent id="overview" activeTab={activeTab}>
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               {/* Pass Pulse & Heatmap */}
+               <Card glass className="border-emerald-100 rounded-[2.5rem] p-8">
+                  <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight mb-8">My Weekly Progress</h2>
+                  <PassPulseRings />
+               </Card>
+
+               <div className="space-y-8">
+                  {/* Daily Focus */}
+                  <LearningMinutesTracker minutesToday={learningMinutesToday} targetMinutes={60} />
+                  
+                  {/* Quick Stats Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                      {stats.map(({ label, value, color, bg, border }, _idx) => {
+                        const Icon = STAT_ICONS[label] ?? BookOpen
+                        // Rename labels for UI
+                        const displayLabel = label === 'Topics mastered' ? 'Books Finished' : label === 'Lessons done' ? 'Lessons Read' : label
+                        return (
+                        <Card key={label} className={`p-6 border-t-4 ${border} rounded-[2rem]`}>
+                          <div className={`w-12 h-12 ${bg} rounded-2xl flex items-center justify-center mb-4 shadow-inner`}>
+                            <Icon size={24} className={color} />
+                          </div>
+                          <p className={`text-4xl font-black ${color} tracking-tighter`}>{value}</p>
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">{displayLabel}</p>
+                        </Card>
+                        )
+                      })}
+                  </div>
+               </div>
+            </div>
+
+            {/* Daily Challenge Promo */}
+            <Link href="/student/challenges">
+              <Card className="bg-slate-900 border-none relative overflow-hidden group rounded-[2.5rem] p-1">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 blur-[100px] -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-1000" />
+                <CardContent className="flex flex-col md:flex-row items-center justify-between p-10 gap-8">
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-amber-500/20 group-hover:rotate-12 transition-transform duration-500">
+                       <Zap size={40} className="text-white animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-black text-white italic tracking-tight uppercase">Play & Win!</h3>
+                      <p className="text-amber-500 text-sm font-black uppercase tracking-widest mt-1">
+                        5 Fun Questions · Win 50 Points · Be the Best!
+                      </p>
+                    </div>
+                  </div>
+                  <Button className="h-16 px-10 rounded-2xl bg-amber-500 text-white font-black uppercase tracking-widest shadow-xl shadow-amber-900/40 hover:bg-amber-400 hover:scale-105 transition-all">
+                    Play Now →
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Social Squads */}
+            <SquadsWidget />
           </div>
         </TabContent>
 
@@ -445,7 +364,7 @@ export default function DashboardClient({
              {/* Exams Center */}
              <div className="space-y-4">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <CalendarCheck size={14} /> Official ZIMSEC Timetable
+                  <CalendarCheck size={14} /> My Exam Dates
                 </h3>
                 {upcomingExams.length > 0 ? (
                   <div className="grid gap-3">
@@ -465,12 +384,12 @@ export default function DashboardClient({
                                  </div>
                               </div>
                               <div className="text-right">
-                                 <p className={`text-2xl font-black text-${urgencyStatus}-600 leading-none`}>{days <= 0 ? 'GO!' : days}</p>
+                                 <p className={`text-2xl font-black text-${urgencyStatus}-600 leading-none`}>{days <= 0 ? 'NOW!' : days}</p>
                                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Days Left</p>
                               </div>
                            </div>
                            <Link href="/student/ai-workspace" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
-                              <Sparkles size={12} /> Personalized Prep
+                              <Sparkles size={12} /> Get Ready with MaFundi
                            </Link>
                          </Card>
                        )
@@ -478,7 +397,7 @@ export default function DashboardClient({
                   </div>
                 ) : (
                   <Card className="p-10 text-center border-dashed">
-                     <p className="text-slate-400 text-sm italic font-medium">No official exams added yet. Sync your timetable in settings.</p>
+                     <p className="text-slate-400 text-sm italic font-medium">No exams yet. Add them in settings!</p>
                   </Card>
                 )}
              </div>
@@ -486,7 +405,7 @@ export default function DashboardClient({
              {/* Missions & Tasks */}
              <div className="space-y-4">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ListTodo size={14} /> Training Missions (Assignments)
+                  <ListTodo size={14} /> My Homework
                 </h3>
                 <Link href="/student/assignments">
                   <Card hover className="p-8 text-center group cursor-pointer border-t-8 border-orange-500">
@@ -494,9 +413,9 @@ export default function DashboardClient({
                         <ClipboardList size={28} className="text-orange-500" />
                      </div>
                      <p className="text-2xl font-black text-slate-800 dark:text-white">{pendingAssignmentsCount}</p>
-                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Pending Assignments</p>
+                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tasks to do</p>
                      <Button variant="outline" size="sm" className="mt-4 border-slate-200 text-slate-600 hover:border-orange-500 hover:text-orange-600">
-                        View All Tasks
+                        See All Homework
                      </Button>
                   </Card>
                 </Link>
@@ -504,7 +423,7 @@ export default function DashboardClient({
                 {/* Notifications Quick-Access */}
                 <Card className="overflow-hidden">
                    <CardHeader className="bg-slate-50 dark:bg-slate-900/50 flex flex-row items-center justify-between py-3">
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Intelligence Briefing</h4>
+                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">News from Teacher</h4>
                       <Bell size={14} className="text-slate-400" />
                    </CardHeader>
                    <CardContent className="divide-y divide-slate-50 dark:divide-slate-800 p-0">
@@ -518,13 +437,14 @@ export default function DashboardClient({
                         </div>
                       ))}
                       <Link href="/student/notifications" className="block text-center py-2 text-xs font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
-                         View All Intelligence
+                         See all News
                       </Link>
                    </CardContent>
                 </Card>
              </div>
           </div>
         </TabContent>
+   </TabContent>
       </div>
 
     </div>

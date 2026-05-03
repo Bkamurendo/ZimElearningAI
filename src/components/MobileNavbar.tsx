@@ -9,10 +9,10 @@ export default function MobileNavbar() {
   const pathname = usePathname()
 
   const navItems = [
-    { label: 'Home', icon: Home, href: '/student/dashboard' },
-    { label: 'Courses', icon: BookOpen, href: '/student/subjects' },
-    { label: 'MaFundi', icon: MessageSquare, href: '/student/ai-workspace', primary: true },
-    { label: 'Offline', icon: CloudOff, href: '/student/offline' },
+    { label: 'Desk', icon: Home, href: '/student/dashboard' },
+    { label: 'Books', icon: BookOpen, href: '/student/subjects' },
+    { label: 'Teacher', icon: MessageSquare, href: '/student/ai-workspace', primary: true },
+    { label: 'Saved', icon: CloudOff, href: '/student/offline' },
     { label: 'Profile', icon: User, href: '/student/profile' },
   ]
 
