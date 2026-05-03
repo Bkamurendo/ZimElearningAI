@@ -147,7 +147,17 @@ const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: stri
   school_elite_basic:   { perMonth: '$100.00', period: 'per month' },
   school_elite_unlimited: { perMonth: '$83.33', period: 'per month, billed $1,000 yearly' },
   corporate_gold:       { perMonth: '$41.67', period: 'per month, billed $500 yearly' },
+  exam_micro_pass:      { perMonth: '$0.50', period: '24-hour full access', badge: 'Panic Button' },
 }
+
+const COMPARISON_DATA = [
+  { feature: 'Price per Month', zimlearn: '$2 - $5', extraLessons: '$40 - $100' },
+  { feature: 'Available Hours', zimlearn: '24/7 (Anytime)', extraLessons: '2-4 hours / week' },
+  { feature: 'Questions Allowed', zimlearn: 'Unlimited (MaFundi)', extraLessons: 'Limited by time' },
+  { feature: 'Syllabus Coverage', zimlearn: 'All ZIMSEC Subjects', extraLessons: 'Usually 1-2 subjects' },
+  { feature: 'Parental Reports', zimlearn: 'Instant WhatsApp Sync', extraLessons: 'Manual / None' },
+  { feature: 'Personalization', zimlearn: 'AI-driven (Tailored)', extraLessons: 'Group-based' },
+]
 
 
 type PaymentMethod = 'ecocash' | 'onemoney' | 'innbucks' | 'web'
@@ -450,7 +460,57 @@ export default function UpgradePage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 pb-12 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 pb-12 space-y-8">
+
+        {/* ── Micro-Pass Panic Button ────────────────────────────────────────── */}
+        <div className="bg-gradient-to-r from-red-600 to-rose-700 rounded-3xl p-6 shadow-2xl border border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/4" />
+          <div className="relative flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner">
+                <Zap size={32} className="text-white animate-bounce" fill="currentColor" />
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="text-xl font-black text-white italic uppercase tracking-tight">EXAM EMERGENCY?</h3>
+                <p className="text-rose-100 text-sm font-medium">Get 24 Hours of Full Pro Access for only <strong>$0.50</strong></p>
+              </div>
+            </div>
+            <button 
+              onClick={() => { setSelectedPlan('exam_micro_pass'); setSelectedTier('pro') }}
+              className="px-8 py-4 bg-white text-rose-700 font-black rounded-2xl shadow-xl hover:scale-105 transition-all uppercase tracking-tight text-sm"
+            >
+              Get 24-Hour Pass →
+            </button>
+          </div>
+        </div>
+
+        {/* ── ZimLearn vs Extra Lessons Comparison ──────────────────────────── */}
+        <div className="bg-slate-800/50 backdrop-blur-md rounded-[2.5rem] border border-white/10 overflow-hidden">
+          <div className="p-8 text-center border-b border-white/10">
+            <h2 className="text-2xl font-black text-white italic uppercase tracking-tight">ZimLearn vs. Extra Lessons</h2>
+            <p className="text-slate-400 text-sm mt-1 uppercase font-black tracking-widest">Why 150+ students switched to AI</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-white/5 bg-white/5">
+                  <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Comparison Feature</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase text-emerald-400 tracking-widest">ZimLearn AI</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Extra Lesson Teacher</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {COMPARISON_DATA.map((row) => (
+                  <tr key={row.feature} className="hover:bg-white/5 transition-colors">
+                    <td className="px-6 py-4 text-xs font-bold text-slate-300">{row.feature}</td>
+                    <td className="px-6 py-4 text-xs font-black text-emerald-400 italic">{row.zimlearn}</td>
+                    <td className="px-6 py-4 text-xs text-slate-500">{row.extraLessons}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* ── One-time Item Summary (if applicable) ─────────────────────────── */}
         {(selectedPlan === 'ai_grade_report' || selectedPlan === 'subject_pack') && (

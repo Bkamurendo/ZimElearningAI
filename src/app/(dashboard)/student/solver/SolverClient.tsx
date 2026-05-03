@@ -84,8 +84,11 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
   const [linkedDocId, setLinkedDocId] = useState<string>('')
   const [messages, setMessages] = useState<StreamMessage[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
+  const [image, setImage] = useState<string | null>(null)
+  const [imageType, setImageType] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selectedSubject = subjects.find((s) => s.code === selectedSubjectCode)
   const levelLabel = selectedSubject?.zimsec_level === 'primary' ? 'Primary'
@@ -99,6 +102,23 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    setImageType(file.type)
+    const reader = new FileReader()
+    reader.onload = (readEvent) => {
+      setImage(readEvent.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const currentMode = MODES.find((m) => m.value === mode) ?? MODES[0]
 
@@ -124,8 +144,12 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
           mode,
           documentId: linkedDocId || null,
           conversationHistory: messages.slice(-8),
+          image,
+          imageType,
         }),
       })
+
+      if (res.ok) setImage(null)
 
       if (!res.ok || !res.body) {
         setMessages((prev) => [
@@ -363,12 +387,47 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={isStreaming}
-                rows={6}
+                rows={image ? 3 : 6}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition disabled:opacity-50 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder={currentMode.placeholder}
               />
+              
+              {image && (
+                <div className="mt-3 relative w-full aspect-video sm:aspect-[21/9] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image} alt="Question preview" className="w-full h-full object-contain" />
+                  <button 
+                    onClick={() => setImage(null)}
+                    className="absolute top-2 right-2 p-1.5 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full transition backdrop-blur-sm"
+                  >
+                    <X size={16} />
+                  </button>
+                  <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-slate-900/50 to-transparent">
+                    <p className="text-[10px] text-white font-bold uppercase tracking-widest px-2">Image attached · Ready to solve</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mt-3">
-                <p className="text-xs text-gray-400">Ctrl+Enter to solve</p>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleImageChange} 
+                    className="hidden" 
+                    accept="image/*"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isStreaming}
+                    className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition border border-transparent hover:border-indigo-100 flex items-center gap-2"
+                    title="Upload photo of question"
+                  >
+                    <Smartphone size={18} />
+                    <span className="text-xs font-bold uppercase tracking-tight hidden sm:inline">Photo</span>
+                  </button>
+                  <p className="text-xs text-gray-400 hidden sm:block">Ctrl+Enter to solve</p>
+                </div>
                 <button
                   onClick={() => handleSolve()}
                   disabled={!question.trim() || isStreaming}

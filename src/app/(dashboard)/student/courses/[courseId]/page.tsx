@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import SaveForOfflineButton from '@/components/SaveForOfflineButton'
 
 export default async function StudentCoursePage({
   params,
@@ -97,6 +98,9 @@ export default async function StudentCoursePage({
                 style={{ width: `${pct}%` }}
               />
             </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-gray-50">
+            <SaveForOfflineButton courseId={params.courseId} lessonIds={lessonIds} />
           </div>
         </div>
 

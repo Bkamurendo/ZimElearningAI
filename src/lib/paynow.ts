@@ -338,6 +338,16 @@ export const PLANS = {
     tier: 'elite' as const,
     description: 'Fund a pool of 50 student scholarships for 1 year + branding.',
   },
+  
+  // MICRO-PASS (NEW)
+  exam_micro_pass: {
+    id: 'exam_micro_pass',
+    label: '24-Hour Exam Micro-Pass',
+    amountUsd: 0.50,
+    days: 1,
+    tier: 'pro' as const,
+    description: '24 hours of full Pro access for emergency ZIMSEC exam preparation.',
+  },
 } as const
 
 export type PlanId = keyof typeof PLANS

@@ -43,6 +43,9 @@ export const metadata: Metadata = {
   },
 }
 
+import { UpgradePopup } from '@/components/UpgradePopup'
+import MobileNavbar from '@/components/MobileNavbar'
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -50,15 +53,21 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#059669" />
+        <meta name="theme-color" content="#0d9488" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-teal-100 selection:text-teal-900`}>
         <ServiceWorkerRegistration />
         <OfflineBanner />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <div className="pb-24 lg:pb-0">
+            {children}
+          </div>
+        </ThemeProvider>
         <UpgradePopup />
+        <MobileNavbar />
       </body>
     </html>
   )

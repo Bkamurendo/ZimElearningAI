@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import WorkspaceActions from './WorkspaceActions'
 import { MasteryHeatmap } from '@/components/MasteryHeatmap'
+import MaFundiWelcomeExperience from '@/components/MaFundiWelcomeExperience'
 
 type SubjectCtx = {
   id: string; name: string; code: string; zimsec_level: string
@@ -158,6 +159,7 @@ export default async function AIWorkspacePage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
+      <MaFundiWelcomeExperience />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
         {/* Header */}

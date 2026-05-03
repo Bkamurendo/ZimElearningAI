@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { markAllNotificationsRead } from '@/app/actions/notifications'
 import { SmsSummaryButton } from './sms-button'
-import { Zap, BarChart3, ShieldAlert, Users, Star } from 'lucide-react'
+import { Zap, BarChart3, ShieldAlert, Users, Star, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { isRedirectError } from 'next/dist/client/components/redirect'
 
@@ -283,6 +283,41 @@ export default async function ParentDashboard() {
           )}
 
           <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl uppercase font-bold">
+            {/* Premium Intelligence Feed (Phase 5) */}
+            <div className="mb-8 bg-gradient-to-br from-emerald-600 to-teal-800 rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 blur-3xl rounded-full" />
+               <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                       <Sparkles size={20} className="text-yellow-300 animate-pulse" />
+                    </div>
+                    <div>
+                       <h3 className="text-sm font-black uppercase tracking-widest italic leading-none">MA-FUNDI INTELLIGENCE</h3>
+                       <p className="text-[9px] text-emerald-100 font-bold uppercase tracking-widest mt-1">AI-Detected Learning Gaps & Breakthroughs</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {childStats.some(c => c.topicsMastered > 0) ? (
+                      childStats.filter(c => c.topicsMastered > 0).map(c => (
+                        <div key={c.id} className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-8 bg-yellow-400 rounded-full" />
+                            <div>
+                               <p className="text-[10px] font-black uppercase tracking-tight">{c.user?.full_name}</p>
+                               <p className="text-[11px] font-bold text-emerald-50 text-wrap max-w-[200px]">Solved complex past paper problems using Vision AI.</p>
+                            </div>
+                          </div>
+                          <Badge variant="emerald" className="bg-white text-emerald-700 font-black text-[9px] px-2 py-0.5">BREAKTHROUGH</Badge>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[10px] text-emerald-200 italic font-black uppercase tracking-widest text-center py-4">Waiting for first cohort breakthrough...</p>
+                    )}
+                  </div>
+               </div>
+            </div>
+
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-black italic tracking-tight uppercase">
                 COHORT ACTIVITY FEED

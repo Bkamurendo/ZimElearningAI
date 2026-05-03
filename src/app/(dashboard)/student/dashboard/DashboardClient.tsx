@@ -39,6 +39,8 @@ import PassPulseRings from './PassPulseRings'
 import { fireConfetti } from '@/lib/confetti'
 import LearningMinutesTracker from './LearningMinutesTracker'
 import AdaptivePath from './AdaptivePath'
+import ParentSyncDialog from '@/components/ParentSyncDialog'
+import SquadsWidget from './SquadsWidget'
 
 const SUBJECT_COLORS = [
   'from-emerald-400 to-emerald-600',
@@ -103,6 +105,31 @@ export default function DashboardClient({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6">
+      
+      {/* Parental Engagement Loop */}
+      <ParentSyncDialog existingPhone={(profile as any)?.parent_phone} />
+      
+      {/* Trial Status Banner */}
+      {profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date() && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-amber-200/20 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
+              <Zap size={20} className="animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-white uppercase tracking-tight italic">PRO TRIAL ACTIVE</p>
+              <p className="text-[10px] text-amber-100 font-bold uppercase tracking-widest">
+                Ends {new Date(profile.trial_ends_at).toLocaleDateString('en-ZW', { day: 'numeric', month: 'short' })} · UNLIMITED AI ACCESS
+              </p>
+            </div>
+          </div>
+          <Link href="/student/upgrade">
+            <Button size="sm" className="bg-white text-orange-600 border-none font-black text-[10px] uppercase tracking-widest hover:bg-amber-50">
+              Keep Pro Features
+            </Button>
+          </Link>
+        </div>
+      )}
       
       {/* Premium Welcome Header */}
       <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 border border-slate-800 p-6 sm:p-10 shadow-2xl">
@@ -199,6 +226,9 @@ export default function DashboardClient({
             {/* Daily Focus Tracker */}
             <LearningMinutesTracker minutesToday={learningMinutesToday} targetMinutes={60} />
 
+            {/* Study Squads (Phase 5 Social) */}
+            <SquadsWidget />
+
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {stats.map(({ label, value, color, bg, border }, _idx) => {
@@ -233,9 +263,18 @@ export default function DashboardClient({
                       </p>
                     </div>
                   </div>
-                  <Button variant="secondary" size="md" className="bg-white text-orange-600 border-none font-black shadow-lg">
-                    {dailyChallengeCompleted ? 'Leaderboard' : 'Start Mission'}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button variant="secondary" size="md" className="bg-white text-orange-600 border-none font-black shadow-lg">
+                      <Link href="/student/challenges">
+                        {dailyChallengeCompleted ? 'Leaderboard' : 'Start Mission'}
+                      </Link>
+                    </Button>
+                    <Button variant="premium" size="md" className="bg-slate-900 text-white border-none font-black shadow-lg">
+                      <Link href="/student/rankings">
+                        National Rankings
+                      </Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </Link>

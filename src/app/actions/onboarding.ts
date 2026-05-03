@@ -39,10 +39,42 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
     if (subErr) redirect('/onboarding?error=Failed+to+save+subjects')
   }
 
-  // Mark onboarding complete
-  await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user.id)
+  // Mark onboarding complete and activate trial
+  const referralCode = formData.get('referral_code') as string
+  const trialDays = 7
+  let finalTrialEndsAt = new Date()
+  finalTrialEndsAt.setDate(finalTrialEndsAt.getDate() + trialDays)
+
+  let referrerId: string | null = null
+  if (referralCode) {
+    const { data: referrer } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('referral_code', referralCode.toUpperCase())
+      .single()
+
+    if (referrer) {
+      referrerId = referrer.id
+      // Bonus: +7 extra days for using a referral code
+      finalTrialEndsAt.setDate(finalTrialEndsAt.getDate() + 7)
+    }
+  }
+
+  await supabase.from('profiles').update({ 
+    onboarding_completed: true,
+    trial_ends_at: finalTrialEndsAt.toISOString(),
+    referred_by: referrerId
+  }).eq('id', user.id)
+
+  if (referrerId) {
+    await supabase.from('referrals').insert({
+      referrer_id: referrerId,
+      referred_id: user.id
+    })
+  }
 
   revalidatePath('/', 'layout')
+  return { success: true }
 }
 
 export async function completeGeneralOnboarding(formData: FormData): Promise<void> {

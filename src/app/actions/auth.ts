@@ -122,6 +122,9 @@ export async function register(formData: FormData): Promise<void> {
         ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         : null
 
+      const curriculum = formData.get('curriculum') as string || 'ZIMSEC'
+      const grade = formData.get('grade') as string || 'Form 4'
+
       await supabase
         .from('profiles')
         .update({ 
@@ -130,6 +133,17 @@ export async function register(formData: FormData): Promise<void> {
           ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}) 
         })
         .eq('id', user.id)
+
+      if (role === 'student') {
+        await supabase
+          .from('student_profiles')
+          .update({
+            curriculum,
+            zimsec_level: grade,
+            current_stage: grade
+          })
+          .eq('user_id', user.id)
+      }
 
       // 2. Referral Tracking (Student Only)
       const refCode = (formData.get('ref') as string | null)?.trim().toUpperCase()

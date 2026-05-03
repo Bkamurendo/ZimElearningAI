@@ -56,264 +56,66 @@ export default function RegisterPage({
 }) {
   const refCode = searchParams.ref ?? ''
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50">
 
       {/* ── Left panel ── */}
       <div
-        className="hidden lg:flex flex-col justify-between w-[48%] p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #064e3b, #065f46, #047857, #059669)' }}
+        className="hidden lg:flex flex-col justify-between w-[40%] p-12 relative overflow-hidden"
+        style={{ background: 'linear-gradient(145deg, #0f172a, #1e293b, #334155)' }}
       >
         {/* Animated glow orbs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div
-            className="absolute -top-32 -left-32 w-96 h-96 rounded-full animate-float"
-            style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, transparent 70%)' }}
-          />
-          <div
-            className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full animate-float"
-            style={{
-              background: 'radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)',
-              animationDelay: '1.5s',
-            }}
+            className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)' }}
           />
         </div>
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-14">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg shadow-black/20 border border-white/10">
-              <GraduationCap size={26} className="text-white" />
+            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Sparkles size={26} className="text-white" />
             </div>
-            <div>
-              <span className="text-white font-extrabold text-xl tracking-tight">ZimLearn</span>
-              <p className="text-emerald-300 text-[11px] font-medium">ZIMSEC AI Platform</p>
-            </div>
+            <span className="text-white font-black text-2xl tracking-tight uppercase italic">ZimLearn<span className="text-emerald-500">AI</span></span>
           </div>
 
-          <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-4 tracking-tight">
-            Join thousands<br />
-            <span className="text-emerald-300">of students</span>
+          <h1 className="text-5xl font-black text-white leading-tight mb-6 tracking-tight uppercase italic">
+            Unlock your<br />
+            <span className="text-emerald-500 italic">True Potential.</span>
           </h1>
-          <p className="text-emerald-100 text-base leading-relaxed mb-10 opacity-90">
-            Start your ZIMSEC journey with Zimbabwe&apos;s most advanced AI learning platform — completely free.
-          </p>
-
-          <div className="space-y-5">
+          
+          <div className="space-y-8 mt-12">
             {[
-              { emoji: '🎓', title: 'Personalised for ZIMSEC', desc: 'Content aligned with O-Level, A-Level and Primary curricula' },
-              { emoji: '🤖', title: 'AI-powered learning', desc: 'Adaptive quizzes and an intelligent tutor that knows your weaknesses' },
-              { emoji: '📊', title: 'Track your progress', desc: 'See topic mastery, streaks, XP and predicted grades' },
-            ].map(({ emoji, title, desc }) => (
-              <div key={title} className="flex gap-3.5 items-start">
-                <span className="text-2xl flex-shrink-0 mt-0.5">{emoji}</span>
+              { icon: Zap, title: 'Instant Mastery', desc: 'MaFundi identifies your gaps in seconds.' },
+              { icon: Globe, title: 'National Standard', desc: 'Used by top schools across Zimbabwe.' },
+              { icon: Star, title: 'Elite Performance', desc: '94% of our students improve their grades within 30 days.' },
+            ].map((item, i) => (
+              <div key={i} className="flex gap-4 group">
+                <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-all duration-300">
+                  <item.icon size={20} className="text-emerald-500 group-hover:text-white transition-colors" />
+                </div>
                 <div>
-                  <p className="text-white font-semibold text-sm">{title}</p>
-                  <p className="text-emerald-300 text-xs mt-0.5 leading-relaxed">{desc}</p>
+                  <p className="text-white font-black uppercase text-sm tracking-widest">{item.title}</p>
+                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Platform tour */}
-          <div className="mt-8">
-            <PlatformTourButton
-              variant="banner"
-              label="▶  Full platform tour — all features explained"
-            />
-          </div>
         </div>
 
-        <p className="relative z-10 text-emerald-500 text-xs">
-          © {new Date().getFullYear()} ZimLearn · Empowering Zimbabwean students
-        </p>
-      </div>
-
-      {/* ── Right panel: registration form ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 bg-gray-50">
-        {/* Mobile logo */}
-        <div className="lg:hidden flex items-center gap-2.5 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-md shadow-emerald-200">
-            <GraduationCap size={20} className="text-white" />
-          </div>
-          <span className="font-bold text-gray-900 text-xl">ZimLearn</span>
-        </div>
-
-        <div className="w-full max-w-sm">
-          {/* Glass card */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-                  <Zap size={13} className="text-white" />
-                </div>
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
-                  Free forever
-                </span>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-              {refCode ? (
-                <p className="text-sm mt-1 text-emerald-600 font-medium bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5">
-                  🎁 You were invited! You&apos;ll start with a full 7-day Pro trial.
-                </p>
-              ) : (
-                <p className="text-gray-400 text-sm mt-1">Join ZimLearn today — it&apos;s free</p>
-              )}
-            </div>
-
-            {searchParams.error && (
-              <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm flex items-start gap-2.5">
-                <span className="flex-shrink-0 mt-0.5 text-red-400">⚠</span>
-                <span>{searchParams.error}</span>
-              </div>
-            )}
-
-            {/* Social auth */}
-            <div className="space-y-3">
-              <GoogleAuthButton label="Sign up with Google" />
-              <FacebookAuthButton label="Sign up with Facebook" />
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
-                or email
-              </span>
-              <div className="flex-1 h-px bg-gray-100" />
-            </div>
-
-            <form
-              action={register as unknown as (formData: FormData) => void}
-              className="space-y-4"
-            >
-              <div>
-                <label
-                  htmlFor="full_name"
-                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
-                >
-                  Full name
-                </label>
-                <input
-                  id="full_name"
-                  name="full_name"
-                  type="text"
-                  required
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
-                  placeholder="Tatenda Moyo"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
-                >
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
-                  placeholder="Min. 8 characters"
-                />
-              </div>
-
-              {/* Role picker */}
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-2.5 uppercase tracking-wider">
-                  I am a…
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {ROLES.map((r) => (
-                    <label
-                      key={r.value}
-                      className={`relative flex flex-col items-center gap-2 cursor-pointer border-2 border-gray-100 rounded-2xl p-3 hover:border-gray-200 transition-all duration-150 ${r.activeBg} ${r.activeBorder}`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value={r.value}
-                        className="sr-only"
-                        required
-                        defaultChecked={r.value === 'student'}
-                      />
-                      <div className={`w-9 h-9 bg-gradient-to-br ${r.gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                        <r.icon size={16} className="text-white" />
-                      </div>
-                      <div className="text-center">
-                        <p className={`font-bold text-gray-900 text-sm leading-tight ${r.activeText}`}>
-                          {r.label}
-                        </p>
-                        <p className="text-gray-400 text-[10px] leading-tight mt-0.5">{r.desc}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Admin note */}
-                <p className="mt-2.5 text-[11px] text-gray-400 text-center">
-                  Admin access?{' '}
-                  <Link href="/login" className="text-gray-500 underline hover:text-gray-700 transition">
-                    Contact your platform administrator
-                  </Link>
-                </p>
-              </div>
-
-              {/* Pass referral code through the form */}
-              {refCode && <input type="hidden" name="ref" value={refCode} />}
-
-              <button
-                type="submit"
-                className="w-full py-3.5 font-bold rounded-2xl transition-all duration-200 text-sm shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01] active:scale-[0.99] text-white mt-1"
-                style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
-              >
-                Create account →
-              </button>
-            </form>
-
-            {/* Terms note */}
-            <p className="text-center text-[11px] text-gray-300 mt-4 leading-relaxed">
-              By creating an account you agree to our{' '}
-              <Link href="/terms" className="hover:text-gray-500 underline transition">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="hover:text-gray-500 underline transition">
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
-
-          <div className="mt-5 text-center">
-            <p className="text-sm text-gray-400">
-              Already have an account?{' '}
-              <Link href="/login" className="text-emerald-600 font-bold hover:text-emerald-700 transition">
-                Sign in
-              </Link>
-            </p>
-          </div>
+        <div className="relative z-10 flex items-center justify-between">
+           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+             © {new Date().getFullYear()} ZimLearn AI
+           </p>
+           <PlatformTourButton variant="outline" label="Watch Tour" />
         </div>
       </div>
+
+      {/* ── Right panel: World-Class Onboarding ── */}
+      <div className="flex-1 overflow-y-auto">
+        <RegisterClient error={searchParams.error} />
+      </div>
+
     </div>
   )
 }

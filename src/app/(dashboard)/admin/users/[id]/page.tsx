@@ -43,11 +43,25 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
   const { data: target } = await svc
     .from('profiles')
-    .select('id, full_name, email, role, plan, onboarding_completed, created_at, suspended, suspension_reason, suspended_at')
+    .select('id, full_name, email, role, plan, onboarding_completed, created_at, suspended, suspension_reason, suspended_at, referred_by, referral_code')
     .eq('id', params.id)
-    .single() as { data: (UserRow & { plan?: string; suspended?: boolean; suspension_reason?: string | null; suspended_at?: string | null }) | null; error: unknown }
+    .single() as { data: (UserRow & { plan?: string; suspended?: boolean; suspension_reason?: string | null; suspended_at?: string | null; referred_by?: string | null; referral_code?: string | null }) | null; error: unknown }
 
   if (!target) notFound()
+
+  // Fetch referrer name if exists
+  let referrerName = null
+  if (target.referred_by) {
+    const { data: ref } = await svc.from('profiles').select('full_name').eq('id', target.referred_by).single()
+    referrerName = ref?.full_name
+  }
+
+  // Fetch CPD points if teacher
+  let totalCpdPoints = 0
+  if (target.role === 'teacher') {
+    const { data: cpdData } = await svc.from('teacher_cpd_points').select('points').eq('teacher_id', target.id)
+    totalCpdPoints = (cpdData ?? []).reduce((acc: number, curr: any) => acc + curr.points, 0)
+  }
 
   const roleCfg = ROLE_CONFIG[target.role] ?? ROLE_CONFIG.student
   const RoleIcon = roleCfg.icon
@@ -115,6 +129,24 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                 day: 'numeric', month: 'long', year: 'numeric',
               })}
             </span>
+          </div>
+
+          {/* Growth & Referral Stats (Phase 4) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 px-6 py-4 border-t border-gray-100 bg-white">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Referral Code</p>
+              <p className="text-sm font-bold text-gray-900">{target.referral_code || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Referred By</p>
+              <p className="text-sm font-bold text-indigo-600 truncate">{referrerName || 'Direct Signup'}</p>
+            </div>
+            {target.role === 'teacher' && (
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">CPD Points</p>
+                <p className="text-sm font-bold text-emerald-600">{totalCpdPoints} pts</p>
+              </div>
+            )}
           </div>
         </div>
 

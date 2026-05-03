@@ -7,6 +7,7 @@ import LessonNotes from './LessonNotes'
 import AskMaFundi from './AskMaFundi'
 import MarkdownContent from '@/components/MarkdownContent'
 import AudioBriefingButton from '@/components/AudioBriefingButton'
+import OfflineSaveButton from '@/components/OfflineSaveButton'
 
 export default async function LessonPage({
   params,
@@ -90,8 +91,9 @@ export default async function LessonPage({
         <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">{lesson.title}</h1>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <AudioBriefingButton lessonId={lesson.id} lessonTitle={lesson.title} />
+              <OfflineSaveButton lessonId={lesson.id} lessonTitle={lesson.title} content={lesson.content} />
               {isCompleted && (
                 <span className="flex-shrink-0 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-green-200">
                   ✓ Completed

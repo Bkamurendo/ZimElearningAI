@@ -48,10 +48,11 @@ export async function POST(req: NextRequest) {
     subjectCode,
     level,
     mode,
-    documentId,
     documentContext,
     studentAnswer,
     conversationHistory,
+    image,      // base64 data (Phase 2)
+    imageType,  // 'image/jpeg' etc.
   }: {
     question: string
     subjectName: string
@@ -62,6 +63,8 @@ export async function POST(req: NextRequest) {
     documentContext?: string
     studentAnswer?: string
     conversationHistory?: { role: 'user' | 'assistant'; content: string }[]
+    image?: string
+    imageType?: string
   } = await req.json()
 
   // Security: sanitize all user-supplied fields injected into system prompt
@@ -210,16 +213,36 @@ Always:
 - Be encouraging and patient`
 
   // Build messages — include conversation history for multi-turn context
-  const userContent = safeMode === 'mark_answer' && studentAnswer
-    ? `QUESTION:\n${question}\n\nSTUDENT'S ANSWER:\n${studentAnswer}`
-    : question
+  let userContent: any = question
+  if (safeMode === 'mark_answer' && studentAnswer) {
+    userContent = `QUESTION:\n${question}\n\nSTUDENT'S ANSWER:\n${studentAnswer}`
+  }
+
+  // If image is provided, convert user content to array (Vision)
+  if (image && imageType) {
+    const base64Data = image.split(',').pop() || image
+    userContent = [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: imageType as any,
+          data: base64Data,
+        },
+      },
+      {
+        type: 'text',
+        text: typeof userContent === 'string' ? userContent : question || 'Analyze this ZIMSEC question from the image.',
+      },
+    ]
+  }
 
   const history: { role: 'user' | 'assistant'; content: string }[] = (conversationHistory ?? [])
     .slice(-8)
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .map((m) => ({ role: m.role, content: String(m.content).slice(0, 4000) }))
 
-  const messages: { role: 'user' | 'assistant'; content: string }[] = [
+  const messages: { role: 'user' | 'assistant'; content: any }[] = [
     ...history,
     { role: 'user', content: userContent },
   ]
