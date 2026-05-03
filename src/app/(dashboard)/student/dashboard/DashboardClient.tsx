@@ -29,7 +29,8 @@ const STAT_ICONS: Record<string, React.ElementType> = {
   'Lessons done': CheckCircle2,
   'Quizzes done': Brain,
   'Topics mastered': Star,
-}import MaFundiMissionCard from '@/components/dashboard/MaFundiMissionCard'
+}
+import MaFundiMissionCard from '@/components/dashboard/MaFundiMissionCard'
 import GettingStartedChecklist from '@/components/GettingStartedChecklist'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -92,7 +93,8 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState('learning') // Default to learning for better engagement
 
-  const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'  const levelLabel = studentProfile?.zimsec_level?.toUpperCase() ?? 'O-LEVEL'
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'
+  const levelLabel = studentProfile?.zimsec_level?.toUpperCase() ?? 'O-LEVEL'
 
   const dashboardTabs = [
     { id: 'learning', label: 'My Lessons', icon: <GraduationCap size={16} /> },
@@ -444,7 +446,6 @@ export default function DashboardClient({
              </div>
           </div>
         </TabContent>
-   </TabContent>
       </div>
 
     </div>
