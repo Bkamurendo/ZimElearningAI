@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit'
-import { checkAIQuota, getUserPlan, isPaidPlan } from '@/lib/ai-quota'
+import { checkAIQuota } from '@/lib/ai-quota'
 
 export const maxDuration = 60
 import crypto from 'crypto'
@@ -22,14 +22,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: `Rate limit exceeded. Try again in ${rl.retryAfterSecs}s.` },
       { status: 429, headers: rateLimitHeaders(rl, RATE_LIMIT.limit) }
-    )
-  }
-
-  const plan = await getUserPlan(supabase, user.id)
-  if (!isPaidPlan(plan)) {
-    return NextResponse.json(
-      { error: 'Grade Predictor is a premium feature. Upgrade to Starter or Pro to access it.' },
-      { status: 403 }
     )
   }
 
@@ -108,15 +100,21 @@ export async function POST(req: NextRequest) {
     }, { status: 400 })
   }
 
-  // Calculate trajectory: compare first half vs second half of attempts
-  const half = Math.ceil(quizAttempts.length / 2)
-  const firstHalf = quizAttempts.slice(0, half)
-  const secondHalf = quizAttempts.slice(half)
-  const avgFirst = firstHalf.reduce((s, a) => s + (a.score / a.total), 0) / firstHalf.length
-  const avgSecond = secondHalf.length > 0
-    ? secondHalf.reduce((s, a) => s + (a.score / a.total), 0) / secondHalf.length
-    : avgFirst
+  // Calculate trajectory: compare earliest attempts vs most recent attempts
+  // Use up to 5 from each end for a more stable signal; fall back to half-split for small sets
+  const windowSize = Math.min(5, Math.ceil(quizAttempts.length / 2))
+  const early = quizAttempts.slice(0, windowSize)
+  const recent = quizAttempts.slice(-windowSize)
+  const avgFirst = early.reduce((s, a) => s + (a.score / a.total), 0) / early.length
+  const avgRecent = recent.reduce((s, a) => s + (a.score / a.total), 0) / recent.length
+  // EMA-based momentum: weight the last 3 attempts most heavily
+  const last3 = quizAttempts.slice(-3)
+  const emaRecent = last3.reduce((s, a) => s + (a.score / a.total), 0) / last3.length
+  const avgSecond = last3.length >= 3 ? (avgRecent * 0.4 + emaRecent * 0.6) : avgRecent
   const trajectory = avgSecond > avgFirst + 0.05 ? 'improving' : avgSecond < avgFirst - 0.05 ? 'declining' : 'stable'
+  // Weekly engagement: attempts in the last 7 days
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const weeklyAttempts = quizAttempts.filter(a => a.created_at >= weekAgo).length
 
   const levelLabel = level === 'olevel' ? 'O-Level' : level === 'alevel' ? 'A-Level' : 'Primary'
 
@@ -144,6 +142,7 @@ STUDENT PERFORMANCE DATA:
 - Strong topics: ${strongTopics.join(', ') || 'none yet'}
 - Weak topics needing work: ${weakTopics.join(', ') || 'none identified'}
 - Study streak: ${streak?.current_streak ?? 0} days current, ${streak?.longest_streak ?? 0} days best
+- Quizzes completed this week: ${weeklyAttempts} (engagement indicator)
 - Lessons completed: ${lessonProgress?.length ?? 0} of ${totalLessons ?? '?'}
 
 ZIMSEC GRADING SCALE:

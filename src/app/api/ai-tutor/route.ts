@@ -97,9 +97,9 @@ export async function POST(req: NextRequest) {
         if (d.ai_summary) section += `Summary: ${d.ai_summary}\n`
         if (d.topics && d.topics.length > 0) section += `Key topics: ${d.topics.join(', ')}\n`
         if (d.extracted_text) {
-          // Include first 1500 chars of extracted text for grounding
-          const textSnippet = d.extracted_text.slice(0, 1500).trim()
-          if (textSnippet) section += `Content excerpt:\n${textSnippet}${d.extracted_text.length > 1500 ? '…' : ''}\n`
+          // Include first 4000 chars of extracted text for grounding
+          const textSnippet = d.extracted_text.slice(0, 4000).trim()
+          if (textSnippet) section += `Content excerpt:\n${textSnippet}${d.extracted_text.length > 4000 ? '…' : ''}\n`
         }
         return section
       }).join('\n---\n')
@@ -142,7 +142,7 @@ Warm, patient, encouraging. Many students have been told they are not clever eno
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-4-6',
           max_tokens: 8192,
           system,
           messages,
