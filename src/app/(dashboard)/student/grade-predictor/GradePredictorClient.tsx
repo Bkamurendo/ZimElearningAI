@@ -138,10 +138,14 @@ export default function GradePredictorClient({
 
                 {/* No data message */}
                 {attempts === 0 && (
-                  <div className="px-6 py-4 text-sm text-gray-400 italic">
-                    Complete at least one quiz in {subject.name} to generate a prediction.{' '}
-                    <Link href={`/student/quiz/${subject.code}`} className="text-violet-600 hover:underline not-italic">
-                      Take a quiz →
+                  <div className="px-6 py-5 flex items-center gap-3 bg-gray-50">
+                    <div className="w-9 h-9 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0 text-lg">📊</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-700">No quiz data yet</p>
+                      <p className="text-xs text-gray-400">Complete at least 1 quiz to unlock your grade prediction</p>
+                    </div>
+                    <Link href={`/student/quiz/${subject.code}`} className="flex-shrink-0 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-200 px-3 py-1.5 rounded-lg hover:bg-violet-100 transition whitespace-nowrap">
+                      Take quiz →
                     </Link>
                   </div>
                 )}
@@ -166,13 +170,16 @@ export default function GradePredictorClient({
                 {prediction && !isLoading && gradeStyle && (
                   <div className="p-6 space-y-5">
                     {/* Grade + readiness */}
-                    <div className="flex items-center gap-5">
-                      <div className={`w-20 h-20 rounded-2xl ${gradeStyle.bg} ${gradeStyle.text} flex flex-col items-center justify-center ring-4 ${gradeStyle.ring} flex-shrink-0`}>
-                        <span className="text-3xl font-bold">{prediction.predictedGrade}</span>
-                        <span className="text-xs opacity-80">{prediction.predictedPercentage}%</span>
+                    <div className="flex items-start gap-4">
+                      <div className={`w-24 h-24 rounded-2xl ${gradeStyle.bg} ${gradeStyle.text} flex flex-col items-center justify-center ring-4 ${gradeStyle.ring} flex-shrink-0 shadow-lg`}>
+                        <span className="text-4xl font-black leading-none">{prediction.predictedGrade}</span>
+                        <span className="text-xs font-bold opacity-80 mt-1">{prediction.predictedPercentage}%</span>
+                        <span className="text-[9px] opacity-60 uppercase tracking-wider mt-0.5">predicted</span>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500 mb-1">{CONFIDENCE_LABEL[prediction.confidence]}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
+                          {CONFIDENCE_LABEL[prediction.confidence]}
+                        </div>
                         <p className="text-sm text-gray-700 leading-relaxed">{prediction.reasoning}</p>
                       </div>
                     </div>
@@ -192,23 +199,23 @@ export default function GradePredictorClient({
                     </div>
 
                     {/* Strengths & improvements */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs font-semibold text-green-700 mb-2">✓ Strengths</p>
-                        <ul className="space-y-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-green-50 border border-green-100 rounded-xl p-3">
+                        <p className="text-xs font-bold text-green-800 mb-2 uppercase tracking-wide">✓ Strengths</p>
+                        <ul className="space-y-1.5">
                           {prediction.strengths.map((s, i) => (
-                            <li key={i} className="text-xs text-gray-600 flex gap-1.5">
-                              <span className="text-green-500 flex-shrink-0">•</span>{s}
+                            <li key={i} className="text-xs text-green-800 flex gap-1.5 leading-snug">
+                              <span className="text-green-500 flex-shrink-0 mt-0.5">•</span>{s}
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-orange-700 mb-2">⚡ To improve</p>
-                        <ul className="space-y-1">
+                      <div className="bg-orange-50 border border-orange-100 rounded-xl p-3">
+                        <p className="text-xs font-bold text-orange-800 mb-2 uppercase tracking-wide">⚡ To improve</p>
+                        <ul className="space-y-1.5">
                           {prediction.improvements.map((s, i) => (
-                            <li key={i} className="text-xs text-gray-600 flex gap-1.5">
-                              <span className="text-orange-400 flex-shrink-0">•</span>{s}
+                            <li key={i} className="text-xs text-orange-800 flex gap-1.5 leading-snug">
+                              <span className="text-orange-400 flex-shrink-0 mt-0.5">→</span>{s}
                             </li>
                           ))}
                         </ul>
