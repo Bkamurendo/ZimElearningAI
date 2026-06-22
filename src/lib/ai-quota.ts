@@ -21,7 +21,7 @@ import { Plan, isUnlimitedAI, getPlanFeatures } from './subscription'
 type SupabaseClient = any
 
 // Default fallback limits (should be ignored if subscription.ts is up to date)
-export const FREE_DAILY_LIMIT = 3
+export const FREE_DAILY_LIMIT = 5
 export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,13 +54,9 @@ export interface QuotaResult {
   used: number
   limit: number
   remaining: number
-  resetsAt: string   // ISO string
+  resetsAt: string
 }
 
-/**
- * Check whether the user may make another AI request.
- * If allowed, increments the counter atomically.
- */
 export async function checkAIQuota(
   supabase: SupabaseClient,
   userId: string
@@ -73,16 +69,13 @@ export async function checkAIQuota(
     .single()
 
   if (error || !profile) {
-    // Can't read profile — this usually means the quota columns haven't been migrated yet.
-    // Fail OPEN with a conservative free-tier allowance so AI features still work.
-    // NOTE: If you see this in logs, run the migration in supabase/schema.sql to add
-    // ai_requests_today and ai_quota_reset_at columns to the profiles table.
-    console.warn('[ai-quota] Could not read profile quota data:', error?.message ?? 'no profile row')
-    return { allowed: true, plan: 'free', used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
+    // Fail open — quota columns may not exist yet
+    return { allowed: true, plan: 'free' as Plan, used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
+  const now = new Date()
   let plan = (profile.plan || 'free') as Plan
-  
+
   // If user is free, check if school is pro
   if (plan === 'free' && profile.schools?.subscription_plan === 'pro') {
     const expiresAt = profile.schools.subscription_expires_at
@@ -94,11 +87,8 @@ export async function checkAIQuota(
   const features = getPlanFeatures(plan)
   const limit = features.aiDailyLimit
 
-  // Reset counter if it's a new day (UTC)
-  const now = new Date()
   const resetAt = new Date(profile.ai_quota_reset_at ?? now)
   const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000
-
   const used: number = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
 
   if (isUnlimitedAI(plan)) {
