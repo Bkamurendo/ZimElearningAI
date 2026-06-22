@@ -82,7 +82,7 @@ export default async function Home() {
 
       {/* ── STATS STRIP ─────────────────────────────────────────────────────── */}
       <section className="border-y border-gray-100 bg-gray-50 py-10 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-6 text-center">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
           {[
             { stat: '103+', label: 'Zimbabwean learners already studying' },
             { stat: '5,000+', label: 'Syllabus topics covered' },

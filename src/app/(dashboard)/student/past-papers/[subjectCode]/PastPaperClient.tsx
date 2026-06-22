@@ -60,9 +60,11 @@ function formatTime(seconds: number) {
 export default function PastPaperClient({
   subject,
   recentAttempts,
+  isPaid = false,
 }: {
   subject: Subject
   recentAttempts: RecentAttempt[]
+  isPaid?: boolean
 }) {
   const [phase, setPhase] = useState<Phase>('setup')
   const [selectedYear, setSelectedYear] = useState(2023)
@@ -209,6 +211,15 @@ export default function PastPaperClient({
               <span>🎯 AI marking</span>
             </div>
           </div>
+
+          {/* Free tier notice */}
+          {!isPaid && (
+            <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+              <span className="text-amber-800">
+                <strong>Free plan:</strong> Try 2 past papers per subject. <a href="/student/upgrade" className="underline font-semibold">Upgrade</a> for unlimited papers &amp; timed exam mode.
+              </span>
+            </div>
+          )}
 
           {/* Recent attempts */}
           {recentAttempts.length > 0 && (
