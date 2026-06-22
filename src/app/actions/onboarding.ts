@@ -5,12 +5,12 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { ZimsecLevel } from '@/types/database'
 
-export async function completeStudentOnboarding(formData: FormData): Promise<{ success: boolean; error?: string }> {
+export async function completeStudentOnboarding(formData: FormData): Promise<{ error: string } | void> {
   const supabase = createClient()
 
   const { data, error: authError } = await supabase.auth.getUser()
   const user = data?.user
-  if (authError || !user) return { success: false, error: 'Session expired. Please log in again.' }
+  if (authError || !user) return { error: 'Session expired. Please log in again.' }
 
   const zimsecLevel = formData.get('zimsec_level') as ZimsecLevel
   const grade = formData.get('grade') as string
@@ -24,7 +24,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
     .single()
 
   if (spError || !studentProfile) {
-    return { success: false, error: 'Failed to save your profile. Please try again.' }
+    return { error: 'Failed to save your profile. Please try again.' }
   }
 
   // Enrol in selected subjects — replace existing
@@ -36,7 +36,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
       subject_id,
     }))
     const { error: subErr } = await supabase.from('student_subjects').insert(rows)
-    if (subErr) return { success: false, error: 'Failed to save subjects. Please try again.' }
+    if (subErr) return { error: 'Failed to save subjects. Please try again.' }
   }
 
   // Mark onboarding complete — this is the critical update
@@ -46,7 +46,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
     .eq('id', user.id)
 
   if (profileErr) {
-    return { success: false, error: 'Failed to complete onboarding. Please try again.' }
+    return { error: 'Failed to complete onboarding. Please try again.' }
   }
 
   // Best-effort: set trial & referral (these columns may not exist yet — never block onboarding)
@@ -80,7 +80,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
   }
 
   revalidatePath('/', 'layout')
-  return { success: true }
+  redirect('/student/dashboard')
 }
 
 export async function completeGeneralOnboarding(formData: FormData): Promise<void> {

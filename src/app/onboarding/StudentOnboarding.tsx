@@ -135,11 +135,10 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
     setSaveError('')
     try {
       const formData = new FormData(e.currentTarget)
+      // Server action redirects on success — if we get a result back it's an error
       const result = await (completeStudentOnboarding as any)(formData)
-      if (result?.success) {
-        window.location.href = '/student/dashboard'
-      } else {
-        setSaveError(result?.error ?? 'Something went wrong. Please try again.')
+      if (result?.error) {
+        setSaveError(result.error)
       }
     } catch (err) {
       console.error('Onboarding save failed:', err)
