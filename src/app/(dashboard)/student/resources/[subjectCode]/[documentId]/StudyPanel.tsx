@@ -800,7 +800,36 @@ export default function StudyPanel({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {renderTabContent()}
+        {/* Free users get Snap Notes; lock advanced tabs with inline nudge */}
+        {(!isPaid && activeTab !== 'snap_notes') ? (
+          <div className="flex flex-col items-center justify-center h-full py-12 px-6 text-center">
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-3">
+              <Lock size={20} className="text-indigo-400" />
+            </div>
+            <p className="font-bold text-gray-900 text-sm mb-1">Premium feature</p>
+            <p className="text-xs text-gray-500 max-w-xs mb-4">
+              {activeTab === 'chat' && 'AI Chat is available on paid plans. Snap Notes are free — try those first!'}
+              {activeTab === 'detailed_notes' && 'Full Study Notes are available on paid plans.'}
+              {activeTab === 'model_answers' && 'Model Answers are available on paid plans.'}
+              {activeTab === 'glossary' && 'AI Glossary is available on paid plans.'}
+              {activeTab === 'practice_questions' && 'Practice Questions are available on paid plans.'}
+            </p>
+            <div className="flex gap-2 flex-wrap justify-center">
+              <button
+                onClick={() => setActiveTab('snap_notes')}
+                className="text-xs font-semibold text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition"
+              >
+                Use free Snap Notes
+              </button>
+              <Link
+                href="/student/upgrade"
+                className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition"
+              >
+                Upgrade from $2/mo →
+              </Link>
+            </div>
+          </div>
+        ) : renderTabContent()}
       </div>
 
     </div>

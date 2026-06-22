@@ -25,11 +25,13 @@ export default function StudyPlannerClient({
   weakTopics,
   level,
   existingPlan,
+  isPaid = false,
 }: {
   subjects: Subject[]
   weakTopics: string[]
   level: string
   existingPlan: { exam_date: string | null; plan_data: Record<string, unknown>; updated_at: string } | null
+  isPaid?: boolean
 }) {
   const [examDate, setExamDate] = useState(existingPlan?.exam_date ?? '')
   const [plan, setPlan] = useState<Plan | null>(existingPlan ? (existingPlan.plan_data as Plan) : null)
@@ -94,6 +96,15 @@ export default function StudyPlannerClient({
           <h1 className="text-xl font-bold text-gray-900">Study Planner</h1>
           <p className="text-sm text-gray-500 mt-0.5">AI-generated ZIMSEC revision schedule</p>
         </div>
+
+        {/* Free tier notice */}
+        {!isPaid && (
+          <div className="flex items-center justify-between gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-sm">
+            <span className="text-indigo-700">
+              <strong>Free plan:</strong> Generate 1 study plan. <a href="/student/upgrade" className="underline font-semibold">Upgrade</a> for unlimited regenerations &amp; advanced tips.
+            </span>
+          </div>
+        )}
 
         {/* Setup card */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 space-y-4 shadow-sm">

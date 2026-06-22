@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PastPaperClient from './PastPaperClient'
-import UpgradeWall from '@/components/UpgradeWall'
 
 export default async function PastPaperPage({
   params,
@@ -25,22 +24,6 @@ export default async function PastPaperPage({
   const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
   const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
 
-  if (!isPaid) {
-    return (
-      <UpgradeWall
-        feature="Past Papers"
-        description="Practice with AI-generated ZIMSEC-style exam papers and get instant marking and feedback."
-        benefits={[
-          'AI-generated full ZIMSEC-style past papers',
-          'Timed exam mode with countdown timer',
-          'Instant AI marking with detailed feedback',
-          'Grade prediction per question',
-          'Track your improvement over time',
-        ]}
-      />
-    )
-  }
-
   const { data: studentProfile } = await supabase
     .from('student_profiles')
     .select('id')
@@ -61,6 +44,7 @@ export default async function PastPaperPage({
     <PastPaperClient
       subject={subjectData}
       recentAttempts={recentAttempts ?? []}
+      isPaid={isPaid}
     />
   )
 }

@@ -35,10 +35,12 @@ export default function GradePredictorClient({
   studentId,
   subjects,
   attemptCounts,
+  isPaid = false,
 }: {
   studentId: string
   subjects: Subject[]
   attemptCounts: Record<string, number>
+  isPaid?: boolean
 }) {
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({})
   const [loading, setLoading] = useState<Record<string, boolean>>({})
@@ -84,6 +86,15 @@ export default function GradePredictorClient({
           <h1 className="text-xl font-bold text-gray-900">Grade Predictor</h1>
           <p className="text-sm text-gray-500 mt-0.5">AI-powered ZIMSEC exam grade forecast</p>
         </div>
+
+        {/* Free tier notice */}
+        {!isPaid && (
+          <div className="flex items-center justify-between gap-3 bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 text-sm">
+            <span className="text-violet-700">
+              <strong>Free plan:</strong> Predict 1 subject. <a href="/student/upgrade" className="underline font-semibold">Upgrade</a> for all subjects, detailed action plans &amp; readiness scores.
+            </span>
+          </div>
+        )}
 
         {/* Explainer */}
         <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl p-5 sm:p-6 overflow-hidden shadow-sm">
