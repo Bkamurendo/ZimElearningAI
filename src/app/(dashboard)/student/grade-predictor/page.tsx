@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import GradePredictorClient from './GradePredictorClient'
-import UpgradeWall from '@/components/UpgradeWall'
 
 export default async function GradePredictorPage() {
   const supabase = createClient()
@@ -11,22 +10,6 @@ export default async function GradePredictorPage() {
 
   const { data: planProfile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
   const isPaid = ['starter', 'pro', 'elite'].includes(planProfile?.plan ?? 'free')
-
-  if (!isPaid) {
-    return (
-      <UpgradeWall
-        feature="Grade Predictor"
-        description="Get an AI-powered prediction of your ZIMSEC exam grade based on your quiz performance and topic mastery."
-        benefits={[
-          'AI-predicted ZIMSEC grade (A–U scale)',
-          'Confidence rating based on your data',
-          'Personalised improvement recommendations',
-          'Track your exam readiness score',
-          'Subject-by-subject performance breakdown',
-        ]}
-      />
-    )
-  }
 
   const { data: studentProfile } = await supabase
     .from('student_profiles')
@@ -64,6 +47,7 @@ export default async function GradePredictorPage() {
       studentId={studentProfile.id}
       subjects={subjects}
       attemptCounts={attemptCounts}
+      isPaid={isPaid}
     />
   )
 }

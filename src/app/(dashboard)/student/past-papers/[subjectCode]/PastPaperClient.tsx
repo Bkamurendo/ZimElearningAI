@@ -60,9 +60,11 @@ function formatTime(seconds: number) {
 export default function PastPaperClient({
   subject,
   recentAttempts,
+  isPaid = false,
 }: {
   subject: Subject
   recentAttempts: RecentAttempt[]
+  isPaid?: boolean
 }) {
   const [phase, setPhase] = useState<Phase>('setup')
   const [selectedYear, setSelectedYear] = useState(2023)
@@ -182,6 +184,20 @@ export default function PastPaperClient({
 
     setMarkResults(results)
     setPhase('results')
+
+    // Persist attempt to DB so it appears in Grade Predictor history
+    const totalAwarded = Object.values(results).reduce((s, r) => s + r.marksAwarded, 0)
+    const totalPossible = paper.questions.flatMap(q => q.parts).reduce((s, p) => s + p.marks, 0)
+    fetch('/api/past-papers/save-attempt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subjectId: subject.id,
+        score: totalAwarded,
+        total: totalPossible,
+        topic: paper.paperTitle,
+      }),
+    }).catch(() => { /* best-effort — don't block results display */ })
   }
 
   // SETUP
@@ -209,6 +225,15 @@ export default function PastPaperClient({
               <span>🎯 AI marking</span>
             </div>
           </div>
+
+          {/* Free tier notice */}
+          {!isPaid && (
+            <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+              <span className="text-amber-800">
+                <strong>Free plan:</strong> Try 2 past papers per subject. <a href="/student/upgrade" className="underline font-semibold">Upgrade</a> for unlimited papers &amp; timed exam mode.
+              </span>
+            </div>
+          )}
 
           {/* Recent attempts */}
           {recentAttempts.length > 0 && (

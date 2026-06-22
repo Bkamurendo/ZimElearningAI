@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, ChevronLeft, Bot, Sparkles, User, Info, Lock } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -59,6 +61,45 @@ function getSamplePrompts(subjectName: string, level: string, grade: string | nu
     'Explain a complex topic with real-world examples',
     'What are the hardest areas to master in this subject?',
   ]
+}
+
+const markdownComponents = {
+  h1: ({ children }) => <h1 className="text-base font-black text-slate-900 dark:text-white mt-4 mb-2 first:mt-0">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-sm font-black text-slate-900 dark:text-white mt-4 mb-2 first:mt-0 uppercase tracking-tight">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-3 mb-1.5 first:mt-0">{children}</h3>,
+  p: ({ children }) => <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 mb-2 last:mb-0">{children}</p>,
+  strong: ({ children }) => <strong className="font-bold text-slate-900 dark:text-white">{children}</strong>,
+  em: ({ children }) => <em className="italic text-slate-600 dark:text-slate-400">{children}</em>,
+  ul: ({ children }) => <ul className="space-y-1.5 mb-2 ml-4 list-disc marker:text-indigo-400">{children}</ul>,
+  ol: ({ children }) => <ol className="space-y-1.5 mb-2 ml-4 list-decimal marker:text-indigo-400">{children}</ol>,
+  li: ({ children }) => <li className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{children}</li>,
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-4 border-indigo-400 pl-4 py-1 my-2 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-r-lg">
+      <div className="text-sm text-indigo-800 dark:text-indigo-300 italic">{children}</div>
+    </blockquote>
+  ),
+  code: ({ children, className }) => {
+    const isBlock = className?.includes('language-')
+    if (isBlock) {
+      return (
+        <div className="my-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+          <div className="bg-slate-800 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Code</div>
+          <pre className="bg-slate-900 px-4 py-3 overflow-x-auto">
+            <code className="text-sm font-mono text-emerald-400 whitespace-pre">{children}</code>
+          </pre>
+        </div>
+      )
+    }
+    return <code className="text-xs font-mono bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md">{children}</code>
+  },
+  hr: () => <hr className="my-3 border-slate-200 dark:border-slate-700" />,
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-2">
+      <table className="text-sm border-collapse w-full">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => <th className="text-left px-3 py-2 bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs uppercase tracking-wider">{children}</th>,
+  td: ({ children }) => <td className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">{children}</td>,
 }
 
 export default function AiTutorChat({
@@ -282,9 +323,13 @@ export default function AiTutorChat({
                     : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none font-medium'
                 }`}
               >
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {msg.content}
-                </div>
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+                )}
               </div>
               {msg.role === 'user' && (
                 <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-[10px] font-black flex-shrink-0 mt-1 shadow-lg">
