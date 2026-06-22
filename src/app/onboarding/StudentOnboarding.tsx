@@ -91,6 +91,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
   const [grade, setGrade] = useState('')
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [showAha, setShowAha] = useState(false)
   const [ahaMessage, setAhaMessage] = useState('')
   const [ahaResponse, setAhaResponse] = useState('')
@@ -131,16 +132,20 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
   async function handleFinalSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsSaving(true)
+    setSaveError('')
     try {
-        const formData = new FormData(e.currentTarget)
-        const result = await (completeStudentOnboarding as any)(formData)
-        if (result?.success) {
-            window.location.href = '/student/dashboard'
-        }
+      const formData = new FormData(e.currentTarget)
+      const result = await (completeStudentOnboarding as any)(formData)
+      if (result?.success) {
+        window.location.href = '/student/dashboard'
+      } else {
+        setSaveError(result?.error ?? 'Something went wrong. Please try again.')
+      }
     } catch (err) {
-        console.error('Onboarding save failed:', err)
+      console.error('Onboarding save failed:', err)
+      setSaveError('Something went wrong. Please try again.')
     } finally {
-        setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
@@ -392,6 +397,11 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                     </div>
                   </div>
 
+                  {saveError && (
+                    <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 font-medium text-center">
+                      {saveError}
+                    </div>
+                  )}
                   <div className="flex gap-3">
                     <button
                       type="button"

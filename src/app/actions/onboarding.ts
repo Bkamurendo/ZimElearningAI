@@ -5,12 +5,12 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { ZimsecLevel } from '@/types/database'
 
-export async function completeStudentOnboarding(formData: FormData): Promise<{ success: boolean }> {
+export async function completeStudentOnboarding(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient()
 
   const { data, error: authError } = await supabase.auth.getUser()
   const user = data?.user
-  if (authError || !user) redirect('/login')
+  if (authError || !user) return { success: false, error: 'Session expired. Please log in again.' }
 
   const zimsecLevel = formData.get('zimsec_level') as ZimsecLevel
   const grade = formData.get('grade') as string
@@ -24,7 +24,7 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
     .single()
 
   if (spError || !studentProfile) {
-    redirect('/onboarding?error=Failed+to+save+student+profile')
+    return { success: false, error: 'Failed to save your profile. Please try again.' }
   }
 
   // Enrol in selected subjects — replace existing
@@ -36,44 +36,51 @@ export async function completeStudentOnboarding(formData: FormData): Promise<{ s
       subject_id,
     }))
     const { error: subErr } = await supabase.from('student_subjects').insert(rows)
-    if (subErr) redirect('/onboarding?error=Failed+to+save+subjects')
+    if (subErr) return { success: false, error: 'Failed to save subjects. Please try again.' }
   }
 
-  // Mark onboarding complete and activate trial
-  const referralCode = formData.get('referral_code') as string
-  const trialDays = 7
-  let finalTrialEndsAt = new Date()
-  finalTrialEndsAt.setDate(finalTrialEndsAt.getDate() + trialDays)
+  // Mark onboarding complete — this is the critical update
+  const { error: profileErr } = await supabase
+    .from('profiles')
+    .update({ onboarding_completed: true })
+    .eq('id', user.id)
 
-  let referrerId: string | null = null
-  if (referralCode) {
-    const { data: referrer } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('referral_code', referralCode.toUpperCase())
-      .single()
+  if (profileErr) {
+    return { success: false, error: 'Failed to complete onboarding. Please try again.' }
+  }
 
-    if (referrer) {
-      referrerId = referrer.id
-      // Bonus: +7 extra days for using a referral code
-      finalTrialEndsAt.setDate(finalTrialEndsAt.getDate() + 7)
+  // Best-effort: set trial & referral (these columns may not exist yet — never block onboarding)
+  try {
+    const referralCode = formData.get('referral_code') as string
+    let trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    let referrerId: string | null = null
+
+    if (referralCode) {
+      const { data: referrer } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', referralCode.toUpperCase())
+        .single()
+      if (referrer) {
+        referrerId = referrer.id
+        trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      }
     }
-  }
 
-  await supabase.from('profiles').update({ 
-    onboarding_completed: true,
-    trial_ends_at: finalTrialEndsAt.toISOString(),
-    referred_by: referrerId
-  }).eq('id', user.id)
+    await supabase.from('profiles').update({
+      trial_ends_at: trialEndsAt.toISOString(),
+      ...(referrerId && { referred_by: referrerId }),
+    }).eq('id', user.id)
 
-  if (referrerId) {
-    await supabase.from('referrals').insert({
-      referrer_id: referrerId,
-      referred_id: user.id
-    })
+    if (referrerId) {
+      await supabase.from('referrals').insert({ referrer_id: referrerId, referred_id: user.id })
+    }
+  } catch {
+    // Non-critical — don't fail onboarding if trial columns are missing
   }
 
   revalidatePath('/', 'layout')
+  return { success: true }
 }
 
 export async function completeGeneralOnboarding(formData: FormData): Promise<void> {
