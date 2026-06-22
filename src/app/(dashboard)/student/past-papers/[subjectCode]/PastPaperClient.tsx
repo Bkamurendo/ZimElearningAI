@@ -182,6 +182,20 @@ export default function PastPaperClient({
 
     setMarkResults(results)
     setPhase('results')
+
+    // Persist attempt to DB so it appears in Grade Predictor history
+    const totalAwarded = Object.values(results).reduce((s, r) => s + r.marksAwarded, 0)
+    const totalPossible = paper.questions.flatMap(q => q.parts).reduce((s, p) => s + p.marks, 0)
+    fetch('/api/past-papers/save-attempt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subjectId: subject.id,
+        score: totalAwarded,
+        total: totalPossible,
+        topic: paper.paperTitle,
+      }),
+    }).catch(() => { /* best-effort — don't block results display */ })
   }
 
   // SETUP
