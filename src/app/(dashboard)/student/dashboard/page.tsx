@@ -17,15 +17,43 @@ export default async function StudentDashboard() {
   if (authError || !user) redirect('/login')
 
   try {
+    // Only select guaranteed columns — optional ones (plan, pro_expires_at, trial_ends_at)
+    // are added by PRODUCTION_RUN_THIS.sql and may not exist yet.
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, role, plan, pro_expires_at, trial_ends_at, schools(subscription_plan, subscription_expires_at)')
+      .select('full_name, role, schools(subscription_plan, subscription_expires_at)')
       .eq('id', user.id)
       .single()
 
-    if (profile?.role?.toLowerCase() !== 'student') {
-      const safeRole = profile?.role?.toLowerCase() || 'student'
+    // Only redirect if we actually got a profile back with a non-student role.
+    // If profile is null (SELECT failed), fall through to render the dashboard.
+    if (profile && profile.role?.toLowerCase() !== 'student') {
+      const safeRole = profile.role?.toLowerCase() || 'student'
       redirect(`/${safeRole === 'school_admin' ? 'school-admin' : safeRole}/dashboard`)
+    }
+
+    // Fetch optional monetisation columns separately — safe to fail
+    let plan: string = 'free'
+    let proExpiresAt: string | null = null
+    let trialEndsAt: string | null = null
+    try {
+      const { data: planData } = await supabase
+        .from('profiles')
+        .select('plan, pro_expires_at, trial_ends_at')
+        .eq('id', user.id)
+        .single()
+      if (planData) {
+        plan = planData.plan ?? 'free'
+        proExpiresAt = planData.pro_expires_at ?? null
+        trialEndsAt = planData.trial_ends_at ?? null
+      }
+    } catch { /* columns may not exist yet — use defaults */ }
+
+    const mergedProfile = {
+      ...profile,
+      plan,
+      pro_expires_at: proExpiresAt,
+      trial_ends_at: trialEndsAt,
     }
 
     const { data: studentProfile } = (await supabase
@@ -183,7 +211,7 @@ export default async function StudentDashboard() {
     return (
       <DashboardClient 
         user={user}
-        profile={profile || {}}
+        profile={mergedProfile || {}}
         studentProfile={studentProfile || {}}
         subjects={subjects || []}
         stats={stats || []}
