@@ -80,7 +80,8 @@ export async function GET() {
       else if (pulseScore >= 65) { confidence = 'Credit (B)'; color = 'text-blue-500' }
       else if (pulseScore >= 50) { confidence = 'Pass (C)'; color = 'text-amber-500' }
       else if (pulseScore >= 40) { confidence = 'Weak Pass (D)'; color = 'text-orange-500' }
-      else { confidence = 'Below Threshold (U)'; color = 'text-red-500' }
+      else if (pulseScore > 0) { confidence = 'Needs Practice'; color = 'text-red-500' }
+      else { confidence = 'Not Started'; color = 'text-gray-400' }
 
       return {
         id: subj.id,
@@ -92,13 +93,15 @@ export async function GET() {
         color,
         masteryCount: subjectMastery.filter(m => m.mastery_level === 'mastered').length,
         totalTopics: subjectMastery.length,
-        recommendation: pulseScore < 50 
-          ? `Priority: Redo ${subjectMastery.find(m => m.mastery_level !== 'mastered')?.topic || 'Foundational'} quizzes.`
-          : 'Keep practicing past papers.'
+        recommendation: subjectMastery.length === 0
+          ? 'Take a quiz to get started'
+          : pulseScore < 50
+            ? `Practice ${subjectMastery.find(m => m.mastery_level !== 'mastered')?.topic || 'foundational'} topics`
+            : 'Keep practicing past papers'
       }
     }).filter(Boolean) as any[]
 
-    const certificateLikelihood = totalPasses >= 5 && corePasses === 3 ? 'High (On Track)' : totalPasses >= 3 ? 'Medium (Bridging)' : 'Critical (Needs Attention)'
+    const certificateLikelihood = totalPasses >= 5 && corePasses === 3 ? 'High (On Track)' : totalPasses >= 3 ? 'Medium (Bridging)' : 'Getting Started'
 
     return NextResponse.json({
       success: true,
