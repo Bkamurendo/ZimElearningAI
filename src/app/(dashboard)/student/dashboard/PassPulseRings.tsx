@@ -44,7 +44,7 @@ export default function PassPulseRings() {
     return (
       <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
         <Loader2 size={24} className="text-emerald-500 animate-spin mb-3" />
-        <p className="text-xs text-gray-400 font-medium">Analyzing diagnostic data...</p>
+        <p className="text-xs text-gray-400 font-medium">Checking your progress…</p>
       </div>
     )
   }
@@ -65,7 +65,7 @@ export default function PassPulseRings() {
               <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                 <Activity size={16} className="text-white" />
               </div>
-              <h2 className="text-sm font-bold text-gray-800">ZIMSEC Readiness Pulse</h2>
+              <h2 className="text-sm font-bold text-gray-800">Exam Readiness Check</h2>
             </div>
             <div className="mt-2 space-y-1">
               <p className="text-xs text-gray-400"><strong>Requirement:</strong> 5 O-Levels incl. Maths, English, Science.</p>
@@ -137,8 +137,8 @@ export default function PassPulseRings() {
               <Target size={18} className="text-white" />
             </div>
             <div>
-              <p className="text-xs font-bold text-amber-900">Diagnostic Alert: Under Threshold</p>
-              <p className="text-[10px] text-amber-700">You are currently below 65% (Grade B threshold). Activate Autopilot?</p>
+              <p className="text-xs font-bold text-amber-900">You need more practice</p>
+              <p className="text-[10px] text-amber-700">You&apos;re below the pass mark. Want a personalised study plan?</p>
             </div>
           </div>
           <Zap size={16} className="text-amber-600 group-hover:scale-125 transition-transform" />

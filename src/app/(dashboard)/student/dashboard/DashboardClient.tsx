@@ -183,9 +183,9 @@ export default function DashboardClient({
                     <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center">
                        <CheckCircle2 size={16} className="text-white" />
                     </div>
-                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Syllabus Mastery Hub</h2>
+                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Your Learning Progress</h2>
                   </div>
-                  <Badge variant="blue">Real-time ZIMSEC Alignment</Badge>
+                  <Badge variant="blue">Your ZIMSEC Topics</Badge>
                </CardHeader>
                <CardContent>
                   <div className="min-h-[100px]">
@@ -223,16 +223,16 @@ export default function DashboardClient({
                        {dailyChallengeCompleted ? <Trophy size={24} className="text-yellow-300" /> : <Zap size={24} className="text-yellow-300 animate-bounce" />}
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-white italic tracking-tight uppercase">DAILY SURVIVAL MISSION</h3>
+                      <h3 className="text-xl font-black text-white italic tracking-tight uppercase">Today&apos;s Challenge</h3>
                       <p className="text-amber-100 text-sm font-black uppercase tracking-tight">
-                        {dailyChallengeCompleted 
-                          ? `COMPLETED: RECEIVED ${(_dailyChallengeScore || 0) * 10} XP` 
-                          : '5 Questions · 50 XP Reward · One Life.'}
+                        {dailyChallengeCompleted
+                          ? `Well done! You earned ${(_dailyChallengeScore || 0) * 10} XP`
+                          : '5 Questions · Earn 50 XP · One attempt'}
                       </p>
                     </div>
                   </div>
                   <Button variant="secondary" size="md" className="bg-white text-orange-600 border-none font-black shadow-lg">
-                    {dailyChallengeCompleted ? 'Leaderboard' : 'Start Mission'}
+                    {dailyChallengeCompleted ? 'Leaderboard' : 'Start Quiz'}
                   </Button>
                 </CardContent>
               </Card>
@@ -247,7 +247,7 @@ export default function DashboardClient({
                <AdaptivePath />
 
                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                 <PlayCircle size={14} /> Resume Learning Path
+                 <PlayCircle size={14} /> Continue Learning
                </h3>
                {continueItems.length > 0 ? (
                  <div className="grid gap-3">
@@ -286,7 +286,7 @@ export default function DashboardClient({
                            </div>
                            <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-xs uppercase">
                               {/* Calculate a realistic proxy for progress */}
-                              {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% PREP
+                              {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% done
                            </Badge>
                         </div>
                         <div>
@@ -307,7 +307,7 @@ export default function DashboardClient({
 
             {/* Quick Actions & Recent Achievements (Right) */}
             <div className="space-y-6">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Growth Center</h3>
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Learning Tools</h3>
                <div className="grid grid-cols-1 gap-3">
                   <Link href="/student/ai-workspace">
                     <Card hover className="bg-slate-900 border-slate-800 p-5 group flex items-center justify-between">
