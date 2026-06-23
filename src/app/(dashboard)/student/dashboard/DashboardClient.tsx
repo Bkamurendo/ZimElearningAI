@@ -94,9 +94,9 @@ export default function DashboardClient({
   const levelLabel = studentProfile?.zimsec_level?.toUpperCase() ?? 'O-LEVEL'
 
   const dashboardTabs = [
-    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
-    { id: 'learning', label: 'My Learning', icon: <GraduationCap size={16} /> },
-    { id: 'tasks', label: 'Exams & Tasks', icon: <ListTodo size={16} /> }
+    { id: 'overview', label: 'Progress', icon: <LayoutDashboard size={16} /> },
+    { id: 'learning', label: 'Study',    icon: <GraduationCap size={16} /> },
+    { id: 'tasks',    label: 'Tasks',    icon: <ListTodo size={16} /> }
   ]
 
   return (
@@ -410,7 +410,7 @@ export default function DashboardClient({
              {/* Missions & Tasks */}
              <div className="space-y-4">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ListTodo size={14} /> Training Missions (Assignments)
+                  <ListTodo size={14} /> My Assignments
                 </h3>
                 <Link href="/student/assignments">
                   <Card hover className="p-8 text-center group cursor-pointer border-t-8 border-orange-500">
@@ -428,7 +428,7 @@ export default function DashboardClient({
                 {/* Notifications Quick-Access */}
                 <Card className="overflow-hidden">
                    <CardHeader className="bg-slate-50 dark:bg-slate-900/50 flex flex-row items-center justify-between py-3">
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Intelligence Briefing</h4>
+                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Notifications</h4>
                       <Bell size={14} className="text-slate-400" />
                    </CardHeader>
                    <CardContent className="divide-y divide-slate-50 dark:divide-slate-800 p-0">
@@ -442,7 +442,7 @@ export default function DashboardClient({
                         </div>
                       ))}
                       <Link href="/student/notifications" className="block text-center py-2 text-xs font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
-                         View All Intelligence
+                         View All
                       </Link>
                    </CardContent>
                 </Card>
