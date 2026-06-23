@@ -1,56 +1,19 @@
-import { Plan, isUnlimitedAI, getPlanFeatures } from './subscription'
-
-/**
- * Daily AI usage quota per user.
- *
- * FREE  users: FREE_DAILY_LIMIT AI requests per day (resets midnight UTC)
- * PRO   users: unlimited
- *
- * Quota is tracked in the `profiles` table via the `ai_requests_today` and
- * `ai_quota_reset_at` columns.  Run the migration below if those columns
- * don't exist yet:
- *
- *   ALTER TABLE public.profiles
- *     ADD COLUMN IF NOT EXISTS ai_requests_today  INTEGER   DEFAULT 0,
- *     ADD COLUMN IF NOT EXISTS ai_quota_reset_at  TIMESTAMPTZ DEFAULT now(),
- *     ADD COLUMN IF NOT EXISTS plan               TEXT      DEFAULT 'free'
- *       CHECK (plan IN ('free', 'starter', 'pro', 'elite', 'ultimate'));
- */
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
 
-// Default fallback limits (should be ignored if subscription.ts is up to date)
 export const FREE_DAILY_LIMIT = 5
-export const PRO_DAILY_LIMIT  = 9999 // effectively unlimited
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getUserPlan(supabase: any, userId: string): Promise<string> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('plan, schools(subscription_plan, subscription_expires_at)')
-    .eq('id', userId)
-    .single()
-
-  // User's own plan takes precedence
-  if (data?.plan && data.plan !== 'free') return data.plan
-
-  // Fall back to school plan if active
-  if (data?.schools?.subscription_plan === 'pro') {
-    const expiresAt = data.schools.subscription_expires_at
-    if (!expiresAt || new Date(expiresAt) > new Date()) return 'pro'
-  }
-
-  return 'free'
+export async function getUserPlan(supabase: SupabaseClient, userId: string): Promise<string> {
+  const { data } = await supabase.from('profiles').select('plan').eq('id', userId).single()
+  return data?.plan ?? 'free'
 }
 
 export function isPaidPlan(plan: string): boolean {
-  return ['starter', 'pro', 'elite', 'ultimate'].includes(plan)
+  return ['starter', 'pro', 'elite'].includes(plan)
 }
 
 export interface QuotaResult {
   allowed: boolean
-  plan: Plan
   used: number
   limit: number
   remaining: number
@@ -61,56 +24,30 @@ export async function checkAIQuota(
   supabase: SupabaseClient,
   userId: string
 ): Promise<QuotaResult> {
-  // Fetch current usage and school plan
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('plan, ai_requests_today, ai_quota_reset_at, schools(subscription_plan, subscription_expires_at)')
+    .select('plan, ai_requests_today, ai_quota_reset_at')
     .eq('id', userId)
     .single()
 
   if (error || !profile) {
     // Fail open — quota columns may not exist yet
-    return { allowed: true, plan: 'free' as Plan, used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
+    return { allowed: true, used: 0, limit: FREE_DAILY_LIMIT, remaining: FREE_DAILY_LIMIT, resetsAt: tomorrowMidnightUTC() }
   }
 
+  // Paid users (starter/pro/elite) have unlimited AI access
+  if (isPaidPlan(profile.plan)) {
+    return { allowed: true, used: 0, limit: 9999, remaining: 9999, resetsAt: tomorrowMidnightUTC() }
+  }
+
+  // Free users: enforce daily limit
   const now = new Date()
-  let plan = (profile.plan || 'free') as Plan
-
-  // If user is free, check if school is pro
-  if (plan === 'free' && profile.schools?.subscription_plan === 'pro') {
-    const expiresAt = profile.schools.subscription_expires_at
-    if (!expiresAt || new Date(expiresAt) > now) {
-      plan = 'pro'
-    }
-  }
-
-  const features = getPlanFeatures(plan)
-  const limit = features.aiDailyLimit
-
   const resetAt = new Date(profile.ai_quota_reset_at ?? now)
   const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000
   const used: number = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
 
-  if (isUnlimitedAI(plan)) {
-    // Unlimited users — just increment, no blocking
-    await supabase.from('profiles').update({
-      ai_requests_today: used + 1,
-      ...(isNewDay && { ai_quota_reset_at: now.toISOString() }),
-    }).eq('id', userId)
-
-    return { allowed: true, plan, used, limit, remaining: limit - used, resetsAt: tomorrowMidnightUTC() }
-  }
-
-  // Free user — enforce limit
-  if (used >= limit) {
-    return {
-      allowed: false,
-      plan,
-      used,
-      limit,
-      remaining: 0,
-      resetsAt: tomorrowMidnightUTC(),
-    }
+  if (used >= FREE_DAILY_LIMIT) {
+    return { allowed: false, used, limit: FREE_DAILY_LIMIT, remaining: 0, resetsAt: tomorrowMidnightUTC() }
   }
 
   // Increment counter
@@ -121,10 +58,9 @@ export async function checkAIQuota(
 
   return {
     allowed: true,
-    plan,
     used: used + 1,
-    limit,
-    remaining: limit - (used + 1),
+    limit: FREE_DAILY_LIMIT,
+    remaining: FREE_DAILY_LIMIT - (used + 1),
     resetsAt: tomorrowMidnightUTC(),
   }
 }

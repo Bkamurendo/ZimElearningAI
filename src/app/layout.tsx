@@ -21,29 +21,29 @@ const geistMono = localFont({
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://zim-elearning-ai.vercel.app'
 
 export const metadata: Metadata = {
-  title: 'ZimLearn AI — The Official ZIMSEC AI Teacher & Learning Platform',
-  description: 'Zimbabwe\'s most advanced AI-powered e-learning platform. Dedicated ZIMSEC curriculum alignment for Primary, O-Level, and A-Level. Complete with AI Teacher MaFundi, past papers, and study planners.',
+  title: "ZimLearn AI — Zimbabwe's AI Teacher for ZIMSEC & the Heritage-Based Curriculum",
+  description: "Meet MaFundi, the AI teacher trained on Zimbabwe's Heritage-Based Curriculum and the full ZIMSEC syllabus. Adaptive tutoring, past papers with instant marking, and exam-ready study plans for ECD, Primary, O'Level and A'Level learners.",
+  keywords: "ZIMSEC, Heritage-Based Curriculum, Zimbabwe e-learning, AI tutor Zimbabwe, O'Level past papers, A'Level tutor, ZimLearn, MaFundi",
   metadataBase: new URL(siteUrl),
   openGraph: {
-    title: 'ZimLearn AI — The Official ZIMSEC AI Teacher',
-    description: 'Master your ZIMSEC exams with the original AI-powered learning platform for Zimbabwe. Official Heritage-Based Curriculum alignment.',
+    title: "ZimLearn AI — Zimbabwe's AI Teacher",
+    description: "An AI teacher trained on ZIMSEC and Zimbabwe's Heritage-Based Curriculum. Study any subject, practise past papers, and get instant feedback — 24/7.",
     url: siteUrl,
-    siteName: 'ZimLearn AI Official',
+    siteName: 'ZimLearn AI',
     locale: 'en_ZW',
     type: 'website',
+    images: [{ url: `${siteUrl}/og-image.png` }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ZimLearn AI — Official ZIMSEC AI Teacher',
-    description: 'The premier AI e-learning destination for Zimbabwean students.',
+    title: "ZimLearn AI — Zimbabwe's AI Teacher",
+    description: "MaFundi: an AI teacher trained on ZIMSEC and the Heritage-Based Curriculum. Built for Zimbabwean learners.",
   },
   icons: {
     icon: '/favicon.ico',
     apple: '/icon-192.png',
   },
 }
-
-import MobileNavbar from '@/components/MobileNavbar'
 
 export default function RootLayout({
   children,
@@ -52,21 +52,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0d9488" />
+        <meta name="theme-color" content="#059669" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-teal-100 selection:text-teal-900`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ServiceWorkerRegistration />
         <OfflineBanner />
-        <ThemeProvider>
-          <div className="pb-24 lg:pb-0">
-            {children}
-          </div>
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
         <UpgradePopup />
-        <MobileNavbar />
       </body>
     </html>
   )

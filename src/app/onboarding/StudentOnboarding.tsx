@@ -86,16 +86,13 @@ interface Props {
 }
 
 export default function StudentOnboarding({ fullName, subjects }: Props) {
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [level, setLevel] = useState<ZimsecLevel | null>(null)
   const [grade, setGrade] = useState('')
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [showAha, setShowAha] = useState(false)
-  const [ahaMessage, setAhaMessage] = useState('')
-  const [ahaResponse, setAhaResponse] = useState('')
-  const [ahaLoading, setAhaLoading] = useState(false)
 
   const filteredSubjects = subjects.filter((s) => s.zimsec_level === level)
   const selectedLevel = LEVELS.find((l) => l.value === level)
@@ -106,39 +103,18 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
     )
   }
 
-  async function handleAhaAsk() {
-    if (!ahaMessage.trim()) return
-    setAhaLoading(true)
-    try {
-      const res = await fetch('/api/ai-teacher/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: ahaMessage,
-          mode: 'normal',
-          solution_mode: 'scaffolded'
-        }),
-      })
-      const data = await res.json()
-      // Extract just the first few sentences or the whole reply
-      setAhaResponse(data.reply || "I'm here to help you master ZIMSEC! Ask me anything about your subjects.")
-    } catch (err) {
-      setAhaResponse("Mhoro! I'm ready to help you with your studies. Let's get started!")
-    } finally {
-      setAhaLoading(false)
-    }
-  }
-
-  async function handleFinalSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Step 2 submit: save profile, then go to Step 3
+  async function handleStep2Submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsSaving(true)
     setSaveError('')
     try {
       const formData = new FormData(e.currentTarget)
-      // Server action redirects on success — if we get a result back it's an error
-      const result = await (completeStudentOnboarding as any)(formData)
-      if (result?.error) {
-        setSaveError(result.error)
+      const result = await completeStudentOnboarding(formData)
+      if (result.success) {
+        setStep(3)
+      } else {
+        setSaveError(result.error ?? 'Something went wrong. Please try again.')
       }
     } catch (err) {
       console.error('Onboarding save failed:', err)
@@ -166,7 +142,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
           {/* Progress bar */}
           <div className="mb-8">
             <div className="flex items-center gap-0 mb-5">
-              {[1, 2].map((s) => (
+              {[1, 2, 3].map((s) => (
                 <div key={s} className="flex items-center flex-1">
                   <div className={`relative flex items-center justify-center w-10 h-10 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm ${
                     s < step
@@ -177,7 +153,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                   }`}>
                     {s < step ? <CheckCircle2 size={18} /> : s}
                   </div>
-                  {s < 2 && (
+                  {s < 3 && (
                     <div className="flex-1 h-1.5 mx-2 rounded-full overflow-hidden bg-gray-100">
                       <div
                         className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
@@ -191,12 +167,16 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
 
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {step === 1 ? `Welcome, ${fullName || 'Student'}! 👋` : 'Choose your subjects'}
+                {step === 1 ? `Welcome, ${fullName || 'Student'}! 👋` :
+                 step === 2 ? 'Choose your subjects' :
+                 '🚀 One last step — choose your plan'}
               </h1>
               <p className="text-gray-400 mt-1 text-sm">
                 {step === 1
                   ? 'Select your ZIMSEC level and grade to personalise your experience.'
-                  : `${selectedLevel?.label} — select the subjects you study.`}
+                  : step === 2
+                  ? `${selectedLevel?.label} — select the subjects you study.`
+                  : 'Start your 7-day free trial. No payment needed today.'}
               </p>
             </div>
           </div>
@@ -273,156 +253,179 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
 
           {/* ── Step 2: Subjects ──────────────────────────────────────────── */}
           {step === 2 && (
-            <form onSubmit={handleFinalSubmit}>
+            <form onSubmit={handleStep2Submit}>
               <input type="hidden" name="zimsec_level" value={level ?? ''} />
               <input type="hidden" name="grade" value={grade} />
 
-              {!showAha ? (
-                <>
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Select subjects</p>
-                    {selectedSubjects.length > 0 && (
-                      <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full">
-                        {selectedSubjects.length} selected
-                      </span>
-                    )}
-                  </div>
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Select subjects</p>
+                {selectedSubjects.length > 0 && (
+                  <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full">
+                    {selectedSubjects.length} selected
+                  </span>
+                )}
+              </div>
 
-                  <div className="grid grid-cols-2 gap-2.5 mb-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {filteredSubjects.map((subject) => {
-                      const checked = selectedSubjects.includes(subject.id)
-                      return (
-                        <label
-                          key={subject.id}
-                          className={`flex items-center gap-3 p-3.5 border-2 rounded-2xl cursor-pointer transition-all duration-150 ${
-                            checked
-                              ? 'border-emerald-500 bg-emerald-50 shadow-sm'
-                              : 'border-gray-100 hover:border-emerald-200 hover:bg-gray-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            name="subject_ids"
-                            value={subject.id}
-                            checked={checked}
-                            onChange={() => toggleSubject(subject.id)}
-                            className="sr-only"
-                          />
-                          <div className={`w-5 h-5 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${
-                            checked ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
-                          }`}>
-                            {checked && (
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-semibold text-gray-800 truncate block">{subject.name}</span>
-                          </div>
-                          {checked && <BookOpen size={13} className="text-emerald-500 flex-shrink-0" />}
-                        </label>
-                      )
-                    })}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="flex-1 py-3 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-bold rounded-2xl transition text-sm"
+              <div className="grid grid-cols-2 gap-2.5 mb-6">
+                {filteredSubjects.map((subject) => {
+                  const checked = selectedSubjects.includes(subject.id)
+                  return (
+                    <label
+                      key={subject.id}
+                      className={`flex items-center gap-3 p-3.5 border-2 rounded-2xl cursor-pointer transition-all duration-150 ${
+                        checked
+                          ? 'border-emerald-500 bg-emerald-50 shadow-sm'
+                          : 'border-gray-100 hover:border-emerald-200 hover:bg-gray-50'
+                      }`}
                     >
-                      ← Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAha(true)}
-                      disabled={selectedSubjects.length === 0}
-                      className="flex-1 py-3 font-bold rounded-2xl transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01] bg-gradient-to-r from-emerald-600 to-teal-600"
-                    >
-                      Next: Meet MaFundi AI →
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Sparkles size={100} className="text-emerald-500" />
-                    </div>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        <Zap size={24} className="text-white" />
+                      <input
+                        type="checkbox"
+                        name="subject_ids"
+                        value={subject.id}
+                        checked={checked}
+                        onChange={() => toggleSubject(subject.id)}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                        checked ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                      }`}>
+                        {checked && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
                       </div>
-                      <div>
-                        <h3 className="font-bold text-emerald-900">Experience MaFundi AI</h3>
-                        <p className="text-xs text-emerald-700">Ask me any question about your subjects!</p>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-gray-800 truncate block">{subject.name}</span>
                       </div>
-                    </div>
+                      {checked && <BookOpen size={13} className="text-emerald-500 flex-shrink-0" />}
+                    </label>
+                  )
+                })}
+              </div>
 
-                    <div className="space-y-4">
-                      {ahaResponse ? (
-                        <div className="bg-white rounded-2xl p-4 text-sm text-gray-700 shadow-sm border border-emerald-50">
-                          <p className="font-bold text-emerald-600 text-xs mb-1">MAFUNDI AI:</p>
-                          {ahaResponse}
-                          <button 
-                            type="button"
-                            onClick={() => { setAhaResponse(''); setAhaMessage('') }}
-                            className="block mt-3 text-xs text-gray-400 hover:text-emerald-600 underline"
-                          >
-                            Ask another question
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <input 
-                            type="text"
-                            value={ahaMessage}
-                            onChange={(e) => setAhaMessage(e.target.value)}
-                            placeholder="e.g. Explain Photosynthesis simply..."
-                            className="flex-1 px-4 py-3 border-2 border-emerald-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
-                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAhaAsk())}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAhaAsk}
-                            disabled={ahaLoading || !ahaMessage.trim()}
-                            className="bg-emerald-600 text-white p-3 rounded-2xl hover:bg-emerald-700 transition disabled:opacity-50"
-                          >
-                            {ahaLoading ? <Loader2 size={20} className="animate-spin" /> : <ChevronRight size={20} />}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {saveError && (
-                    <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 font-medium text-center">
-                      {saveError}
-                    </div>
-                  )}
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowAha(false)}
-                      className="flex-1 py-3 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-bold rounded-2xl transition text-sm"
-                    >
-                      ← Change Subjects
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="flex-1 py-3 font-bold rounded-2xl transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01] bg-gradient-to-r from-emerald-600 to-teal-600"
-                    >
-                      {isSaving ? 'Synchronizing...' : 'Start Learning Now →'}
-                    </button>
-                  </div>
-                  <p className="text-center text-[10px] text-gray-400">
-                    By clicking "Start Learning", you agree to our 7-day free trial.
-                  </p>
+              {saveError && (
+                <div className="mb-2 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 font-medium">
+                  {saveError}
                 </div>
               )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 py-3 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-bold rounded-2xl transition text-sm"
+                >
+                  ← Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={selectedSubjects.length === 0 || isSaving}
+                  className="flex-1 py-3 font-bold rounded-2xl transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:scale-[1.01]"
+                  style={{ background: selectedSubjects.length === 0 || isSaving ? '#d1fae5' : 'linear-gradient(135deg, #059669, #10b981)' }}
+                >
+                  {isSaving ? 'Saving...' : 'Next: Choose plan →'}
+                </button>
+              </div>
             </form>
+          )}
+
+          {/* ── Step 3: Upgrade offer ─────────────────────────────────────── */}
+          {step === 3 && (
+            <div className="space-y-4">
+              {/* Social proof */}
+              <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                <div className="flex -space-x-2">
+                  {['🧑🏾‍🎓','👩🏽‍🎓','👦🏿','👧🏾'].map((e, i) => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center text-base border-2 border-white">{e}</div>
+                  ))}
+                </div>
+                <p className="text-sm text-emerald-800 font-medium">
+                  <strong>5,000+ Zimbabwean students</strong> already learning with ZimLearn
+                </p>
+              </div>
+
+              {/* Trial badge */}
+              <div className="text-center">
+                <span className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 text-xs font-bold px-4 py-1.5 rounded-full border border-amber-200">
+                  ✨ 7-day free trial included — start learning immediately, no card needed
+                </span>
+              </div>
+
+              {/* Plan cards */}
+              <div className="grid grid-cols-1 gap-3">
+                {PLAN_CARDS.map((plan) => {
+                  const isSelected = selectedPlan === plan.id
+                  return (
+                    <button
+                      key={plan.id}
+                      onClick={() => setSelectedPlan(plan.id)}
+                      className={`relative text-left p-4 border-2 rounded-2xl transition-all duration-150 ${
+                        isSelected ? plan.selectedColor : plan.color + ' bg-white'
+                      }`}
+                    >
+                      {plan.badge && (
+                        <span className={`absolute -top-3 left-4 bg-gradient-to-r ${plan.badgeBg} text-white text-[10px] font-bold px-3 py-0.5 rounded-full`}>
+                          {plan.badge}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3 mt-1">
+                        <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                          {plan.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-1">
+                            <span className="font-bold text-gray-900 text-base">{plan.name}</span>
+                            <span className="ml-auto font-black text-gray-900">{plan.price}<span className="text-xs font-normal text-gray-400">{plan.period}</span></span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                            {plan.highlights.map(h => (
+                              <span key={h} className="flex items-center gap-1 text-xs text-gray-600">
+                                <Check size={10} className="text-emerald-500" strokeWidth={3} />
+                                {h}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ml-2 transition-all ${
+                          isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Action buttons */}
+              <div className="pt-2 space-y-2">
+                {selectedPlan ? (
+                  <a
+                    href={`/student/upgrade?plan=${selectedPlan}`}
+                    className={`w-full py-3.5 font-bold rounded-2xl transition-all text-white text-sm text-center flex items-center justify-center gap-2 shadow-lg ${
+                      PLAN_CARDS.find(p => p.id === selectedPlan)?.ctaBg ?? 'bg-indigo-600'
+                    }`}
+                  >
+                    {PLAN_CARDS.find(p => p.id === selectedPlan)?.cta}
+                    <ChevronRight size={16} />
+                  </a>
+                ) : (
+                  <div className="text-center text-sm text-gray-400 py-2">← Select a plan above to continue</div>
+                )}
+
+                <a
+                  href="/student/dashboard"
+                  className="w-full py-3 text-gray-400 hover:text-gray-600 font-medium text-sm text-center block transition"
+                >
+                  Continue with free trial →
+                </a>
+
+                <p className="text-center text-xs text-gray-300">
+                  Free trial gives you 7 days of full access. Upgrade anytime.
+                </p>
+              </div>
+            </div>
           )}
         </div>
 

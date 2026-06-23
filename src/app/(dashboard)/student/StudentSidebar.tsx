@@ -6,73 +6,50 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { logout } from '@/app/actions/auth'
 import {
-  LayoutDashboard, TrendingUp, Target, CalendarDays, LogOut,
+  LayoutDashboard, TrendingUp, CalendarCheck, LogOut,
   Flame, X, Calculator,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
-  ClipboardList, FileText, Layers, Bot, Sparkles, CalendarCheck, FlaskConical, Crown,
+  ClipboardList, FileText, Layers, Bot, Sparkles, CalendarDays, FlaskConical, Crown,
   Accessibility, Gift, Users, AlertTriangle, ChevronDown, ChevronRight, Lock, Package,
+  Target,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
 
-// ── Navigation grouped by section ─────────────────────────────────────────────
+// ── Navigation ─────────────────────────────────────────────────────────────────
 
-const NAV_SECTIONS = [
-  {
-    label: 'Main',
-    items: [
-      { href: '/student/dashboard',     label: 'Dashboard',       icon: LayoutDashboard, badge: null },
-      { href: '/student/challenges',    label: 'Daily Challenge', icon: Zap,             badge: 'challenge' as const },
-      { href: '/student/notifications', label: 'Notifications',   icon: Bell,            badge: 'notifications' as const },
-      { href: '/student/messages',      label: 'Messages',        icon: MessageSquare,   badge: 'messages' as const },
-    ],
-  },
-  {
-    label: 'MaFundi AI',
-    items: [
-      { href: '/student/ai-teacher',   label: 'AI Teacher',   icon: Bot,      badge: null },
-      { href: '/student/ai-workspace', label: 'AI Workspace', icon: Sparkles, badge: 'pro-only' as const },
-    ],
-  },
-  {
-    label: 'Learn',
-    items: [
-      { href: '/student/subjects',     label: 'My Subjects',      icon: BookOpen,     badge: null },
-      { href: '/student/resources',    label: 'Resource Library', icon: Library,      badge: 'pro-only' as const },
-      { href: '/student/assignments',  label: 'Assignments',      icon: ClipboardList,badge: null },
-      { href: '/student/notes',        label: 'My Notes',         icon: FileText,     badge: null },
-      { href: '/student/flashcards',   label: 'Flashcards',       icon: Layers,       badge: null },
-    ],
-  },
-  {
-    label: 'Track & Plan',
-    items: [
-      { href: '/student/progress',        label: 'My Progress',     icon: TrendingUp,   badge: null },
-      { href: '/student/exam-timetable',  label: 'Exam Timetable',  icon: CalendarCheck,badge: null },
-      { href: '/student/study-planner',   label: 'Study Planner',   icon: CalendarDays, badge: 'pro-only' as const },
-      { href: '/student/grade-predictor', label: 'Grade Predictor', icon: Target,       badge: 'pro-only' as const },
-    ],
-  },
-  {
-    label: 'Compete',
-    items: [
-      { href: '/student/leaderboard',  label: 'Leaderboard',     icon: Trophy, badge: null },
-      { href: '/student/tournaments',  label: 'Tournaments 🏆',  icon: Trophy, badge: 'pro-only' as const },
-      { href: '/student/squads',       label: 'Study Squads 👥', icon: Users,  badge: 'pro-only' as const },
-    ],
-  },
+const CORE_ITEMS = [
+  { href: '/student/dashboard',    label: 'Dashboard',      icon: LayoutDashboard, badge: null },
+  { href: '/student/subjects',     label: 'My Subjects',    icon: BookOpen,        badge: null },
+  { href: '/student/ai-teacher',   label: 'MaFundi AI',     icon: Bot,             badge: null },
+  { href: '/student/progress',     label: 'My Progress',    icon: TrendingUp,      badge: null },
+  { href: '/student/assignments',  label: 'Assignments',    icon: ClipboardList,   badge: null },
+]
+
+const STUDY_ITEMS = [
+  { href: '/student/challenges',     label: 'Daily Challenge', icon: Zap,          badge: 'challenge' as const },
+  { href: '/student/notes',          label: 'My Notes',        icon: FileText,     badge: null },
+  { href: '/student/flashcards',     label: 'Flashcards',      icon: Layers,       badge: null },
+  { href: '/student/exam-timetable', label: 'Exam Timetable',  icon: CalendarCheck,badge: null },
 ]
 
 const MORE_ITEMS = [
-  { href: '/student/solver',             label: 'Problem Solver',  icon: Calculator,  badge: null },
-  { href: '/student/bookmarks',          label: 'Bookmarks',       icon: Bookmark,    badge: null },
-  { href: '/student/search',             label: 'Search',          icon: Search,      badge: null },
-  { href: '/student/projects',           label: 'Projects (SBP)',  icon: FlaskConical,badge: null },
-  { href: '/student/sbp-packages',       label: 'SBP Packages 📦', icon: Package,     badge: null },
-  { href: '/student/projects/examples',  label: 'SBP Examples',   icon: BookOpen,    badge: null },
-  { href: '/student/projects/templates', label: 'SBP Templates',  icon: Crown,       badge: null },
-  { href: '/student/settings/security',  label: 'Security',       icon: Settings,    badge: null },
-  { href: '/student/referral',           label: 'Refer & Earn 🎁',icon: Gift,        badge: null },
+  { href: '/student/notifications',    label: 'Notifications',   icon: Bell,        badge: 'notifications' as const },
+  { href: '/student/messages',         label: 'Messages',        icon: MessageSquare,badge: 'messages' as const },
+  { href: '/student/resources',        label: 'Resource Library',icon: Library,     badge: 'pro-only' as const },
+  { href: '/student/study-planner',    label: 'Study Planner',   icon: CalendarDays,badge: 'pro-only' as const },
+  { href: '/student/grade-predictor',  label: 'Grade Predictor', icon: Target,      badge: 'pro-only' as const },
+  { href: '/student/ai-workspace',     label: 'AI Workspace',    icon: Sparkles,    badge: 'pro-only' as const },
+  { href: '/student/leaderboard',      label: 'Leaderboard',     icon: Trophy,      badge: null },
+  { href: '/student/tournaments',      label: 'Tournaments',     icon: Trophy,      badge: 'pro-only' as const },
+  { href: '/student/squads',           label: 'Study Squads',    icon: Users,       badge: 'pro-only' as const },
+  { href: '/student/solver',           label: 'Problem Solver',  icon: Calculator,  badge: null },
+  { href: '/student/bookmarks',        label: 'Bookmarks',       icon: Bookmark,    badge: null },
+  { href: '/student/projects',         label: 'Projects (SBP)',  icon: FlaskConical,badge: null },
+  { href: '/student/sbp-packages',     label: 'SBP Packages',    icon: Package,     badge: null },
+  { href: '/student/referral',         label: 'Refer & Earn',    icon: Gift,        badge: null },
+  { href: '/student/search',           label: 'Search',          icon: Search,      badge: null },
+  { href: '/student/settings/security',label: 'Security',        icon: Settings,    badge: null },
 ]
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -91,13 +68,6 @@ interface Props {
 
 const PLAN_LIMITS: Record<string, number> = { free: 3, starter: 10, pro: 40, elite: 120, ultimate: 9999 }
 const PLAN_LABELS: Record<string, string>  = { free: 'Free', starter: 'Starter', pro: 'Pro', elite: 'Elite', ultimate: 'Ultimate' }
-const PLAN_COLORS: Record<string, string>  = {
-  free:    'bg-slate-600 text-slate-200',
-  starter: 'bg-blue-600 text-blue-100',
-  pro:     'bg-indigo-600 text-indigo-100',
-  elite:   'bg-amber-500 text-amber-100',
-  ultimate: 'bg-purple-600 text-purple-100',
-}
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -119,7 +89,6 @@ export default function StudentSidebar({
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
-  // Listen for "open-sidebar" custom event (dispatched by MobileBottomNav "More" tab)
   useEffect(() => {
     const handler = () => setOpen(true)
     window.addEventListener('open-sidebar', handler)
@@ -133,15 +102,14 @@ export default function StudentSidebar({
   }
 
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'S'
-
-  // Check if any "More" item is currently active so we auto-expand the section
   const moreItemActive = MORE_ITEMS.some(item => isActive(item.href))
+  const isPaid = ['starter', 'pro', 'elite', 'ultimate'].includes(plan)
 
   function NavLink({ href, label, icon: Icon, badge }: { href: string; label: string; icon: React.ElementType; badge: string | null }) {
-    const active = isActive(href)
-    const count  = badge ? (badgeCounts[badge] ?? 0) : 0
-    const isLocked = !['starter', 'pro', 'elite', 'ultimate'].includes(plan) && (badge === 'pro-only')
-    
+    const active   = isActive(href)
+    const count    = badge ? (badgeCounts[badge] ?? 0) : 0
+    const isLocked = !isPaid && badge === 'pro-only'
+
     return (
       <Link
         href={isLocked ? '/student/upgrade' : href}
@@ -154,7 +122,7 @@ export default function StudentSidebar({
       >
         <Icon size={16} className={active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
         <span className="flex-1 truncate">{label}</span>
-        
+
         {isLocked && <Lock size={12} className="text-amber-500" />}
 
         {count > 0 && !isLocked && (
@@ -171,9 +139,73 @@ export default function StudentSidebar({
     )
   }
 
+  // ── Compact plan status (single row replacing 4 competing footer elements) ────
+  function PlanStatus() {
+    const now         = new Date()
+    const subExp      = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null
+    const isExpired   = subExp ? subExp <= now : false
+    const trialActive = trialEndsAt && new Date(trialEndsAt) > now && !isPaid
+    const daysLeft    = trialActive
+      ? Math.ceil((new Date(trialEndsAt!).getTime() - now.getTime()) / 86_400_000)
+      : 0
+    const limit = PLAN_LIMITS[plan] ?? 5
+    const pct   = Math.min(100, Math.round((aiUsed / limit) * 100))
+
+    if (isExpired) {
+      return (
+        <Link href="/student/upgrade" onClick={() => setOpen(false)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-all text-xs">
+          <AlertTriangle size={13} className="text-red-400 flex-shrink-0" />
+          <span className="flex-1 font-semibold text-red-300">Subscription expired</span>
+          <span className="text-red-400 font-bold">Renew →</span>
+        </Link>
+      )
+    }
+
+    if (trialActive) {
+      return (
+        <Link href="/student/upgrade" onClick={() => setOpen(false)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all text-xs">
+          <Zap size={13} className="text-emerald-400 flex-shrink-0" />
+          <span className="flex-1 font-semibold text-emerald-300">Pro Trial — {daysLeft}d left</span>
+          <span className="text-emerald-400 font-bold">Upgrade →</span>
+        </Link>
+      )
+    }
+
+    if (plan === 'pro' || plan === 'elite' || plan === 'ultimate') {
+      return (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/60 text-xs">
+          <Crown size={13} className="text-amber-400 flex-shrink-0" />
+          <span className="flex-1 font-semibold text-slate-300">{PLAN_LABELS[plan]} Plan</span>
+          <span className="text-slate-500">Unlimited AI</span>
+        </div>
+      )
+    }
+
+    // Free / starter — show AI quota inline
+    const barColor = pct >= 80 ? 'bg-red-500' : pct >= 50 ? 'bg-amber-400' : 'bg-emerald-500'
+    return (
+      <Link href="/student/upgrade" onClick={() => setOpen(false)}
+        className="block px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 transition-all text-xs space-y-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 font-semibold text-slate-300">
+            <Zap size={12} className="text-amber-500" />
+            AI quota
+          </div>
+          <span className={pct >= 80 ? 'text-red-400 font-bold' : 'text-slate-400'}>{aiUsed}/{limit} used</span>
+        </div>
+        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-slate-500 text-center">Upgrade for unlimited access →</p>
+      </Link>
+    )
+  }
+
   return (
     <A11yProvider>
-      {/* ── Accessibility overlay ─────────────────────────────────── */}
+      {/* Accessibility overlay */}
       {a11yOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-end" onClick={() => setA11yOpen(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -186,11 +218,9 @@ export default function StudentSidebar({
                 <Accessibility size={16} className="text-emerald-600" />
                 <h2 className="text-sm font-bold text-slate-800">Accessibility</h2>
               </div>
-              <button
-                onClick={() => setA11yOpen(false)}
+              <button onClick={() => setA11yOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-400 hover:text-slate-600"
-                aria-label="Close accessibility panel"
-              >
+                aria-label="Close accessibility panel">
                 <X size={15} />
               </button>
             </div>
@@ -204,7 +234,7 @@ export default function StudentSidebar({
         <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30" onClick={() => setOpen(false)} />
       )}
 
-      {/* ── Sidebar ──────────────────────────────────────────────── */}
+      {/* ── Sidebar ────────────────────────────────────────────────── */}
       <aside className={`fixed inset-y-0 left-0 w-64 bg-slate-900 z-40 flex flex-col transform transition-transform duration-300 ease-in-out shadow-2xl ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
 
         {/* Brand */}
@@ -223,20 +253,25 @@ export default function StudentSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin space-y-4">
-          {NAV_SECTIONS.map(section => (
-            <div key={section.label}>
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1.5">
-                {section.label}
-              </p>
-              <div className="space-y-0.5">
-                {section.items.map(item => (
-                  <NavLink key={item.href} {...item} />
-                ))}
-              </div>
-            </div>
-          ))}
 
-          {/* ── More (collapsible) ───────────────────────── */}
+          {/* Core */}
+          <div className="space-y-0.5">
+            {CORE_ITEMS.map(item => (
+              <NavLink key={item.href} {...item} />
+            ))}
+          </div>
+
+          {/* Study Tools */}
+          <div>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1.5">Study Tools</p>
+            <div className="space-y-0.5">
+              {STUDY_ITEMS.map(item => (
+                <NavLink key={item.href} {...item} />
+              ))}
+            </div>
+          </div>
+
+          {/* More (collapsible) */}
           <div>
             <button
               onClick={() => setMoreOpen(v => !v)}
@@ -246,7 +281,7 @@ export default function StudentSidebar({
                   : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 border-transparent'
               }`}
             >
-              <span className="flex-1 text-left text-xs font-semibold uppercase tracking-widest">More</span>
+              <span className="flex-1 text-left text-xs font-semibold uppercase tracking-widest text-slate-600">More</span>
               {moreOpen || moreItemActive
                 ? <ChevronDown size={14} className="text-slate-500" />
                 : <ChevronRight size={14} className="text-slate-500" />
@@ -263,143 +298,43 @@ export default function StudentSidebar({
           </div>
         </nav>
 
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-800 space-y-2 flex-shrink-0">
+        {/* Footer — 2 rows only */}
+        <div className="px-3 py-3 border-t border-slate-800 space-y-2 flex-shrink-0">
 
-          {/* Trial banner */}
-          {trialEndsAt && new Date(trialEndsAt) > new Date() && (plan === 'free' || plan === 'starter') && (() => {
-            const daysLeft = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-            return (
-              <Link href="/student/upgrade" onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all">
-                <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Zap size={14} className="text-emerald-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-emerald-300 leading-tight">Pro Trial Active</div>
-                  <div className="text-xs text-emerald-500 leading-tight">{daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining · Upgrade to keep access</div>
-                </div>
-              </Link>
-            )
-          })()}
+          {/* Row 1: compact plan/quota status */}
+          <PlanStatus />
 
-          {/* AI quota bar */}
-          {((plan || 'free') === 'free' || plan === 'starter') && !(trialEndsAt && new Date(trialEndsAt) > new Date()) && (() => {
-            const limit = PLAN_LIMITS[plan || 'free'] ?? 5
-            const currentUsage = aiUsed || 0
-            const pct = Math.min(100, Math.round((currentUsage / limit) * 100))
-            const barColor = pct >= 80 ? 'bg-red-500' : pct >= 50 ? 'bg-amber-400' : 'bg-emerald-500'
-            return (
-              <div className="px-1 space-y-2 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
-                    <Zap size={12} className="text-amber-500 fill-amber-500" />
-                    AI Daily Quota
-                  </div>
-                  <span className={`text-xs font-black ${pct >= 80 ? 'text-red-400' : 'text-slate-300'}`}>{currentUsage}/{limit}</span>
-                </div>
-                <div className="h-2 w-full bg-slate-800/50 rounded-full overflow-hidden border border-slate-700">
-                  <div className={`h-full rounded-full transition-all duration-500 ${barColor} shadow-[0_0_8px_rgba(0,0,0,0.4)]`} style={{ width: `${pct}%` }} />
-                </div>
-                {pct >= 60 ? (
-                  <Link href="/student/upgrade" className="block text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/20 text-center animate-pulse">
-                    QUOTA ALMOST FULL — UNLOCK NOW
-                  </Link>
-                ) : (
-                   <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                     <Lock size={10} /> Limited account plan
-                   </p>
-                )}
-              </div>
-            )
-          })()}
-
-          {/* Plan status / upgrade */}
-          {(() => {
-            const now = new Date()
-            const subExpiresAt = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null
-            const isExpired = subExpiresAt ? subExpiresAt <= now : false
-
-            if (isExpired) {
-              return (
-                <Link href="/student/upgrade" onClick={() => setOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all group">
-                  <div className="w-7 h-7 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle size={14} className="text-red-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-red-300 leading-tight">Plan Expired</div>
-                    <div className="text-xs text-red-500 leading-tight underline group-hover:text-red-400">Renew Now to unlock AI</div>
-                  </div>
-                </Link>
-              )
-            }
-
-            if (plan === 'pro' || plan === 'elite' || plan === 'ultimate') {
-              return (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800/60">
-                  <Crown size={14} className="text-amber-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-slate-200 leading-tight">{PLAN_LABELS[plan]} Plan</div>
-                    <div className="text-xs text-slate-500 leading-tight">Unlimited AI access</div>
-                  </div>
-                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${PLAN_COLORS[plan]}`}>{PLAN_LABELS[plan].toUpperCase()}</span>
-                </div>
-              )
-            }
-
-            return (
-              <Link href="/student/upgrade" onClick={() => setOpen(false)}
-                className="relative overflow-hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.02] group"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)' }}>
-                <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100" />
-                <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Zap size={14} className="text-yellow-300" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-white leading-tight">Upgrade to Pro</div>
-                  <div className="text-xs text-purple-200 leading-tight">Unlimited AI · from $5/mo</div>
-                </div>
-              </Link>
-            )
-          })()}
-
-          {/* Streak pill */}
-          {streak > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
-              <Flame size={14} className="text-orange-400 flex-shrink-0" />
-              <span className="text-xs font-semibold text-orange-300">{streak} day streak 🔥</span>
-            </div>
-          )}
-
-          {/* User info + theme + accessibility */}
-          <div className="flex items-center gap-2.5 px-2 py-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-500/40 shadow-lg"
+          {/* Row 2: user info + controls */}
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-500/40"
               style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
               <span className="text-white text-xs font-bold">{initials}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
-              <p className="text-xs text-slate-500">Student</p>
+              <div className="flex items-center gap-1">
+                <p className="text-xs text-slate-500">Student</p>
+                {streak > 0 && (
+                  <span className="text-xs text-orange-400 font-semibold">· {streak} 🔥</span>
+                )}
+              </div>
             </div>
             <ThemeToggle />
             <button
               onClick={() => setA11yOpen(v => !v)}
-              className={`p-2 rounded-xl transition-all duration-200 ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800/50 text-slate-400'}`}
+              className={`p-1.5 rounded-lg transition-all ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800/50 text-slate-400'}`}
               title="Accessibility settings"
               aria-label="Toggle accessibility settings"
             >
-              <Accessibility size={16} />
+              <Accessibility size={15} />
             </button>
+            <form action={logout}>
+              <button type="submit" title="Sign out"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                <LogOut size={15} />
+              </button>
+            </form>
           </div>
-
-          {/* Sign out */}
-          <form action={logout}>
-            <button type="submit" className="flex items-center gap-2 w-full px-3 py-2 text-xs text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-150">
-              <LogOut size={13} />
-              Sign out
-            </button>
-          </form>
         </div>
       </aside>
 
