@@ -33,7 +33,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabContent } from '@/components/ui/Tabs'
-import PassPulseRings from './PassPulseRings'
 import { fireConfetti } from '@/lib/confetti'
 import LearningMinutesTracker from './LearningMinutesTracker'
 import AdaptivePath from './AdaptivePath'
@@ -176,24 +175,6 @@ export default function DashboardClient({
       <div className="space-y-6">
         <TabContent id="overview" activeTab={activeTab}>
           <div className="space-y-6">
-            {/* Mission Hub (Mastery Heatmap) */}
-            <Card glass className="border-emerald-100/50 dark:border-emerald-900/20">
-               <CardHeader className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center">
-                       <CheckCircle2 size={16} className="text-white" />
-                    </div>
-                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Your Learning Progress</h2>
-                  </div>
-                  <Badge variant="blue">Your ZIMSEC Topics</Badge>
-               </CardHeader>
-               <CardContent>
-                  <div className="min-h-[100px]">
-                    <PassPulseRings />
-                  </div>
-               </CardContent>
-            </Card>
-
             {/* Daily Focus Tracker */}
             <LearningMinutesTracker minutesToday={learningMinutesToday} targetMinutes={60} />
 

@@ -31,12 +31,14 @@ const CONFIDENCE_CONFIG: Record<string, { bg: string; border: string; bar: strin
   'Credit (B)':      { bg: 'bg-blue-50',    border: 'border-blue-200',    bar: 'bg-blue-500',    badge: 'bg-blue-100 text-blue-700'    },
   'Pass (C)':        { bg: 'bg-amber-50',   border: 'border-amber-200',   bar: 'bg-amber-400',   badge: 'bg-amber-100 text-amber-700'  },
   'Weak Pass (D)':   { bg: 'bg-orange-50',  border: 'border-orange-200',  bar: 'bg-orange-400',  badge: 'bg-orange-100 text-orange-700'},
+  'Needs Practice':  { bg: 'bg-rose-50',    border: 'border-rose-200',    bar: 'bg-rose-400',    badge: 'bg-rose-100 text-rose-700'    },
+  'Not Started':     { bg: 'bg-slate-50',   border: 'border-slate-200',   bar: 'bg-slate-300',   badge: 'bg-slate-100 text-slate-500'  },
 }
 
 const CERT_COLORS: Record<string, string> = {
-  'High (On Track)':      'bg-emerald-50 border-emerald-200 text-emerald-700',
-  'Medium (Bridging)':    'bg-amber-50 border-amber-200 text-amber-700',
-  'Critical (Needs Attention)': 'bg-red-50 border-red-200 text-red-700',
+  'High (On Track)':   'bg-emerald-50 border-emerald-200 text-emerald-700',
+  'Medium (Bridging)': 'bg-amber-50 border-amber-200 text-amber-700',
+  'Getting Started':   'bg-slate-50 border-slate-200 text-slate-600',
 }
 
 export default function SyllabusMasteryMap() {
@@ -99,7 +101,7 @@ export default function SyllabusMasteryMap() {
     )
   }
 
-  const certStyle = CERT_COLORS[data.certificateLikelihood] ?? CERT_COLORS['Critical (Needs Attention)']
+  const certStyle = CERT_COLORS[data.certificateLikelihood] ?? CERT_COLORS['Getting Started']
 
   return (
     <div className="space-y-4">
