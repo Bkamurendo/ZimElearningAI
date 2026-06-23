@@ -579,7 +579,7 @@ export default function AITeacherPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-56px)] lg:h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-[calc(100vh-112px)] lg:h-screen overflow-hidden bg-gray-50">
 
       {/* ── Language Selection Modal (Proactive) ── */}
       {showLanguageModal && (
@@ -664,7 +664,7 @@ export default function AITeacherPage() {
 
         {/* Mode selector */}
         <div className="px-3 py-3 border-b border-gray-100 space-y-1.5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Mode</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Mode</p>
           {(Object.entries(MODES) as [Mode, typeof MODES[Mode]][]).map(([key, cfg]) => {
             const Icon = cfg.icon
             return (
@@ -681,7 +681,7 @@ export default function AITeacherPage() {
 
         {/* Subject selector */}
         <div className="px-3 py-3 border-b border-gray-100">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Subject</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Subject</p>
           <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
             className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-teal-500 outline-none bg-white text-gray-700">
             <option value="">All Subjects</option>
@@ -691,7 +691,7 @@ export default function AITeacherPage() {
 
         {/* History */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Recent Chats</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Recent Chats</p>
           {conversations.length === 0
             ? <p className="text-xs text-gray-400 italic px-2 py-4 text-center">No conversations yet</p>
             : conversations.map(conv => (
@@ -732,7 +732,7 @@ export default function AITeacherPage() {
               <button
                 key={l.id}
                 onClick={() => updateLanguage(l.id as any)}
-                className={`px-3 py-2 rounded-lg text-[10px] font-bold transition ${
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition ${
                   preferredLanguage === l.id ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -808,7 +808,7 @@ export default function AITeacherPage() {
                     </div>
                   )}
 
-                  <div className={`max-w-[80%] ${msg.role === 'user' ? '' : 'flex-1'}`}>
+                  <div className={`max-w-[85vw] sm:max-w-[80%] break-words ${msg.role === 'user' ? '' : 'flex-1'}`}>
                     {/* Image preview (user uploads) */}
                     {msg.imagePreview && (
                       <div className="mb-2 flex justify-end">
@@ -823,7 +823,7 @@ export default function AITeacherPage() {
                         : 'bg-white border border-gray-100 text-gray-800 shadow-sm rounded-tl-sm'
                     }`}>
                       {msg.role === 'assistant' ? (
-                        <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-strong:text-gray-900 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
+                        <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-strong:text-gray-900 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-table:overflow-x-auto [&_table]:block [&_table]:overflow-x-auto">
                           <ReactMarkdown 
                             remarkPlugins={[remarkGfm, remarkMath]} 
                             rehypePlugins={[rehypeKatex]}
@@ -927,7 +927,7 @@ export default function AITeacherPage() {
                 <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-blue-700 truncate">{imageFile?.name}</p>
-                  <p className="text-[10px] text-blue-400">Image attached — ask MaFundi about it</p>
+                  <p className="text-xs text-blue-400">Image attached — ask MaFundi about it</p>
                 </div>
                 <button onClick={clearUploads} className="p-2 rounded-lg hover:bg-blue-100 transition flex-shrink-0">
                   <X size={14} className="text-blue-500" />
@@ -940,7 +940,7 @@ export default function AITeacherPage() {
                 <FileText size={20} className="text-teal-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-teal-700 truncate">{activeFile.name}</p>
-                  <p className="text-[10px] text-teal-400">Document attached — ask MaFundi for help</p>
+                  <p className="text-xs text-teal-400">Document attached — ask MaFundi for help</p>
                 </div>
                 <button onClick={() => setActiveFile(null)} className="p-2 rounded-lg hover:bg-teal-100 transition flex-shrink-0">
                   <X size={14} className="text-teal-500" />
@@ -954,8 +954,8 @@ export default function AITeacherPage() {
                   <div key={res.id} className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 flex-shrink-0 max-w-[200px]">
                     <Library size={16} className="text-indigo-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-indigo-700 truncate tracking-tight">{res.title}</p>
-                      <p className="text-[9px] text-indigo-400 font-medium">Library Resource</p>
+                      <p className="text-xs font-bold text-indigo-700 truncate tracking-tight">{res.title}</p>
+                      <p className="text-[11px] text-indigo-400 font-medium">Library Resource</p>
                     </div>
                     <button onClick={() => removeResource(res.id)} className="p-2 rounded-md hover:bg-indigo-100 transition flex-shrink-0">
                       <X size={12} className="text-indigo-500" />
@@ -982,7 +982,7 @@ export default function AITeacherPage() {
                 }`}
               >
                 <Zap size={12} className={solutionMode === 'direct' ? 'text-yellow-500' : ''} /> Direct Solution
-                {solutionMode !== 'direct' && <span className="ml-1 px-1 bg-indigo-100 text-indigo-600 rounded text-[9px] uppercase tracking-tighter">Pro</span>}
+                {solutionMode !== 'direct' && <span className="ml-1 px-1.5 bg-indigo-100 text-indigo-600 rounded text-xs uppercase tracking-tighter">Pro</span>}
               </button>
             </div>
 
@@ -994,38 +994,38 @@ export default function AITeacherPage() {
             }`}>
               {/* Attachment logic */}
               <div className="relative">
-                <button 
-                  onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
+                <button
+                  onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
                   title="Add content"
-                  className={`flex-shrink-0 p-1.5 rounded-lg transition ${showAttachmentMenu ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`}
+                  className={`flex-shrink-0 p-2.5 rounded-lg transition min-w-[44px] min-h-[44px] flex items-center justify-center ${showAttachmentMenu ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 active:bg-indigo-50'}`}
                 >
-                  <Plus size={16} className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`} />
+                  <Plus size={18} className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`} />
                 </button>
 
                 {showAttachmentMenu && (
-                  <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5 animate-in slide-in-from-bottom-2 duration-200 z-10">
-                    <button 
+                  <div className="absolute bottom-full left-0 mb-2 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5 animate-in slide-in-from-bottom-2 duration-200 z-10 max-w-[calc(100vw-32px)]">
+                    <button
                       onClick={() => { fileInputRef.current?.click(); setShowAttachmentMenu(false) }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition text-sm text-gray-700"
+                      className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition text-sm text-gray-700 min-h-[52px]"
                     >
-                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                         <ImageIcon size={16} />
                       </div>
                       <div className="text-left">
                         <p className="font-bold text-xs">Device Files</p>
-                        <p className="text-[9px] text-gray-400">Images, PDFs, Docs</p>
+                        <p className="text-[11px] text-gray-400">Images, PDFs, Docs</p>
                       </div>
                     </button>
-                    <button 
+                    <button
                       onClick={() => { setIsResourceModalOpen(true); setShowAttachmentMenu(false) }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition text-sm text-gray-700"
+                      className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition text-sm text-gray-700 min-h-[52px]"
                     >
-                      <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Library size={16} />
                       </div>
                       <div className="text-left">
                         <p className="font-bold text-xs">Search Library</p>
-                        <p className="text-[9px] text-gray-400">Platform Resources</p>
+                        <p className="text-[11px] text-gray-400">Platform Resources</p>
                       </div>
                     </button>
                   </div>
@@ -1035,29 +1035,29 @@ export default function AITeacherPage() {
 
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
                 placeholder={
-                  mode === 'quiz'       ? `Topic to quiz on… e.g. "Form 3 Photosynthesis MCQ"` :
-                  mode === 'roadmap'    ? `Topic for study plan… e.g. "O-Level Maths 4 weeks to exam"` :
-                  mode === 'past_paper' ? `Paste a past paper question or ask for ZIMSEC-style Q…` :
-                                          `Ask MaFundi anything… (Enter to send)`
+                  mode === 'quiz'       ? `Quiz topic… e.g. "Form 3 Photosynthesis"` :
+                  mode === 'roadmap'    ? `Study plan topic… e.g. "O-Level Maths"` :
+                  mode === 'past_paper' ? `Paste a question or ask for a ZIMSEC-style Q…` :
+                                          `Ask MaFundi anything…`
                 }
                 rows={1}
                 className="flex-1 resize-none bg-transparent outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 max-h-32"
-                style={{ minHeight: '24px' }} />
+                style={{ minHeight: '44px' }} />
 
               {/* Voice input */}
               <button onClick={toggleVoice} title={listening ? 'Stop listening' : 'Voice input'}
-                className={`flex-shrink-0 p-1.5 rounded-lg transition ${listening ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-400 hover:text-teal-500 hover:bg-teal-50'}`}>
-                {listening ? <MicOff size={16} /> : <Mic size={16} />}
+                className={`flex-shrink-0 p-2.5 rounded-lg transition min-w-[44px] min-h-[44px] flex items-center justify-center ${listening ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-400 hover:text-teal-500 hover:bg-teal-50 active:bg-teal-50'}`}>
+                {listening ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
 
               {/* Send */}
               <button onClick={() => sendMessage()} disabled={(!input.trim() && !imageBase64) || loading}
-                className={`flex-shrink-0 w-9 h-9 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition ${modeConfig.color}`}>
-                {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                className={`flex-shrink-0 w-11 h-11 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition active:scale-95 ${modeConfig.color}`}>
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               </button>
             </div>
 
-            <p className="text-[10px] text-gray-400 text-center">
+            <p className="text-xs text-gray-400 text-center">
               MaFundi is an AI teacher. For critical academic decisions, consult your school teacher or official ZIMSEC resources.
             </p>
           </div>

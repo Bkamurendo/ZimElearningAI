@@ -163,7 +163,7 @@ export default async function StudentSubjectsPage() {
                         </div>
                         <div>
                           <h3 className="font-bold text-white text-sm leading-tight">{subject.name}</h3>
-                          <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/20`}>
+                          <span className={`inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/20`}>
                             {badge.label}
                           </span>
                         </div>
@@ -197,7 +197,7 @@ export default async function StudentSubjectsPage() {
                 >
                   <div className="text-xl mb-1">{emoji}</div>
                   <p className="text-sm font-bold text-gray-800 group-hover:text-emerald-700 transition">{label}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{desc}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
                 </Link>
               ))}
             </div>

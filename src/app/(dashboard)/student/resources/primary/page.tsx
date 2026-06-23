@@ -130,7 +130,7 @@ export default async function PrimaryResourcesPage() {
                   {desc}
                 </p>
                 {key && (
-                  <span className="inline-block mt-1.5 text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                  <span className="inline-block mt-1.5 text-[11px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
                     Key Exam
                   </span>
                 )}

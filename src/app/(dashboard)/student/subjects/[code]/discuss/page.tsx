@@ -349,7 +349,7 @@ Please provide a clear, accurate, ZIMSEC-aligned answer as MaFundi AI. Format yo
                                     <div className="flex items-center gap-1">
                                       <Bot size={12} className="text-teal-600" />
                                       <span className="font-semibold text-teal-800 text-xs">MaFundi AI</span>
-                                      <span className="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full uppercase tracking-tight">AI Answer</span>
+                                      <span className="text-[11px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full uppercase tracking-tight">AI Answer</span>
                                     </div>
                                   ) : (
                                     <>

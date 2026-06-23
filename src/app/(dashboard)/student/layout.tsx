@@ -136,7 +136,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         subscriptionExpiresAt={subscriptionExpiresAt}
         hasChallenge={hasChallenge}
       />
-      <div className="lg:pl-64 pb-16 lg:pb-0">
+      <div className="lg:pl-64 pb-20 lg:pb-0">
         <div className="pt-14 lg:pt-0">
           <TrialStatusBanner trialEndsAt={trialEndsAt} subscriptionExpiresAt={subscriptionExpiresAt} plan={plan} />
           {children}

@@ -128,7 +128,7 @@ export default function PremiumGradeReportPage({ params }: { params: { subjectId
             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg">Z</div>
             <div>
               <p className="font-black text-xl text-slate-900 tracking-tighter">ZimLearn <span className="text-indigo-600">AI</span></p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">MaFundi Intelligence Engine</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">MaFundi Intelligence Engine</p>
             </div>
           </div>
 
@@ -139,19 +139,19 @@ export default function PremiumGradeReportPage({ params }: { params: { subjectId
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Subject</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Subject</p>
               <p className="font-bold text-slate-900">{report?.subjectName ?? 'Mathematics'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">ZIMSEC Level</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">ZIMSEC Level</p>
               <p className="font-bold text-slate-900">O-Level</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Report Date</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Report Date</p>
               <p className="font-bold text-slate-900">{new Date().toLocaleDateString()}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Student ID</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Student ID</p>
               <p className="font-bold text-slate-900">#STUDENT-1204</p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function PremiumGradeReportPage({ params }: { params: { subjectId
               <div className="h-3 bg-slate-200 rounded-full overflow-hidden shadow-inner">
                 <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${report?.examReadiness ?? 78}%` }} />
               </div>
-              <p className="text-[10px] text-slate-400 mt-2 font-medium italic">Accuracy calibrated against historical 2023-2024 ZIMSEC data.</p>
+              <p className="text-xs text-slate-400 mt-2 font-medium italic">Accuracy calibrated against historical 2023-2024 ZIMSEC data.</p>
             </div>
           </div>
         </div>
@@ -259,9 +259,9 @@ export default function PremiumGradeReportPage({ params }: { params: { subjectId
         <div className="pt-10 border-t-2 border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6 opacity-60 grayscale hover:grayscale-0 transition-all">
           <div className="flex items-center gap-2">
             <Award className="text-indigo-600" size={24} />
-            <p className="text-[10px] font-bold text-slate-900 tracking-widest uppercase">ZimLearn Certified Report</p>
+            <p className="text-xs font-bold text-slate-900 tracking-widest uppercase">ZimLearn Certified Report</p>
           </div>
-          <p className="text-[10px] text-slate-400 font-medium">© 2026 ZimLearn AI Education Platform. All rights reserved.</p>
+          <p className="text-xs text-slate-400 font-medium">© 2026 ZimLearn AI Education Platform. All rights reserved.</p>
         </div>
       </div>
     </div>

@@ -120,25 +120,25 @@ export default function DashboardClient({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+          <div className="flex items-stretch gap-2 sm:gap-4 w-full sm:w-auto">
              {/* Dynamic Stats Pill */}
-             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <Zap size={20} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
-                <p className="text-lg sm:text-xl font-black text-white">
+             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <Zap size={18} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
+                <p className="text-base sm:text-xl font-black text-white leading-none">
                   {stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0}
                 </p>
-                <p className="text-xs uppercase font-black text-slate-500 tracking-widest">Mastered</p>
+                <p className="text-[11px] uppercase font-black text-slate-500 tracking-widest mt-0.5">Mastered</p>
              </div>
 
              {/* Streak Pill */}
-             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <p className="text-lg sm:text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
-                <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
+             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <p className="text-base sm:text-xl font-black text-orange-500 leading-none">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
+                <p className="text-[11px] uppercase font-black text-orange-500/60 tracking-widest mt-0.5">Day Streak</p>
              </div>
 
-             <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <p className="text-lg sm:text-xl font-black text-indigo-400">⏱️ {learningMinutesToday}m</p>
-                <p className="text-xs uppercase font-black text-indigo-500/60 tracking-widest">Focus Time</p>
+             <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <p className="text-base sm:text-xl font-black text-indigo-400 leading-none">⏱️ {learningMinutesToday}m</p>
+                <p className="text-[11px] uppercase font-black text-indigo-500/60 tracking-widest mt-0.5">Focus Time</p>
               </div>
 
              <Button 
@@ -168,7 +168,7 @@ export default function DashboardClient({
       />
 
       {/* Modern Tabbed Navigation */}
-      <div className="sticky top-4 z-40 flex justify-center">
+      <div className="sticky top-16 lg:top-4 z-40 flex justify-center">
         <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} className="shadow-xl shadow-slate-900/5" />
       </div>
 

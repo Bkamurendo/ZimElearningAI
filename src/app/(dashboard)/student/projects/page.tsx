@@ -178,7 +178,7 @@ export default async function StudentProjectsPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
-                Pro Templates <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">PRO</span>
+                Pro Templates <span className="text-xs font-bold px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">PRO</span>
               </p>
               <p className="text-xs text-slate-500">MaFundi generates a full example for your topic & subject</p>
             </div>
@@ -242,7 +242,7 @@ export default async function StudentProjectsPage() {
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                    <div className="flex justify-between text-xs text-slate-400 mt-1">
                       <span>Proposal</span>
                       <span>Submit</span>
                     </div>

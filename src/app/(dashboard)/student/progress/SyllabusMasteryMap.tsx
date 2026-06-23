@@ -155,7 +155,7 @@ export default function SyllabusMasteryMap() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-bold text-gray-900 text-sm">{subject.name}</h4>
                     {subject.isCore && (
-                      <span className="text-[9px] font-black bg-slate-800 text-white px-2 py-0.5 rounded-full uppercase tracking-tight">
+                      <span className="text-[11px] font-black bg-slate-800 text-white px-2 py-0.5 rounded-full uppercase tracking-tight">
                         CORE
                       </span>
                     )}
@@ -164,7 +164,7 @@ export default function SyllabusMasteryMap() {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-xl font-black text-gray-900">{subject.score}<span className="text-xs font-semibold text-gray-400">%</span></p>
-                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tight ${cfg.badge}`}>
+                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-tight ${cfg.badge}`}>
                     {subject.confidence}
                   </span>
                 </div>

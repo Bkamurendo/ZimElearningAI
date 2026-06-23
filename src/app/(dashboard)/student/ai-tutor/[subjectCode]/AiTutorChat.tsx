@@ -83,7 +83,7 @@ const markdownComponents = {
     if (isBlock) {
       return (
         <div className="my-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
-          <div className="bg-slate-800 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Code</div>
+          <div className="bg-slate-800 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-slate-400">Code</div>
           <pre className="bg-slate-900 px-4 py-3 overflow-x-auto">
             <code className="text-sm font-mono text-emerald-400 whitespace-pre">{children}</code>
           </pre>
@@ -242,19 +242,19 @@ export default function AiTutorChat({
           </div>
           <div className="min-w-0">
             <p className="font-black text-slate-900 dark:text-white text-sm truncate uppercase tracking-tight">{subjectName} AI Tutor</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
                <Sparkles size={10} className="text-indigo-400" />
                MaFundi Intelligence · {levelLabel}
             </p>
           </div>
         </div>
         {isPaid ? (
-          <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-500/20">
+          <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-500/20">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
             Active Engine
           </div>
         ) : (
-          <div className={`hidden sm:flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${aiUsedToday >= 5 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+          <div className={`hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${aiUsedToday >= 5 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${aiUsedToday >= 5 ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
             {5 - Math.min(aiUsedToday, 5)} of 5 free left
           </div>
@@ -293,7 +293,7 @@ export default function AiTutorChat({
                     whileHover={{ scale: 1.02, y: -2 }}
                     key={s}
                     onClick={() => setInput(s)}
-                    className="text-[10px] font-black uppercase tracking-widest p-5 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-3xl hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-slate-900 transition-all duration-300 border border-slate-100 dark:border-slate-800 shadow-sm"
+                    className="text-xs font-black uppercase tracking-widest p-5 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-3xl hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-slate-900 transition-all duration-300 border border-slate-100 dark:border-slate-800 shadow-sm"
                   >
                     {s}
                   </motion.button>
@@ -312,7 +312,7 @@ export default function AiTutorChat({
               className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-2xl flex items-center justify-center text-white dark:text-slate-900 text-[10px] font-black flex-shrink-0 mt-1 shadow-lg relative">
+                <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-2xl flex items-center justify-center text-white dark:text-slate-900 text-xs font-black flex-shrink-0 mt-1 shadow-lg relative">
                   AI
                 </div>
               )}
@@ -332,7 +332,7 @@ export default function AiTutorChat({
                 )}
               </div>
               {msg.role === 'user' && (
-                <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-[10px] font-black flex-shrink-0 mt-1 shadow-lg">
+                <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-xs font-black flex-shrink-0 mt-1 shadow-lg">
                   <User size={16} />
                 </div>
               )}
@@ -345,7 +345,7 @@ export default function AiTutorChat({
               animate={{ opacity: 1, y: 0 }}
               className="flex gap-4 justify-start"
             >
-              <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-2xl flex items-center justify-center text-white dark:text-slate-900 text-[10px] font-black flex-shrink-0 mt-1 shadow-lg">
+              <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-2xl flex items-center justify-center text-white dark:text-slate-900 text-xs font-black flex-shrink-0 mt-1 shadow-lg">
                 AI
               </div>
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-6 py-6 rounded-[2rem] rounded-tl-none shadow-sm space-y-3 min-w-0 max-w-[80vw]">
@@ -354,7 +354,7 @@ export default function AiTutorChat({
                 <Skeleton className="h-4 w-[50%] rounded-full" />
                 <div className="pt-2 flex items-center gap-2">
                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" />
-                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Thinking...</span>
+                   <span className="text-xs font-black uppercase tracking-widest text-indigo-500">Thinking...</span>
                 </div>
               </div>
             </motion.div>
@@ -414,12 +414,12 @@ export default function AiTutorChat({
           
           <div className="flex items-center justify-center gap-6 mt-4 opacity-40">
              <div className="flex items-center gap-1.5">
-                <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-black text-slate-500">ENTER</kbd>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Send</span>
+                <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[11px] font-black text-slate-500">ENTER</kbd>
+                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Send</span>
              </div>
              <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-slate-800 pl-6">
                 <Info size={10} className="text-slate-500" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">MaFundi AI v2.1</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">MaFundi AI v2.1</span>
              </div>
           </div>
         </div>

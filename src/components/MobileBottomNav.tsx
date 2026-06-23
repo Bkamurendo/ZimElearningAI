@@ -32,7 +32,7 @@ export function MobileBottomNav({ role = 'student' }: { role?: 'student' | 'teac
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-slate-900 border-t border-slate-700/60 safe-area-pb shadow-2xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-slate-900 border-t border-slate-700/60 shadow-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="flex items-stretch justify-around">
         {tabs.map(({ href, label, icon: Icon, type }) => {
           const isActive = type === 'link' && href && (pathname === href || pathname.startsWith(href + '/'))
@@ -42,10 +42,10 @@ export function MobileBottomNav({ role = 'student' }: { role?: 'student' | 'teac
               <button
                 key={label}
                 onClick={openSidebar}
-                className="flex flex-col items-center justify-center gap-1 flex-1 py-2.5 min-h-[56px] transition-all text-slate-400 active:text-slate-200 active:bg-slate-800/50"
+                className="flex flex-col items-center justify-center gap-1.5 flex-1 py-3 min-h-[60px] transition-colors text-slate-400 active:text-slate-200 active:bg-slate-800/50"
               >
                 <Icon size={22} strokeWidth={1.8} />
-                <span className="text-xs font-semibold leading-none tracking-wide text-slate-500">{label}</span>
+                <span className="text-[11px] font-semibold leading-tight tracking-wide text-slate-500">{label}</span>
               </button>
             )
           }
@@ -54,7 +54,7 @@ export function MobileBottomNav({ role = 'student' }: { role?: 'student' | 'teac
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center justify-center gap-1 flex-1 py-2.5 min-h-[56px] transition-all relative ${
+              className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3 min-h-[60px] transition-colors relative ${
                 isActive ? `${activeColor} ${activeBg}` : 'text-slate-400 active:text-slate-200 active:bg-slate-800/50'
               }`}
             >
@@ -62,7 +62,7 @@ export function MobileBottomNav({ role = 'student' }: { role?: 'student' | 'teac
                 <span className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 ${activeDot} rounded-full`} />
               )}
               <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-              <span className={`text-xs font-semibold leading-none tracking-wide ${isActive ? '' : 'text-slate-500'}`}>
+              <span className={`text-[11px] font-semibold leading-tight tracking-wide ${isActive ? '' : 'text-slate-500'}`}>
                 {label}
               </span>
             </Link>
