@@ -108,7 +108,7 @@ export default async function NotificationsPage() {
               </div>
               <div>
                 <h2 className="font-bold text-gray-900 text-sm">Platform Announcements</h2>
-                <p className="text-xs text-gray-400">{announcements.length} active</p>
+                <p className="text-xs text-gray-500">{announcements.length} active</p>
               </div>
             </div>
             <div className="divide-y divide-gray-50 px-4 py-3 space-y-2">
@@ -121,7 +121,7 @@ export default async function NotificationsPage() {
                       <div>
                         <p className="font-bold text-gray-900 text-sm">{a.title}</p>
                         <p className="text-xs text-gray-600 mt-1 leading-relaxed">{a.body}</p>
-                        <p className="text-[10px] text-gray-400 mt-1.5">
+                        <p className="text-xs text-gray-500 mt-1.5">
                           {new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                       </div>
@@ -141,7 +141,7 @@ export default async function NotificationsPage() {
             </div>
             <div>
               <h2 className="font-bold text-gray-900 text-sm">Activity</h2>
-              <p className="text-xs text-gray-400">{allNotifs.length} notifications</p>
+              <p className="text-xs text-gray-500">{allNotifs.length} notifications</p>
             </div>
           </div>
 
@@ -166,7 +166,7 @@ export default async function NotificationsPage() {
                         {!n.read && <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1.5 shadow-sm" />}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{n.message}</p>
-                      <p className="text-[10px] text-gray-400 mt-1.5">
+                      <p className="text-xs text-gray-500 mt-1.5">
                         {new Date(n.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>

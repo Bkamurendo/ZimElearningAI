@@ -458,7 +458,7 @@ function DocumentCard({
                 <span className="text-xs text-gray-500 font-medium bg-gray-100 px-1.5 py-0.5 rounded-md">{doc.year}</span>
               )}
               {doc.paper_number && (
-                <span className="text-xs text-gray-400">Paper {doc.paper_number}</span>
+                <span className="text-xs text-gray-500">Paper {doc.paper_number}</span>
               )}
               {isOwn && (
                 <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
@@ -486,7 +486,7 @@ function DocumentCard({
             </span>
           ))}
           {doc.file_size && (
-            <span className="text-xs text-gray-400 ml-auto">
+            <span className="text-xs text-gray-500 ml-auto">
               {formatSize(doc.file_size)}
             </span>
           )}

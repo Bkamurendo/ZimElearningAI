@@ -192,7 +192,7 @@ export default function RevisionPackClient({ subjects }: { subjects: SubjectInfo
                       <span className={`text-xs font-bold ${textColor}`}>
                         Score: {t.lastScore}%
                       </span>
-                      <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                      <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full border ${
                         t.importance === 'high'
                           ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
                           : t.importance === 'medium'
@@ -223,8 +223,8 @@ export default function RevisionPackClient({ subjects }: { subjects: SubjectInfo
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{q.question}</p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-[11px] text-gray-400 dark:text-slate-500">{q.topic}</span>
-                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                        <span className="text-xs text-gray-500 dark:text-slate-500">{q.topic}</span>
+                        <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${
                           q.difficulty === 'easy'
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                             : q.difficulty === 'medium'
@@ -301,7 +301,7 @@ export default function RevisionPackClient({ subjects }: { subjects: SubjectInfo
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                 {pack.estimatedStudyHours}h
               </p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">recommended</p>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">recommended</p>
             </div>
           </div>
         </div>

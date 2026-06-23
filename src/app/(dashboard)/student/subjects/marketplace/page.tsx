@@ -68,7 +68,7 @@ export default async function SubjectMarketplacePage() {
       {/* Hero */}
       <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white pt-10 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 border border-white/10 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-white/10 backdrop-blur-sm">
             <Sparkles size={12} fill="currentColor" /> Unlocked Learning
           </div>
           <h1 className="text-3xl sm:text-4xl font-black mb-3">Subject Marketplace</h1>
@@ -113,17 +113,17 @@ export default async function SubjectMarketplacePage() {
                       {emoji}
                     </div>
                     {isPurchased || isPro ? (
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1 uppercase tracking-wider">
                         <CheckCircle2 size={10} /> Fully Unlocked
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1 uppercase tracking-wider">
                         <Lock size={10} /> Limited Access
                       </span>
                     )}
                   </div>
                   <h3 className="font-bold text-gray-900 mb-1">{subject.name}</h3>
-                  <p className="text-xs text-gray-400 mb-4">{subject.code}</p>
+                  <p className="text-xs text-gray-500 mb-4">{subject.code}</p>
                   
                   <div className="space-y-2">
                     {[
@@ -132,7 +132,7 @@ export default async function SubjectMarketplacePage() {
                       'ZIMSEC Past Papers',
                       'AI Topic Analysis'
                     ].map(feat => (
-                      <div key={feat} className="flex items-center gap-2 text-[11px] text-gray-500">
+                      <div key={feat} className="flex items-center gap-2 text-xs text-gray-500">
                         <CheckCircle2 size={12} className={isPurchased || isPro ? 'text-emerald-500' : 'text-gray-300'} />
                         {feat}
                       </div>

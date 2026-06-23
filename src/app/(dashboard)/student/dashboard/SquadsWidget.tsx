@@ -29,11 +29,11 @@ export default function SquadsWidget() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
           <Users size={14} /> My Study Squads
         </h3>
         <Link href="/student/squads/create">
-          <Button variant="ghost" size="xs" className="text-emerald-600 font-black uppercase text-[10px] tracking-widest">
+          <Button variant="ghost" size="xs" className="text-emerald-600 font-black uppercase text-xs tracking-widest">
             <Plus size={12} className="mr-1" /> New Squad
           </Button>
         </Link>
@@ -73,10 +73,10 @@ export default function SquadsWidget() {
               </div>
               <div>
                 <p className="text-sm font-black text-slate-800 uppercase tracking-tight italic">No Active Squads</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Join a squad to compete & share notes with peers.</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Join a squad to compete & share notes with peers.</p>
               </div>
               <Link href="/student/squads/discover">
-                <Button variant="outline" size="sm" className="font-black uppercase text-[10px] tracking-widest">
+                <Button variant="outline" size="sm" className="font-black uppercase text-xs tracking-widest">
                   Discover Squads
                 </Button>
               </Link>

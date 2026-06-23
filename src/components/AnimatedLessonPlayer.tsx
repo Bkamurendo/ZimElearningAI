@@ -74,7 +74,7 @@ function TitleSlide({ slide, colors }: SlideProps) {
         {slide.emoji ?? '🎓'}
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest mb-4"
+        className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4"
         style={{ background: colors.lightBg, color: colors.text }}>
         MaFundi Lesson
       </motion.div>
@@ -449,7 +449,7 @@ export function AnimatedLessonPlayer({ lesson, onClose }: Props) {
         <div className="flex items-center gap-0.5 rounded-lg p-1" style={{ background: 'rgba(255,255,255,0.08)' }}>
           {[0.75, 1, 1.25, 1.5].map(s => (
             <button key={s} onClick={() => setSpeed(s)}
-              className="px-2 py-0.5 rounded text-[11px] font-bold transition-all duration-150"
+              className="px-2 py-0.5 rounded text-xs font-bold transition-all duration-150"
               style={speed === s
                 ? { background: colors.accent, color: '#000' }
                 : { color: 'rgba(255,255,255,0.45)' }}>
@@ -535,7 +535,7 @@ export function AnimatedLessonPlayer({ lesson, onClose }: Props) {
         </div>
 
         {/* Slide counter */}
-        <span className="text-[11px] font-mono text-slate-400 flex-shrink-0">
+        <span className="text-xs font-mono text-slate-400 flex-shrink-0">
           {currentIndex + 1}/{lesson.slides.length}
         </span>
 

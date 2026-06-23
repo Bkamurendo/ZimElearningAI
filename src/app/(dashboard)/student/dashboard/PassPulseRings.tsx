@@ -44,7 +44,7 @@ export default function PassPulseRings() {
     return (
       <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
         <Loader2 size={24} className="text-emerald-500 animate-spin mb-3" />
-        <p className="text-xs text-gray-400 font-medium">Checking your progress…</p>
+        <p className="text-xs text-gray-500 font-medium">Checking your progress…</p>
       </div>
     )
   }
@@ -68,17 +68,17 @@ export default function PassPulseRings() {
               <h2 className="text-sm font-bold text-gray-800">Exam Readiness Check</h2>
             </div>
             <div className="mt-2 space-y-1">
-              <p className="text-xs text-gray-400"><strong>Requirement:</strong> 5 O-Levels incl. Maths, English, Science.</p>
+              <p className="text-xs text-gray-500"><strong>Requirement:</strong> 5 O-Levels incl. Maths, English, Science.</p>
               <div className="flex items-center gap-2">
-                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${totalPasses >= 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
+                 <span className={`text-xs font-black px-2 py-0.5 rounded-full ${totalPasses >= 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
                    {totalPasses}/5 Passes
                  </span>
-                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${corePasses >= 3 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                 <span className={`text-xs font-black px-2 py-0.5 rounded-full ${corePasses >= 3 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
                    {corePasses}/3 Core
                  </span>
               </div>
               {likelihood && likelihood !== 'Getting Started' && (
-                <p className="text-[11px] font-bold text-slate-700 mt-1">
+                <p className="text-xs font-bold text-slate-700 mt-1">
                   Likelihood: <span className={likelihood.startsWith('High') ? 'text-emerald-500' : 'text-amber-500'}>{likelihood}</span>
                 </p>
               )}
@@ -89,7 +89,7 @@ export default function PassPulseRings() {
             <div className={`relative w-20 h-20 rounded-full flex items-center justify-center border-4 ${overall >= 50 ? 'border-emerald-500 shadow-lg shadow-emerald-100' : 'border-amber-400 shadow-lg shadow-amber-100'}`}>
               <span className={`text-xl font-black ${overall >= 50 ? 'text-emerald-600' : 'text-amber-600'}`}>{overall}%</span>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest mt-2 text-gray-400">Total Score</span>
+            <span className="text-xs font-black uppercase tracking-widest mt-2 text-gray-400">Total Score</span>
           </div>
         </div>
       </div>
@@ -114,12 +114,12 @@ export default function PassPulseRings() {
               <div className="flex items-center justify-between mb-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{s.code}</p>
-                    {s.isCore && <span className="text-[11px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter">Core</span>}
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">{s.code}</p>
+                    {s.isCore && <span className="text-xs bg-indigo-600 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter">Core</span>}
                   </div>
                   <h3 className="text-sm font-bold text-gray-900 truncate">{s.name}</h3>
                 </div>
-                <span className={`text-[11px] font-black px-2 py-1 rounded-full border flex-shrink-0 ${badgeStyle}`}>
+                <span className={`text-xs font-black px-2 py-1 rounded-full border flex-shrink-0 ${badgeStyle}`}>
                   {s.confidence}
                 </span>
               </div>
@@ -129,7 +129,7 @@ export default function PassPulseRings() {
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-gray-400 italic truncate flex-1 leading-tight">
+                <p className="text-xs text-gray-500 italic truncate flex-1 leading-tight">
                   {s.totalTopics === 0 ? 'Take a quiz to see your score' : s.recommendation}
                 </p>
                 <Link href={`/student/subjects/${s.code}`} className="flex-shrink-0 bg-gray-50 text-emerald-600 p-2 rounded-lg hover:bg-emerald-500 hover:text-white transition min-w-[36px] min-h-[36px] flex items-center justify-center">

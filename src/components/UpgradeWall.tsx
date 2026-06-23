@@ -37,7 +37,7 @@ export default function UpgradeWall({ feature, description, benefits }: Props) {
             <Zap size={16} />
             Upgrade from $2/month
           </Link>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500">
             Less than the cost of one exercise book · Cancel anytime
           </p>
         </div>

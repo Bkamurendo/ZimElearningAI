@@ -166,15 +166,15 @@ function Leaderboard({
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-semibold truncate ${isMe ? 'text-amber-700' : 'text-gray-800'}`}>
                   {formatName(entry.profiles?.full_name)}
-                  {isMe && <span className="ml-1.5 text-[10px] bg-amber-200 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">YOU</span>}
+                  {isMe && <span className="ml-1.5 text-xs bg-amber-200 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">YOU</span>}
                 </p>
                 {entry.time_taken_seconds != null && (
-                  <p className="text-[11px] text-gray-400">{formatTime(entry.time_taken_seconds)}</p>
+                  <p className="text-xs text-gray-500">{formatTime(entry.time_taken_seconds)}</p>
                 )}
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="text-sm font-bold text-gray-900">{entry.score}/5</p>
-                <p className="text-[11px] text-amber-600 font-semibold">+{entry.xp_earned} XP</p>
+                <p className="text-xs text-amber-600 font-semibold">+{entry.xp_earned} XP</p>
               </div>
             </div>
           )
@@ -465,7 +465,7 @@ export default function DailyChallengesPage() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-400 font-medium">Next challenge in</p>
+              <p className="text-xs text-gray-500 font-medium">Next challenge in</p>
               <p className="text-xl font-bold text-gray-900 font-mono">{countdown}</p>
             </div>
             <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
@@ -545,7 +545,7 @@ export default function DailyChallengesPage() {
                       : <XCircle size={14} className="text-red-500" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-gray-400 font-medium mb-0.5">{r.subject}</p>
+                    <p className="text-xs text-gray-500 font-medium mb-0.5">{r.subject}</p>
                     <p className="text-sm font-medium text-gray-900 leading-snug">{r.question}</p>
                   </div>
                 </div>
@@ -593,13 +593,13 @@ export default function DailyChallengesPage() {
         <header className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] text-gray-400 font-medium">{challenge.title}</p>
+              <p className="text-xs text-gray-500 font-medium">{challenge.title}</p>
               <p className="text-sm font-bold text-gray-900">
                 Question {currentQ + 1} of {challenge.questions.length}
               </p>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="flex items-center gap-1 text-xs text-gray-400 font-mono">
+              <div className="flex items-center gap-1 text-xs text-gray-500 font-mono">
                 <Clock size={12} />
                 {formatTime(elapsedSeconds)}
               </div>
@@ -626,7 +626,7 @@ export default function DailyChallengesPage() {
 
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-4">
           {/* Date / level badge */}
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
             <span>{todayLabel}</span>
             <span className="w-1 h-1 bg-gray-300 rounded-full" />
             <span className="capitalize">{challenge.zimsec_level === 'olevel' ? 'O-Level' : challenge.zimsec_level === 'alevel' ? 'A-Level' : 'Primary'}</span>

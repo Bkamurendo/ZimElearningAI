@@ -314,11 +314,11 @@ export default function SecuritySettingsPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
               {currentMethod === 'none' ? (
                 <><div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center"><ShieldOff size={20} className="text-amber-500" /></div>
-                <div><p className="font-semibold text-gray-900 text-sm">2FA is <span className="text-amber-500">disabled</span></p><p className="text-xs text-gray-400">Your account is protected by password only</p></div></>
+                <div><p className="font-semibold text-gray-900 text-sm">2FA is <span className="text-amber-500">disabled</span></p><p className="text-xs text-gray-500">Your account is protected by password only</p></div></>
               ) : (
                 <><div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center"><ShieldCheck size={20} className="text-green-600" /></div>
                 <div><p className="font-semibold text-gray-900 text-sm">2FA is <span className="text-green-600">active</span></p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Method: {currentMethod === 'totp' ? 'Authenticator App' : currentMethod === 'email' ? 'Email OTP' : 'Phone/SMS OTP'}
                   </p></div></>
               )}
@@ -334,8 +334,8 @@ export default function SecuritySettingsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="font-semibold text-gray-900 text-sm">Authenticator App</p>
-                    {currentMethod === 'totp' && <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
-                    <span className="text-[10px] bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full ml-auto">Most Secure</span>
+                    {currentMethod === 'totp' && <span className="text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
+                    <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full ml-auto">Most Secure</span>
                   </div>
                   <p className="text-xs text-gray-500 mb-3">Use Google Authenticator, Authy, or any TOTP app. Works offline.</p>
                   <button
@@ -355,10 +355,10 @@ export default function SecuritySettingsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="font-semibold text-gray-900 text-sm">Email OTP</p>
-                    {currentMethod === 'email' && <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
+                    {currentMethod === 'email' && <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
                   </div>
                   <p className="text-xs text-gray-500 mb-1">A 6-digit code is sent to <strong>{userEmail}</strong> each time you sign in.</p>
-                  <p className="text-xs text-gray-400 mb-3">Requires internet + access to your email inbox.</p>
+                  <p className="text-xs text-gray-500 mb-3">Requires internet + access to your email inbox.</p>
                   <button
                     onClick={() => setStep('email-confirm')} disabled={busy}
                     className="text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-40 transition"
@@ -376,10 +376,10 @@ export default function SecuritySettingsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="font-semibold text-gray-900 text-sm">Phone / SMS OTP</p>
-                    {currentMethod === 'phone' && <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
+                    {currentMethod === 'phone' && <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Active</span>}
                   </div>
                   <p className="text-xs text-gray-500 mb-1">A 6-digit code is sent via SMS to your mobile number.</p>
-                  <p className="text-xs text-gray-400 mb-3">Works with any Zimbabwe number (EcoNet, NetOne, Telecel).</p>
+                  <p className="text-xs text-gray-500 mb-3">Works with any Zimbabwe number (EcoNet, NetOne, Telecel).</p>
                   <button
                     onClick={() => setStep('phone-enter')} disabled={busy}
                     className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 disabled:opacity-40 transition"
@@ -429,7 +429,7 @@ export default function SecuritySettingsPage() {
                   <img src={qrUrl} alt="2FA QR code" width={180} height={180} />
                 </div>
                 <div className="w-full">
-                  <p className="text-xs text-gray-400 text-center mb-2">Or enter this key manually:</p>
+                  <p className="text-xs text-gray-500 text-center mb-2">Or enter this key manually:</p>
                   <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                     <code className="flex-1 text-xs font-mono text-gray-700 break-all select-all">{secret}</code>
                     <button type="button" onClick={async () => { await navigator.clipboard.writeText(secret); setCopied(true); setTimeout(() => setCopied(false), 2000) }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition">
@@ -561,13 +561,13 @@ export default function SecuritySettingsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-gray-900 truncate">{label}</p>
                       {s.isCurrent && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                           This device
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
                       {s.isCurrent ? 'Active now' : `Last seen ${new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                     </p>
                   </div>
@@ -666,7 +666,7 @@ export default function SecuritySettingsPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-gray-900">Sign out all other devices</p>
-              <p className="text-xs text-gray-400 mt-0.5">Revoke access on every device except this one.</p>
+              <p className="text-xs text-gray-500 mt-0.5">Revoke access on every device except this one.</p>
             </div>
             <button
               onClick={() => setSignOutAllModal('others')}
@@ -682,7 +682,7 @@ export default function SecuritySettingsPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-gray-900">Sign out everywhere</p>
-              <p className="text-xs text-gray-400 mt-0.5">Sign out of all devices including this one. You will be redirected to login.</p>
+              <p className="text-xs text-gray-500 mt-0.5">Sign out of all devices including this one. You will be redirected to login.</p>
             </div>
             <button
               onClick={() => setSignOutAllModal('all')}

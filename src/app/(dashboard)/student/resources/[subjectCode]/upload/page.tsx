@@ -145,7 +145,7 @@ export default function StudentResourceUploadPage() {
               </div>
               <h2 className="text-lg font-bold text-gray-900">Resource Uploaded!</h2>
               <p className="text-sm text-gray-500 mt-1">Your document is being reviewed by AI.</p>
-              <p className="text-xs text-gray-400 mt-3">It will be shared with classmates after approval. Redirecting…</p>
+              <p className="text-xs text-gray-500 mt-3">It will be shared with classmates after approval. Redirecting…</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -180,7 +180,7 @@ export default function StudentResourceUploadPage() {
                   <div>
                     <Upload size={28} className="text-gray-400 mx-auto mb-2" />
                     <p className="font-semibold text-gray-700 text-sm">Drop PDF here or click to browse</p>
-                    <p className="text-xs text-gray-400 mt-1">PDF only · Max 50MB</p>
+                    <p className="text-xs text-gray-500 mt-1">PDF only · Max 50MB</p>
                   </div>
                 )}
               </div>

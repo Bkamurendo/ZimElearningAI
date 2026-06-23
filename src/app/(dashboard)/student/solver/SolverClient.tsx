@@ -303,7 +303,7 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
               {selectedSubject && (
-                <p className="text-xs text-gray-400 mt-1.5 px-1">ZIMSEC {levelLabel}</p>
+                <p className="text-xs text-gray-500 mt-1.5 px-1">ZIMSEC {levelLabel}</p>
               )}
             </div>
 
@@ -341,10 +341,10 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   Link Document
                 </label>
-                <span className="text-xs text-gray-400 font-medium">optional</span>
+                <span className="text-xs text-gray-500 font-medium">optional</span>
               </div>
               {pickerDocs.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">No published documents for this subject yet.</p>
+                <p className="text-xs text-gray-500 italic">No published documents for this subject yet.</p>
               ) : (
                 <>
                   <div className="relative">
@@ -403,7 +403,7 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                     <X size={16} />
                   </button>
                   <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-slate-900/50 to-transparent">
-                    <p className="text-[10px] text-white font-bold uppercase tracking-widest px-2">Image attached · Ready to solve</p>
+                    <p className="text-xs text-white font-bold uppercase tracking-widest px-2">Image attached · Ready to solve</p>
                   </div>
                 </div>
               )}
@@ -426,7 +426,7 @@ export default function SolverClient({ subjects, initialSubjectCode, publishedDo
                     <Smartphone size={18} />
                     <span className="text-xs font-bold uppercase tracking-tight hidden sm:inline">Photo</span>
                   </button>
-                  <p className="text-xs text-gray-400 hidden sm:block">Ctrl+Enter to solve</p>
+                  <p className="text-xs text-gray-500 hidden sm:block">Ctrl+Enter to solve</p>
                 </div>
                 <button
                   onClick={() => handleSolve()}

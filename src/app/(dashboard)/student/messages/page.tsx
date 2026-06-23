@@ -107,7 +107,7 @@ export default function StudentMessagesPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">{other?.full_name ?? 'Unknown'}</p>
-                  <p className="text-xs text-gray-400 capitalize">{other?.role}</p>
+                  <p className="text-xs text-gray-500 capitalize">{other?.role}</p>
                 </div>
               </div>
               {selected.subject && (
@@ -116,7 +116,7 @@ export default function StudentMessagesPage() {
                   {selected.subject.name} ({selected.subject.code})
                 </p>
               )}
-              <p className="text-[11px] text-gray-400 mt-1.5">
+              <p className="text-xs text-gray-500 mt-1.5">
                 {new Date(selected.created_at).toLocaleString('en-GB', {
                   day: 'numeric', month: 'long', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
@@ -237,7 +237,7 @@ export default function StudentMessagesPage() {
                 <Icon size={15} />
                 {label}
                 {key === 'inbox' && inboxUnread > 0 && (
-                  <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
                     {inboxUnread > 99 ? '99+' : inboxUnread}
                   </span>
                 )}
@@ -291,12 +291,12 @@ export default function StudentMessagesPage() {
                         <p className={`text-sm truncate ${isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
                           {other?.full_name ?? 'Unknown'}
                         </p>
-                        <p className="text-[10px] text-gray-400 flex-shrink-0">
+                        <p className="text-xs text-gray-500 flex-shrink-0">
                           {new Date(msg.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                         </p>
                       </div>
                       {msg.subject && (
-                        <p className="text-[11px] text-gray-400 mb-0.5">{msg.subject.name}</p>
+                        <p className="text-xs text-gray-500 mb-0.5">{msg.subject.name}</p>
                       )}
                       <p className="text-xs text-gray-500 line-clamp-1 break-words">{msg.content}</p>
                     </div>

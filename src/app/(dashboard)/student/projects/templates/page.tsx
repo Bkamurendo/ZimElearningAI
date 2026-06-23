@@ -199,7 +199,7 @@ export default function PremiumTemplatesPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Heritage Theme <span className="text-xs text-slate-400 font-normal">(optional — recommended)</span>
+                Heritage Theme <span className="text-xs text-slate-500 font-normal">(optional — recommended)</span>
               </label>
               <select
                 value={heritageTheme}

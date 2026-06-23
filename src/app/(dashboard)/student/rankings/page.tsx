@@ -32,7 +32,7 @@ export default async function SchoolRankingsPage() {
             <h1 className="text-3xl sm:text-5xl font-black italic tracking-tighter uppercase leading-none">
               ZIMSEC PREP <br /><span className="text-blue-400">LEADERBOARD</span>
             </h1>
-            <p className="text-slate-400 text-xs font-black tracking-[0.15em] max-w-xs leading-relaxed italic">
+            <p className="text-slate-500 text-xs font-black tracking-[0.15em] max-w-xs leading-relaxed italic">
               Schools ranked by their active student Readiness Index.
             </p>
           </div>
@@ -40,11 +40,11 @@ export default async function SchoolRankingsPage() {
           <div className="flex gap-3">
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-2xl text-center flex-1">
                <p className="text-2xl sm:text-3xl font-black italic tracking-tighter">{schools.length}</p>
-               <p className="text-[11px] text-slate-500 mt-1 tracking-widest">SCHOOLS</p>
+               <p className="text-xs text-slate-500 mt-1 tracking-widest">SCHOOLS</p>
             </div>
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-2xl text-center flex-1">
                <p className="text-2xl sm:text-3xl font-black italic tracking-tighter">#1</p>
-               <p className="text-[11px] text-slate-500 mt-1 tracking-widest">TOP SCHOOL</p>
+               <p className="text-xs text-slate-500 mt-1 tracking-widest">TOP SCHOOL</p>
             </div>
           </div>
         </div>
@@ -54,7 +54,7 @@ export default async function SchoolRankingsPage() {
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
         <div className="px-4 sm:px-8 py-4 sm:py-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
            <h2 className="text-sm font-black italic tracking-tight text-slate-800">TOP PERFORMANCE UNITS</h2>
-           <span className="text-xs text-slate-400">Every 60 mins</span>
+           <span className="text-xs text-slate-500">Every 60 mins</span>
         </div>
 
         {/* Mobile card list */}
@@ -73,7 +73,7 @@ export default async function SchoolRankingsPage() {
                 <p className="text-sm font-black text-slate-800 tracking-tight truncate">{school.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <MapPin size={10} className="text-slate-400 flex-shrink-0" />
-                  <span className="text-xs text-slate-400 truncate">{school.location || 'Zimbabwe'}</span>
+                  <span className="text-xs text-slate-500 truncate">{school.location || 'Zimbabwe'}</span>
                 </div>
               </div>
               <div className="flex-shrink-0 text-right">
@@ -82,7 +82,7 @@ export default async function SchoolRankingsPage() {
                   school.readinessIndex >= 50 ? 'text-amber-600' :
                   'text-slate-400'
                 }`}>{school.readinessIndex}%</span>
-                <p className="text-[11px] text-slate-400">readiness</p>
+                <p className="text-xs text-slate-500">readiness</p>
               </div>
             </div>
           ))}
@@ -121,7 +121,7 @@ export default async function SchoolRankingsPage() {
                       <div>
                         <p className="text-sm font-black text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors uppercase">{school.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="blue" className="text-[10px] px-1.5 py-0.5">{school.rank}</Badge>
+                          <Badge variant="blue" className="text-xs px-1.5 py-0.5">{school.rank}</Badge>
                         </div>
                       </div>
                     </div>
@@ -175,7 +175,7 @@ function Badge({ children, variant, className }: any) {
     emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100'
   }
   return (
-    <span className={`px-2 py-1 rounded-md border text-[10px] font-black uppercase tracking-widest ${variants[variant] || ''} ${className}`}>
+    <span className={`px-2 py-1 rounded-md border text-xs font-black uppercase tracking-widest ${variants[variant] || ''} ${className}`}>
       {children}
     </span>
   )

@@ -111,11 +111,11 @@ export default async function LeaderboardPage() {
                 <div className="flex gap-3 mt-3">
                   <div className="bg-white/15 rounded-xl px-3 py-2 text-center border border-white/10">
                     <p className="text-xl font-bold">{totalStudents}</p>
-                    <p className="text-[10px] text-orange-100">Students</p>
+                    <p className="text-xs text-orange-100">Students</p>
                   </div>
                   <div className="bg-white/15 rounded-xl px-3 py-2 text-center border border-white/10">
                     <p className="text-xl font-bold">{topXp.toLocaleString()}</p>
-                    <p className="text-[10px] text-orange-100">Top XP</p>
+                    <p className="text-xs text-orange-100">Top XP</p>
                   </div>
                 </div>
               </div>
@@ -144,14 +144,14 @@ export default async function LeaderboardPage() {
 
           {top3.length >= 3 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">🏆 Top 3 Podium</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">🏆 Top 3 Podium</p>
               <div className="flex items-end justify-center gap-3">
                 {top3[1] && (
                   <div className={`flex-1 flex flex-col items-center pt-4 pb-3 px-2 rounded-2xl bg-gray-100 border-2 ${top3[1].isMe ? 'border-emerald-400' : 'border-gray-200'}`}>
                     <div className="text-2xl mb-2">🥈</div>
                     <p className="font-bold text-gray-800 text-xs text-center truncate w-full">{top3[1].full_name.split(' ')[0]}</p>
                     <p className="text-xs text-gray-600 font-semibold mt-1">{top3[1].total_xp.toLocaleString()}</p>
-                    <p className="text-[10px] text-gray-400">XP</p>
+                    <p className="text-xs text-gray-500">XP</p>
                   </div>
                 )}
                 {top3[0] && (
@@ -163,7 +163,7 @@ export default async function LeaderboardPage() {
                     </div>
                     <p className="font-bold text-amber-900 text-xs text-center truncate w-full">{top3[0].full_name.split(' ')[0]}</p>
                     <p className="text-sm text-amber-700 font-bold mt-1">{top3[0].total_xp.toLocaleString()}</p>
-                    <p className="text-[10px] text-amber-600">XP</p>
+                    <p className="text-xs text-amber-600">XP</p>
                   </div>
                 )}
                 {top3[2] && (
@@ -171,7 +171,7 @@ export default async function LeaderboardPage() {
                     <div className="text-2xl mb-2">🥉</div>
                     <p className="font-bold text-gray-800 text-xs text-center truncate w-full">{top3[2].full_name.split(' ')[0]}</p>
                     <p className="text-xs text-orange-600 font-semibold mt-1">{top3[2].total_xp.toLocaleString()}</p>
-                    <p className="text-[10px] text-orange-400">XP</p>
+                    <p className="text-xs text-orange-400">XP</p>
                   </div>
                 )}
               </div>
@@ -223,7 +223,7 @@ export default async function LeaderboardPage() {
                       <p className={`font-semibold text-sm truncate ${leader.isMe ? 'text-emerald-800' : 'text-gray-900'}`}>
                         {leader.full_name} {leader.isMe && <span className="text-xs text-emerald-500 font-bold">(You)</span>}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         {LEVEL_LABELS[leader.zimsec_level] ?? ''}{leader.grade ? ` · ${leader.grade}` : ''}
                       </p>
                     </div>
@@ -244,7 +244,7 @@ export default async function LeaderboardPage() {
               </div>
             )}
           </div>
-          <p className="text-center text-xs text-gray-400 pb-2">Leaderboard updates in real-time as students earn XP</p>
+          <p className="text-center text-xs text-gray-500 pb-2">Leaderboard updates in real-time as students earn XP</p>
         </div>
       </div>
     )

@@ -252,7 +252,7 @@ export default async function StudentDocumentDetailPage({
               </div>
 
               {/* File meta */}
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400 flex-wrap">
+              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500 flex-wrap">
                 <span>{doc.file_name}</span>
                 {formatSize(doc.file_size) && <span>· {formatSize(doc.file_size)}</span>}
                 <span>· {new Date(doc.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -264,7 +264,7 @@ export default async function StudentDocumentDetailPage({
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-700">📄 Document Preview</p>
                 <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isUserPremium || isOwner ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${isUserPremium || isOwner ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                     {isUserPremium || isOwner ? 'Full Access' : 'Free Preview'}
                   </span>
                   {signedUrl && (isUserPremium || isOwner) && (
@@ -304,7 +304,7 @@ export default async function StudentDocumentDetailPage({
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <span className="text-4xl mb-3">📎</span>
                   <p className="text-sm text-gray-500 font-medium">Preview unavailable</p>
-                  <p className="text-xs text-gray-400 mt-1">The signed URL could not be generated</p>
+                  <p className="text-xs text-gray-500 mt-1">The signed URL could not be generated</p>
                 </div>
               )}
             </div>

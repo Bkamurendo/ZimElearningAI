@@ -102,7 +102,7 @@ export default async function TournamentsPage() {
           ].map(s => (
             <div key={s.label}>
               <p className="text-2xl font-black text-gray-900">{s.value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
@@ -168,7 +168,7 @@ export default async function TournamentsPage() {
                         <StatusBadge status={t.status} />
                       </div>
                       {t.description && <p className="text-sm text-gray-500 mb-2">{t.description}</p>}
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-400 mb-3">
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-3">
                         <span className="flex items-center gap-1"><Users size={11} /> {t.max_participants} max</span>
                         <span className="flex items-center gap-1"><Zap size={11} /> {t.question_count} questions</span>
                         <span className="flex items-center gap-1"><Clock size={11} /> {t.time_limit_minutes} min</span>
@@ -188,11 +188,11 @@ export default async function TournamentsPage() {
                         </div>
 
                         {t.status === 'ended' ? (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-500">
                             {isCompleted ? `Your rank: #${myEntry?.rank ?? '—'}` : 'Ended'}
                           </span>
                         ) : isCompleted ? (
-                          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
+                          <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
                             ✓ Submitted · {myEntry?.score ?? 0} pts
                           </span>
                         ) : isEntered ? (
@@ -210,7 +210,7 @@ export default async function TournamentsPage() {
                             Enter {!entryFree && `$${t.entry_fee_usd}`} <ChevronRight size={14} />
                           </Link>
                         ) : (
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Clock size={12} /> Opens {startsAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                           </span>
                         )}

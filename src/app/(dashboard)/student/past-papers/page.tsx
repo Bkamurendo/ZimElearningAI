@@ -99,7 +99,7 @@ export default async function PastPapersIndexPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-800 text-base leading-tight">{subject.name}</p>
-                      <p className="text-slate-400 text-xs mt-0.5">{LEVEL_LABEL[subject.zimsec_level] ?? subject.zimsec_level} · {subject.code}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">{LEVEL_LABEL[subject.zimsec_level] ?? subject.zimsec_level} · {subject.code}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-xs text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded-lg">Practice</span>

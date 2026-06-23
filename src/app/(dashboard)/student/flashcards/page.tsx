@@ -232,7 +232,7 @@ export default function StudentFlashcardsPage() {
                 style={{ backfaceVisibility: 'hidden' }}>
                 <p className="text-xs font-semibold text-violet-400 uppercase tracking-wide mb-4">Question</p>
                 <p className="text-xl font-semibold text-gray-900">{card.front}</p>
-                <p className="text-xs text-gray-400 mt-6">Tap to reveal answer</p>
+                <p className="text-xs text-gray-500 mt-6">Tap to reveal answer</p>
               </div>
               {/* Back */}
               <div className="absolute inset-0 bg-violet-600 rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 text-center"
@@ -379,7 +379,7 @@ export default function StudentFlashcardsPage() {
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subject</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Subject</label>
                   <select value={genSubjectId} onChange={e => setGenSubjectId(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
                     <option value="">Select a subject...</option>
@@ -389,14 +389,14 @@ export default function StudentFlashcardsPage() {
 
                 {genType === 'lesson' ? (
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Lesson Content</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Lesson Content</label>
                     <select value={genLessonId} onChange={e => setGenLessonId(e.target.value)}
                       disabled={lessons.length === 0}
                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all disabled:opacity-50">
                       <option value="">{lessons.length > 0 ? 'Select a lesson...' : 'Select a subject first'}</option>
                       {lessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
                     </select>
-                    <p className="text-[10px] text-slate-400 font-medium px-1 italic">Creates 6 cards from the core lesson text.</p>
+                    <p className="text-xs text-slate-500 font-medium px-1 italic">Creates 6 cards from the core lesson text.</p>
                   </div>
                 ) : (
                   <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100">
@@ -476,7 +476,7 @@ export default function StudentFlashcardsPage() {
                     </div>
                   ))}
                   {deck.cards.length > 3 && (
-                    <p className="px-5 py-2.5 text-xs text-gray-400">+{deck.cards.length - 3} more cards</p>
+                    <p className="px-5 py-2.5 text-xs text-gray-500">+{deck.cards.length - 3} more cards</p>
                   )}
                 </div>
               </div>

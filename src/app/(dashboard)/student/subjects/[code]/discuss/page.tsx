@@ -285,19 +285,19 @@ Please provide a clear, accurate, ZIMSEC-aligned answer as MaFundi AI. Format yo
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           {d.pinned && (
-                            <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                            <span className="flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full">
                               <Pin size={10} /> Pinned
                             </span>
                           )}
                           {profile?.role === 'teacher' && (
-                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Teacher</span>
+                            <span className="text-xs font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full">Teacher</span>
                           )}
                         </div>
                         <h3 className="font-semibold text-gray-900">{d.title}</h3>
                         {!isExpanded && (
                           <p className="text-sm text-gray-500 mt-1 line-clamp-2">{d.body}</p>
                         )}
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                           <span>{profile?.full_name ?? 'Anonymous'}</span>
                           <span>·</span>
                           <span>{timeAgo(d.created_at)}</span>
@@ -349,7 +349,7 @@ Please provide a clear, accurate, ZIMSEC-aligned answer as MaFundi AI. Format yo
                                     <div className="flex items-center gap-1">
                                       <Bot size={12} className="text-teal-600" />
                                       <span className="font-semibold text-teal-800 text-xs">MaFundi AI</span>
-                                      <span className="text-[11px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full uppercase tracking-tight">AI Answer</span>
+                                      <span className="text-xs font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full uppercase tracking-tight">AI Answer</span>
                                     </div>
                                   ) : (
                                     <>
@@ -359,7 +359,7 @@ Please provide a clear, accurate, ZIMSEC-aligned answer as MaFundi AI. Format yo
                                       )}
                                     </>
                                   )}
-                                  <span className="text-xs text-gray-400">{timeAgo(r.created_at)}</span>
+                                  <span className="text-xs text-gray-500">{timeAgo(r.created_at)}</span>
                                 </div>
                                 <p className={`whitespace-pre-wrap ${isAIReply ? 'text-teal-900 text-xs leading-relaxed' : 'text-gray-700'}`}>
                                   {r.body}
@@ -368,11 +368,11 @@ Please provide a clear, accurate, ZIMSEC-aligned answer as MaFundi AI. Format yo
                             )
                           })}
                           {d.replies.length === 0 && (
-                            <p className="text-xs text-gray-400 italic">No replies yet — be the first, or ask MaFundi AI above!</p>
+                            <p className="text-xs text-gray-500 italic">No replies yet — be the first, or ask MaFundi AI above!</p>
                           )}
                         </div>
                       ) : (
-                        <div className="py-3 text-xs text-gray-400">Loading replies…</div>
+                        <div className="py-3 text-xs text-gray-500">Loading replies…</div>
                       )}
 
                       {/* Reply box */}

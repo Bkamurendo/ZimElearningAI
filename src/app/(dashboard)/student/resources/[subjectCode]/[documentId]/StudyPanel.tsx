@@ -190,7 +190,7 @@ function DifficultyBadge({ level }: { level: string }) {
     hard:   { label: 'Hard',   color: 'bg-red-50 text-red-700 border-red-200' },
   }[level] ?? { label: level, color: 'bg-gray-50 text-gray-600 border-gray-200' }
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}>{cfg.label}</span>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}>{cfg.label}</span>
   )
 }
 
@@ -391,7 +391,7 @@ export default function StudyPanel({
           </div>
           <div className="text-center">
             <p className="font-semibold text-gray-800 text-sm">Generating content…</p>
-            <p className="text-xs text-gray-400 mt-1">Claude is reading and analysing the document</p>
+            <p className="text-xs text-gray-500 mt-1">Claude is reading and analysing the document</p>
           </div>
         </div>
       )
@@ -452,7 +452,7 @@ export default function StudyPanel({
         <div className="flex items-center justify-between mb-2">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">⚡ Snap Notes</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Quick-revision bullet points — perfect 24h before exams</p>
+            <p className="text-xs text-gray-500 mt-0.5">Quick-revision bullet points — perfect 24h before exams</p>
           </div>
           <button onClick={() => generateContent('snap_notes', true)} title="Regenerate" className="p-1.5 text-gray-300 hover:text-gray-500 transition">
             <RefreshCw size={14} />
@@ -486,7 +486,7 @@ export default function StudyPanel({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">📖 Study Notes</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Comprehensive notes for deep understanding</p>
+            <p className="text-xs text-gray-500 mt-0.5">Comprehensive notes for deep understanding</p>
           </div>
           <div className="flex items-center gap-1">
             <CopyButton text={notes} />
@@ -510,7 +510,7 @@ export default function StudyPanel({
         <div className="flex items-center justify-between mb-2">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">✍️ Model Answers</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Full step-by-step solutions with examiner notes</p>
+            <p className="text-xs text-gray-500 mt-0.5">Full step-by-step solutions with examiner notes</p>
           </div>
           <button onClick={() => generateContent('model_answers', true)} title="Regenerate" className="p-1.5 text-gray-300 hover:text-gray-500 transition">
             <RefreshCw size={14} />
@@ -532,7 +532,7 @@ export default function StudyPanel({
         <div className="flex items-center justify-between mb-2">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">📚 Glossary</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{items.length} key terms, formulas &amp; concepts</p>
+            <p className="text-xs text-gray-500 mt-0.5">{items.length} key terms, formulas &amp; concepts</p>
           </div>
           <button onClick={() => generateContent('glossary', true)} title="Regenerate" className="p-1.5 text-gray-300 hover:text-gray-500 transition">
             <RefreshCw size={14} />
@@ -540,7 +540,7 @@ export default function StudyPanel({
         </div>
         {categories.map((cat) => (
           <div key={cat}>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{cat}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{cat}</p>
             <div className="space-y-2">
               {items.filter((i) => i.category === cat).map((item, j) => (
                 <div key={j} className="bg-purple-50 border border-purple-100 rounded-xl p-3">
@@ -570,7 +570,7 @@ export default function StudyPanel({
         <div className="flex items-center justify-between mb-2">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">🎯 Practice Questions</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{questions.length} ZIMSEC-style questions with full solutions</p>
+            <p className="text-xs text-gray-500 mt-0.5">{questions.length} ZIMSEC-style questions with full solutions</p>
           </div>
           <button onClick={() => generateContent('practice_questions', true)} title="Regenerate" className="p-1.5 text-gray-300 hover:text-gray-500 transition">
             <RefreshCw size={14} />
@@ -613,7 +613,7 @@ export default function StudyPanel({
             <div className="space-y-4">
               <div className="text-center py-4">
                 <p className="text-sm font-semibold text-gray-700 mb-1">Ask anything about this document</p>
-                <p className="text-xs text-gray-400">Or tap a quick action below</p>
+                <p className="text-xs text-gray-500">Or tap a quick action below</p>
               </div>
               <div className="grid grid-cols-1 gap-2">
                 {quickPrompts.map((prompt) => (
@@ -661,7 +661,7 @@ export default function StudyPanel({
         {/* Input */}
         <div className="px-4 py-4 border-t border-gray-100 flex-shrink-0">
           {messages.length > 0 && (
-            <button onClick={() => { setMessages([]); setInput('') }} className="mb-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition">
+            <button onClick={() => { setMessages([]); setInput('') }} className="mb-2 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-600 transition">
               <RotateCcw size={11} /> Clear chat
             </button>
           )}
@@ -683,7 +683,7 @@ export default function StudyPanel({
               {streaming ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             </button>
           </div>
-          <p className="text-center text-[10px] text-gray-400 mt-2">Grounded in the actual document content</p>
+          <p className="text-center text-xs text-gray-500 mt-2">Grounded in the actual document content</p>
         </div>
       </div>
     )
@@ -727,7 +727,7 @@ export default function StudyPanel({
           <Sparkles size={18} />
           Upgrade to Unlock All
         </Link>
-        <p className="text-[10px] text-gray-400 mt-4 uppercase tracking-widest font-bold">Starting from $2 USD / month</p>
+        <p className="text-xs text-gray-500 mt-4 uppercase tracking-widest font-bold">Starting from $2 USD / month</p>
       </div>
     )
   }
@@ -860,7 +860,7 @@ function ModelAnswerCard({ answer }: { answer: ModelAnswer }) {
 
       {/* Model answer */}
       <div className="px-4 py-3 bg-green-50 border-b border-green-100">
-        <p className="text-[10px] font-bold text-green-700 uppercase tracking-wider mb-1.5">✅ Model Answer</p>
+        <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-1.5">✅ Model Answer</p>
         <p className="text-sm text-gray-800 leading-relaxed">{answer.model_answer}</p>
       </div>
 
@@ -878,7 +878,7 @@ function ModelAnswerCard({ answer }: { answer: ModelAnswer }) {
             <div className="px-4 pb-4 space-y-2">
               {answer.working.map((step, i) => (
                 <div key={i} className="flex gap-3 items-start">
-                  <span className="w-6 h-6 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="w-6 h-6 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
                   <p className="text-sm text-gray-700 leading-relaxed">{step}</p>
                 </div>
               ))}
@@ -900,13 +900,13 @@ function ModelAnswerCard({ answer }: { answer: ModelAnswer }) {
             <div className="px-4 pb-4 space-y-2">
               {answer.examiner_notes && (
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
-                  <p className="text-[10px] font-bold text-amber-700 uppercase mb-1">How marks are awarded</p>
+                  <p className="text-xs font-bold text-amber-700 uppercase mb-1">How marks are awarded</p>
                   <p className="text-xs text-gray-700 leading-relaxed">{answer.examiner_notes}</p>
                 </div>
               )}
               {answer.common_mistakes && (
                 <div className="bg-red-50 border border-red-100 rounded-xl p-3">
-                  <p className="text-[10px] font-bold text-red-600 uppercase mb-1">⚠️ Common Mistakes</p>
+                  <p className="text-xs font-bold text-red-600 uppercase mb-1">⚠️ Common Mistakes</p>
                   <p className="text-xs text-gray-700 leading-relaxed">{answer.common_mistakes}</p>
                 </div>
               )}
@@ -932,7 +932,7 @@ function PracticeQuestionCard({ question }: { question: PracticeQuestion }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Q{question.number}</span>
             <DifficultyBadge level={question.difficulty} />
-            <span className="text-xs text-gray-400">{question.marks} mark{question.marks !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-500">{question.marks} mark{question.marks !== 1 ? 's' : ''}</span>
           </div>
         </div>
         <p className="text-sm text-gray-900 leading-relaxed font-medium">{question.question}</p>
@@ -954,7 +954,7 @@ function PracticeQuestionCard({ question }: { question: PracticeQuestion }) {
       {showAnswer && (
         <div className="border-t border-green-100">
           <div className="px-4 py-3 bg-green-50">
-            <p className="text-[10px] font-bold text-green-700 uppercase mb-1.5">Model Answer</p>
+            <p className="text-xs font-bold text-green-700 uppercase mb-1.5">Model Answer</p>
             <p className="text-sm text-gray-800 leading-relaxed">{question.model_answer}</p>
           </div>
 

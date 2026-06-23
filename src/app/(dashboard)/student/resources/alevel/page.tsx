@@ -158,7 +158,7 @@ export default async function ALevelResourcesPage() {
               const groupSubjects = grouped[groupName] ?? []
               return (
                 <div key={groupName}>
-                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{groupName}</h2>
+                  <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{groupName}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {groupSubjects.map((subject) => {
                       const emoji = getEmoji(subject.name)
@@ -180,7 +180,7 @@ export default async function ALevelResourcesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-gray-900 text-sm leading-tight">{subject.name}</h3>
-                              <p className="text-xs text-gray-400 mt-0.5">A-Level · {total} resource{total !== 1 ? 's' : ''}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">A-Level · {total} resource{total !== 1 ? 's' : ''}</p>
                             </div>
                             <ChevronRight size={16} className="text-gray-300 group-hover:text-purple-400 transition flex-shrink-0" />
                           </div>
@@ -195,7 +195,7 @@ export default async function ALevelResourcesPage() {
                                 )
                               })
                             ) : (
-                              <span className="text-xs text-gray-400">No resources yet</span>
+                              <span className="text-xs text-gray-500">No resources yet</span>
                             )}
                           </div>
                         </Link>

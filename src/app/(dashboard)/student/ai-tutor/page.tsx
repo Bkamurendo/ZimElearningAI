@@ -99,7 +99,7 @@ export default async function AiTutorIndexPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-800 text-base leading-tight">{subject.name}</p>
-                      <p className="text-slate-400 text-xs mt-0.5">{LEVEL_LABEL[subject.zimsec_level] ?? subject.zimsec_level} · {subject.code}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">{LEVEL_LABEL[subject.zimsec_level] ?? subject.zimsec_level} · {subject.code}</p>
                     </div>
                     <ChevronRight size={18} className="text-slate-300 group-hover:text-emerald-500 transition flex-shrink-0" />
                   </Link>

@@ -130,7 +130,7 @@ export default function ParentSyncDialog({ existingPhone }: ParentSyncDialogProp
                 <button
                   type="button"
                   onClick={handleMaybeLater}
-                  className="w-full text-xs text-slate-400 hover:text-slate-600 font-medium py-1 transition"
+                  className="w-full text-xs text-slate-500 hover:text-slate-600 font-medium py-1 transition"
                 >
                   Maybe later
                 </button>

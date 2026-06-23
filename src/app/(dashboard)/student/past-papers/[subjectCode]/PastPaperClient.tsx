@@ -338,7 +338,7 @@ export default function PastPaperClient({
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-xs text-gray-400 mt-2">{pct}% complete</p>
+          <p className="text-xs text-gray-500 mt-2">{pct}% complete</p>
         </div>
       </div>
     )
@@ -409,7 +409,7 @@ export default function PastPaperClient({
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
                               ({p.part}) {p.question}
-                              <span className="ml-2 text-xs text-gray-400">[{p.marks} marks]</span>
+                              <span className="ml-2 text-xs text-gray-500">[{p.marks} marks]</span>
                             </p>
                           </div>
                           {result && (
@@ -547,7 +547,7 @@ export default function PastPaperClient({
                       <span className="font-semibold text-gray-700 flex-shrink-0">({p.part})</span>
                       <div className="flex-1">
                         <p className="text-sm text-gray-900 leading-relaxed">{p.question}</p>
-                        <p className="text-xs text-gray-400 mt-1">[{p.marks} marks]</p>
+                        <p className="text-xs text-gray-500 mt-1">[{p.marks} marks]</p>
                       </div>
                     </div>
                     <textarea
@@ -557,7 +557,7 @@ export default function PastPaperClient({
                       placeholder={`Write your answer here… (${p.marks} marks)`}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
                     />
-                    <p className="text-xs text-gray-400 text-right">
+                    <p className="text-xs text-gray-500 text-right">
                       {(answers[key] ?? '').length} chars
                     </p>
                   </div>

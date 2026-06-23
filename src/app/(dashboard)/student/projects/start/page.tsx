@@ -168,7 +168,7 @@ function StartProjectForm() {
           {isSelfInitiated && (
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Heritage Theme <span className="text-xs text-slate-400 font-normal">(optional but recommended)</span>
+                Heritage Theme <span className="text-xs text-slate-500 font-normal">(optional but recommended)</span>
               </label>
               <select
                 value={heritageTheme}
@@ -180,7 +180,7 @@ function StartProjectForm() {
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                 <Leaf size={11} className="text-emerald-500" />
                 All ZIMSEC SBPs should connect to Zimbabwe&apos;s heritage and local context
               </p>
@@ -203,7 +203,7 @@ function StartProjectForm() {
               }
               className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             />
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Choose a clear, specific title — you can refine it later in your workspace
             </p>
           </div>

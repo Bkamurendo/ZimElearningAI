@@ -128,7 +128,7 @@ export default function ProfileSettingsPage() {
           {editingName ? (
             <div className="space-y-3 max-w-xs mx-auto mt-4 text-left">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1">Full Name</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 ml-1">Full Name</label>
                 <input
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
@@ -138,14 +138,14 @@ export default function ProfileSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1">Phone Number</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 ml-1">Phone Number</label>
                 <input
                   value={newPhone}
                   onChange={e => setNewPhone(e.target.value)}
                   placeholder="e.g. 0771234567"
                   className="w-full border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50 dark:bg-slate-800"
                 />
-                <p className="text-[10px] text-slate-400 mt-1 ml-1">Used for 2FA and Ready Pulse alerts</p>
+                <p className="text-xs text-slate-500 mt-1 ml-1">Used for 2FA and Ready Pulse alerts</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -297,7 +297,7 @@ export default function ProfileSettingsPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-400 mt-5">
+        <p className="text-center text-xs text-slate-500 mt-5">
           ZimLearn · Student Portal · v2.0
         </p>
       </div>

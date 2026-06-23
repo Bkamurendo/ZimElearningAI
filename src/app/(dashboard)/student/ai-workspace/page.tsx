@@ -212,7 +212,7 @@ export default async function AIWorkspacePage() {
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">{e.subject_name}</p>
                         <p className="text-xs text-gray-500">Paper {e.paper_number}</p>
-                        <p className="text-xs text-gray-400 mt-1">{new Date(e.exam_date).toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(e.exam_date).toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                       </div>
                       <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${chip.cls}`}>
                         <Clock size={10} className="inline mr-0.5" />{chip.label}
@@ -295,7 +295,7 @@ export default async function AIWorkspacePage() {
         {/* Syllabus Mastery Heatmap Section */}
         {subjects.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+            <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-2">
               <BookOpen size={14} /> Interactive Syllabus Mastery
             </h2>
             <div className="space-y-8">
@@ -343,7 +343,7 @@ export default async function AIWorkspacePage() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <BookOpen size={14} /> AI-Generated Notes
             </h2>
-            <span className="text-xs text-gray-400">{aiNotes.length} notes</span>
+            <span className="text-xs text-gray-500">{aiNotes.length} notes</span>
           </div>
           {aiNotes.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
@@ -362,7 +362,7 @@ export default async function AIWorkspacePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{note.topic ?? 'Notes'}</p>
-                      <p className="text-xs text-gray-400">{subj?.name ?? ''} · {new Date(note.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-500">{subj?.name ?? ''} · {new Date(note.created_at).toLocaleDateString()}</p>
                     </div>
                     <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-500 flex-shrink-0" />
                   </Link>
@@ -378,7 +378,7 @@ export default async function AIWorkspacePage() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <ClipboardList size={14} /> Mock Exams
             </h2>
-            <span className="text-xs text-gray-400">{aiExams.length} exams</span>
+            <span className="text-xs text-gray-500">{aiExams.length} exams</span>
           </div>
           {aiExams.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
@@ -396,7 +396,7 @@ export default async function AIWorkspacePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{subj?.name ?? ''} — Paper {exam.topic}</p>
-                      <p className="text-xs text-gray-400">{new Date(exam.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-500">{new Date(exam.created_at).toLocaleDateString()}</p>
                     </div>
                     <span className="text-xs bg-purple-100 text-purple-700 font-medium px-2 py-0.5 rounded-full flex-shrink-0">Generated</span>
                   </div>
@@ -412,7 +412,7 @@ export default async function AIWorkspacePage() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <FileText size={14} /> Revision Sheets
             </h2>
-            <span className="text-xs text-gray-400">{aiRevision.length} sheets</span>
+            <span className="text-xs text-gray-500">{aiRevision.length} sheets</span>
           </div>
           {aiRevision.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
@@ -431,7 +431,7 @@ export default async function AIWorkspacePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{rev.topic ?? 'Revision'}</p>
-                      <p className="text-xs text-gray-400">{subj?.name ?? ''} · {new Date(rev.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-500">{subj?.name ?? ''} · {new Date(rev.created_at).toLocaleDateString()}</p>
                     </div>
                     <ChevronRight size={14} className="text-gray-300 group-hover:text-emerald-500 flex-shrink-0" />
                   </Link>
@@ -447,7 +447,7 @@ export default async function AIWorkspacePage() {
       <Link href="/student/ai-teacher"
         className="fixed bottom-20 lg:bottom-8 right-6 w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all z-40 group">
         <Bot size={24} className="group-hover:animate-bounce" />
-        <div className="absolute right-full mr-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
           Ask MaFundi anything
         </div>
       </Link>

@@ -56,7 +56,7 @@ export default function ReferralPageClient({
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
               <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
-              <p className="text-xs text-gray-400 mt-1 leading-tight">{stat.label}</p>
+              <p className="text-xs text-gray-500 mt-1 leading-tight">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -85,7 +85,7 @@ export default function ReferralPageClient({
           {/* Or your code */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-xs text-gray-400">or share your code</span>
+            <span className="text-xs text-gray-500">or share your code</span>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
@@ -138,7 +138,7 @@ export default function ReferralPageClient({
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-gray-500">
           Free months are applied to your next renewal. No limit on referrals.
         </p>
 

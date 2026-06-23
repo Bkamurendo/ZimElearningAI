@@ -176,7 +176,7 @@ export default async function LessonPage({
               href={`/student/lessons/${prev.id}`}
               className="flex-1 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-300 transition text-left"
             >
-              <p className="text-xs text-gray-400 mb-1">← Previous</p>
+              <p className="text-xs text-gray-500 mb-1">← Previous</p>
               <p className="text-sm font-medium text-gray-800 truncate">{prev.title}</p>
             </Link>
           )}
@@ -185,7 +185,7 @@ export default async function LessonPage({
               href={`/student/lessons/${next.id}`}
               className="flex-1 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-300 transition text-right"
             >
-              <p className="text-xs text-gray-400 mb-1">Next →</p>
+              <p className="text-xs text-gray-500 mb-1">Next →</p>
               <p className="text-sm font-medium text-gray-800 truncate">{next.title}</p>
             </Link>
           )}

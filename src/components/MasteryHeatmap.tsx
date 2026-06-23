@@ -43,7 +43,7 @@ export function MasteryHeatmap({ subjectName, topics }: Props) {
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <Brain size={18} className="text-indigo-600" /> Syllabus Mastery Heatmap
           </h3>
-          <p className="text-xs text-slate-400 font-medium">{subjectName} · {topics.length} core topics</p>
+          <p className="text-xs text-slate-500 font-medium">{subjectName} · {topics.length} core topics</p>
         </div>
         <div className="flex gap-2 text-[10px] font-bold uppercase tracking-tight text-slate-400">
           <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Mastered</div>
@@ -115,10 +115,10 @@ export function MasteryHeatmap({ subjectName, topics }: Props) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Concept Analysis</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Concept Analysis</p>
                     <div className="bg-white rounded-xl p-3 border border-slate-100">
                       {selectedTopic.mastery_level === 0 ? (
-                        <p className="text-xs text-slate-400 italic">No study data yet. Ask MaFundi to explain this topic!</p>
+                        <p className="text-xs text-slate-500 italic">No study data yet. Ask MaFundi to explain this topic!</p>
                       ) : (
                         <ul className="space-y-2">
                           <li className="flex items-start gap-2 text-xs text-slate-600">
@@ -136,7 +136,7 @@ export function MasteryHeatmap({ subjectName, topics }: Props) {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Next Active Steps</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Next Active Steps</p>
                     <div className="grid grid-cols-1 gap-2">
                       <button className="bg-indigo-600 text-white rounded-xl py-2 px-3 text-xs font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 flex items-center justify-center gap-2">
                         <Brain size={14} /> Explain Topic again

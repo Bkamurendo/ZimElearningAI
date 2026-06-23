@@ -240,7 +240,7 @@ export default function StudentNotesPage() {
                         {aiGenerated && (
                           <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">MaFundi AI</span>
                         )}
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-500">
                           {new Date(note.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                         {!isExpanded && (
@@ -284,7 +284,7 @@ export default function StudentNotesPage() {
                             className="w-full text-sm text-gray-700 dark:text-gray-200 font-mono bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 focus:ring-2 focus:ring-emerald-400 outline-none resize-y"
                             placeholder="Write your note here… (Markdown supported)"
                           />
-                          <p className="text-xs text-gray-400">Markdown supported — auto-saves as you type</p>
+                          <p className="text-xs text-gray-500">Markdown supported — auto-saves as you type</p>
                         </div>
                       ) : (
                         /* View mode — rendered markdown */

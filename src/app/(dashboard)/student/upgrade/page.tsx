@@ -453,7 +453,7 @@ export default function UpgradePage() {
               <span className="text-2xl">📅</span>
               <div className="text-left">
                 <p className="text-emerald-300 font-bold text-sm">Save up to 42% with an annual plan</p>
-                <p className="text-slate-400 text-xs">Pro yearly = $2.92/mo · Elite yearly = $5/mo · Choose billing period below</p>
+                <p className="text-slate-500 text-xs">Pro yearly = $2.92/mo · Elite yearly = $5/mo · Choose billing period below</p>
               </div>
             </div>
           </div>
@@ -606,7 +606,7 @@ export default function UpgradePage() {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">Choose Billing Period — <span className={tier.color}>{tier.name}</span></h2>
-            <p className="text-xs text-slate-400 mt-0.5">Longer plans save more. Cancel anytime.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Longer plans save more. Cancel anytime.</p>
           </div>
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {tier.planOptions.map(planId => {
@@ -634,7 +634,7 @@ export default function UpgradePage() {
                   <div className="text-2xl font-black text-slate-900">
                     {meta.perMonth}<span className="text-sm font-normal text-slate-400">/mo</span>
                   </div>
-                  <div className="text-xs text-slate-400 mt-1 leading-tight">{meta.period}</div>
+                  <div className="text-xs text-slate-500 mt-1 leading-tight">{meta.period}</div>
                   <div className="mt-3 pt-3 border-t border-slate-100">
                     <div className="text-sm font-bold text-indigo-600">${p.amountUsd.toFixed(2)} USD total</div>
                   </div>
@@ -719,7 +719,7 @@ export default function UpgradePage() {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-3 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">Payment Method</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Choose how you want to pay</p>
+            <p className="text-xs text-slate-500 mt-0.5">Choose how you want to pay</p>
           </div>
 
           {/* Gateway tabs */}
@@ -739,7 +739,7 @@ export default function UpgradePage() {
           {/* Zimbabwe methods */}
           {gateway === 'local' && (
             <div className="p-4 space-y-4">
-              <p className="text-xs text-slate-400 font-medium">Select your mobile money provider</p>
+              <p className="text-xs text-slate-500 font-medium">Select your mobile money provider</p>
               <div className="grid grid-cols-2 gap-3">
                 {LOCAL_METHODS.map(m => {
                   const isSel = selectedMethod === m.id
@@ -754,7 +754,7 @@ export default function UpgradePage() {
                       <Logo src={m.logoSrc} alt={m.label} className="h-8 w-auto max-w-[100px] object-contain" />
                       <div className="text-center">
                         <div className="text-xs font-bold text-slate-700">{m.label}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{m.sublabel}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{m.sublabel}</div>
                       </div>
                     </button>
                   )
@@ -763,7 +763,7 @@ export default function UpgradePage() {
 
               <div className="flex items-center gap-2 pt-1">
                 <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-xs text-slate-400">Secured by</span>
+                <span className="text-xs text-slate-500">Secured by</span>
                 <Logo src="/logos/paynow.svg" alt="Paynow" className="h-5 w-auto object-contain opacity-70" />
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
@@ -778,7 +778,7 @@ export default function UpgradePage() {
                     <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="77 123 4567"
                       className="w-full border-2 border-slate-200 rounded-xl pl-20 pr-4 py-3 text-slate-800 text-sm focus:ring-0 focus:border-indigo-500 outline-none transition" />
                   </div>
-                  <p className="text-xs text-slate-400">You&apos;ll receive a USSD prompt on this number to approve the payment</p>
+                  <p className="text-xs text-slate-500">You&apos;ll receive a USSD prompt on this number to approve the payment</p>
                 </div>
               )}
 
@@ -797,7 +797,7 @@ export default function UpgradePage() {
           {/* International methods */}
           {gateway === 'international' && (
             <div className="p-4 space-y-4">
-              <p className="text-xs text-slate-400 font-medium">Pay with card or digital wallet</p>
+              <p className="text-xs text-slate-500 font-medium">Pay with card or digital wallet</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {CARD_METHODS.map(({ src, alt }) => (
                   <div key={alt} className="flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition min-h-[80px]">
@@ -808,7 +808,7 @@ export default function UpgradePage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-xs text-slate-400">Powered by</span>
+                <span className="text-xs text-slate-500">Powered by</span>
                 <Logo src="/logos/flutterwave.svg" alt="Flutterwave" className="h-5 w-auto object-contain opacity-80" />
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
@@ -816,7 +816,7 @@ export default function UpgradePage() {
                 <Shield size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-slate-700">256-bit SSL Encrypted Checkout</p>
-                  <p className="text-xs text-slate-400 mt-0.5">You&apos;ll be redirected to Flutterwave&apos;s secure hosted page. No card data is stored on ZimLearn.</p>
+                  <p className="text-xs text-slate-500 mt-0.5">You&apos;ll be redirected to Flutterwave&apos;s secure hosted page. No card data is stored on ZimLearn.</p>
                 </div>
               </div>
             </div>
@@ -826,11 +826,11 @@ export default function UpgradePage() {
         {/* ── Order summary + pay button ─────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-5 pt-5 pb-4 border-b border-slate-100">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Order Summary</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Order Summary</p>
             <div className="flex items-start justify-between">
               <div>
                 <div className="font-bold text-slate-900">{tier.name} — {plan.label}</div>
-                <div className="text-xs text-slate-400 mt-0.5">{plan.description}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{plan.description}</div>
               </div>
               <div className="text-right">
                 {couponResult && couponResult.valid && (
@@ -839,7 +839,7 @@ export default function UpgradePage() {
                 <div className={`text-2xl font-black ${couponResult && couponResult.valid ? 'text-emerald-600' : 'text-slate-900'}`}>
                   ${effectiveAmount.toFixed(2)}
                 </div>
-                <div className="text-xs text-slate-400">USD</div>
+                <div className="text-xs text-slate-500">USD</div>
               </div>
             </div>
             {couponResult && couponResult.valid && (
@@ -887,11 +887,11 @@ export default function UpgradePage() {
             )}
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400"><Lock size={11} className="text-green-500" /> Secure payment</div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500"><Lock size={11} className="text-green-500" /> Secure payment</div>
               <div className="w-px h-3 bg-slate-200 hidden sm:block" />
-              <div className="flex items-center gap-1.5 text-xs text-slate-400"><Shield size={11} className="text-green-500" /> No card data stored</div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500"><Shield size={11} className="text-green-500" /> No card data stored</div>
               <div className="w-px h-3 bg-slate-200 hidden sm:block" />
-              <div className="flex items-center gap-1.5 text-xs text-slate-400"><CheckCircle2 size={11} className="text-green-500" /> Cancel anytime</div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500"><CheckCircle2 size={11} className="text-green-500" /> Cancel anytime</div>
             </div>
           </div>
         </div>
@@ -903,7 +903,7 @@ export default function UpgradePage() {
             <h3 className="font-bold text-white text-base">Exam Prep Passes</h3>
             <span className="text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-semibold">ZIMSEC Season</span>
           </div>
-          <p className="text-xs text-slate-400 mb-4">Short-term Pro access for the weeks before exams. No subscription commitment.</p>
+          <p className="text-xs text-slate-500 mb-4">Short-term Pro access for the weeks before exams. No subscription commitment.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(['bootcamp_2week', 'bootcamp_4week'] as PlanId[]).map(planId => {
               const p = PLANS[planId]
@@ -917,7 +917,7 @@ export default function UpgradePage() {
                     {meta.badge && <span className="text-xs bg-rose-500 text-white px-1.5 py-0.5 rounded-full font-bold">{meta.badge}</span>}
                   </div>
                   <p className="text-xl font-extrabold text-rose-300">${p.amountUsd.toFixed(2)}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{meta.period}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{meta.period}</p>
                 </button>
               )
             })}

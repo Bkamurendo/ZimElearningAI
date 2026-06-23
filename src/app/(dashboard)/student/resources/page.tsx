@@ -141,7 +141,7 @@ export default async function ResourcesLandingPage() {
 
         {/* Level directory */}
         <div>
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Select Education Level</h2>
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Select Education Level</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {(Object.entries(LEVEL_CONFIG) as [string, typeof LEVEL_CONFIG.primary][]).map(([key, cfg]) => {
               const subjects = subjectCounts[key] ?? 0
@@ -175,14 +175,14 @@ export default async function ResourcesLandingPage() {
                     {topTypes.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {topTypes.map(([type, count]) => (
-                          <span key={type} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                          <span key={type} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
                             {TYPE_ICONS[type] ?? '📄'} {count}
                           </span>
                         ))}
                       </div>
                     )}
 
-                    <p className="text-xs text-gray-400 italic">{cfg.note}</p>
+                    <p className="text-xs text-gray-500 italic">{cfg.note}</p>
 
                     <div className={`flex items-center gap-1 text-xs font-semibold ${cfg.text} group-hover:gap-2 transition-all`}>
                       Browse {cfg.label} <ChevronRight size={12} />
@@ -196,7 +196,7 @@ export default async function ResourcesLandingPage() {
 
         {/* Material type quick-browse */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Browse by Material Type</h2>
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Browse by Material Type</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {MATERIAL_TYPES.map(({ type, label, icon, bg, border, text, hover }) => {
               const count = globalTypeCounts[type] ?? 0

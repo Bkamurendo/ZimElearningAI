@@ -201,7 +201,7 @@ export default function ExamTimetablePage() {
                           )}
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${chip.cls}`}>{chip.label}</span>
                         </div>
-                        {exam.notes && <p className="text-xs text-gray-400 mt-1">{exam.notes}</p>}
+                        {exam.notes && <p className="text-xs text-gray-500 mt-1">{exam.notes}</p>}
                       </div>
                     </div>
                     <button onClick={() => deleteExam(exam.id)} disabled={!!deletingId} className="p-1.5 text-gray-300 hover:text-red-500 transition flex-shrink-0">
@@ -290,7 +290,7 @@ export default function ExamTimetablePage() {
             </div>
 
             {(!form.subject_id || !form.exam_date) && (
-              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <AlertCircle size={13} /> Subject and exam date are required
               </div>
             )}

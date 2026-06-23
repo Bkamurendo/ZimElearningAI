@@ -238,7 +238,7 @@ export default function LessonNotes({
                       <textarea rows={5} value={note.content}
                         onChange={e => scheduleAutoSave(note.id, 'content', e.target.value)}
                         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-400 outline-none resize-none" />
-                      <p className="text-xs text-gray-400 text-right">Auto-saved</p>
+                      <p className="text-xs text-gray-500 text-right">Auto-saved</p>
                     </div>
                   )}
                 </div>
@@ -246,7 +246,7 @@ export default function LessonNotes({
             </div>
           )}
 
-          <Link href="/student/notes" className="block text-center text-xs text-gray-400 hover:text-emerald-600 transition mt-2">
+          <Link href="/student/notes" className="block text-center text-xs text-gray-500 hover:text-emerald-600 transition mt-2">
             View all my notes →
           </Link>
         </div>

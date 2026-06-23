@@ -129,7 +129,7 @@ export default function SquadIdPage() {
             </div>
             <div>
               <h1 className="font-black text-slate-900 tracking-tight text-lg leading-tight">{squad.name}</h1>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Study Squad</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Study Squad</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
@@ -194,8 +194,8 @@ export default function SquadIdPage() {
                        </div>
                        <div className="flex-1 min-w-0">
                          <div className="flex items-center gap-2 mb-1">
-                           <span className="text-[11px] font-black text-slate-800">{msg.profiles.full_name}</span>
-                           <span className="text-[11px] text-slate-400 font-medium">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                           <span className="text-xs font-black text-slate-800">{msg.profiles.full_name}</span>
+                           <span className="text-xs text-slate-500 font-medium">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                          </div>
                          <div className="bg-slate-50 rounded-2xl rounded-tl-none p-3 text-sm text-slate-700 leading-relaxed inline-block max-w-[90%]">
                            {msg.content}
@@ -250,7 +250,7 @@ export default function SquadIdPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                                <h4 className="text-sm font-bold text-slate-800 truncate">{res.title}</h4>
-                               <p className="text-xs text-slate-400 font-bold uppercase tracking-tight">Shared by {res.profiles.full_name}</p>
+                               <p className="text-xs text-slate-500 font-bold uppercase tracking-tight">Shared by {res.profiles.full_name}</p>
                             </div>
                           </div>
                           <button className="w-full py-2 bg-slate-50 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 text-xs font-black uppercase tracking-widest rounded-xl transition-colors">
