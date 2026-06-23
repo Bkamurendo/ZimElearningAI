@@ -188,7 +188,7 @@ export default function DocumentViewerClient({
           <div className="space-y-4">
             <div className="text-center py-4">
               <p className="text-sm font-semibold text-gray-700 mb-1">Quick actions</p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500">
                 Select a mode above, then tap a prompt or type your own question
               </p>
             </div>
@@ -262,7 +262,7 @@ export default function DocumentViewerClient({
             )}
           </button>
         </div>
-        <p className="text-center text-[10px] text-gray-400 mt-2">
+        <p className="text-center text-xs text-gray-500 mt-2">
           AI responses are grounded in the actual document content
         </p>
       </div>

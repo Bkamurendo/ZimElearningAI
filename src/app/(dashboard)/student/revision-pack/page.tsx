@@ -114,7 +114,7 @@ export default async function RevisionPackPage() {
                   }`}
                 >
                   {isUrgent && !isPast && (
-                    <span className="absolute top-3 right-3 flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 px-2 py-0.5 rounded-full">
+                    <span className="absolute top-3 right-3 flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 px-2 py-0.5 rounded-full">
                       <AlertTriangle size={11} /> URGENT
                     </span>
                   )}
@@ -125,7 +125,7 @@ export default async function RevisionPackPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{subj.name}</p>
-                      <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">{subj.code}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-500 uppercase tracking-wide">{subj.code}</p>
                     </div>
                   </div>
 
@@ -153,7 +153,7 @@ export default async function RevisionPackPage() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-400 dark:text-slate-500 italic">
+                    <p className="text-xs text-gray-500 dark:text-slate-500 italic">
                       No exam date set — add one in Exam Timetable
                     </p>
                   )}

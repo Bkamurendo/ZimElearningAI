@@ -140,12 +140,12 @@ export default function SyllabusMasteryMap() {
             style={{ width: `${data.overallReadiness}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-2">Based on quiz scores and topic mastery across all enrolled subjects</p>
+        <p className="text-xs text-gray-500 mt-2">Based on quiz scores and topic mastery across all enrolled subjects</p>
       </div>
 
       {/* Per-Subject Cards */}
       <div className="space-y-3">
-        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+        <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest px-1">
           Subject-by-Subject Analysis
         </h3>
         {data.audit.map(subject => {
@@ -157,16 +157,16 @@ export default function SyllabusMasteryMap() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-bold text-gray-900 text-sm">{subject.name}</h4>
                     {subject.isCore && (
-                      <span className="text-[11px] font-black bg-slate-800 text-white px-2 py-0.5 rounded-full uppercase tracking-tight">
+                      <span className="text-xs font-black bg-slate-800 text-white px-2 py-0.5 rounded-full uppercase tracking-tight">
                         CORE
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">{subject.code}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{subject.code}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-xl font-black text-gray-900">{subject.score}<span className="text-xs font-semibold text-gray-400">%</span></p>
-                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-tight ${cfg.badge}`}>
+                  <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase tracking-tight ${cfg.badge}`}>
                     {subject.confidence}
                   </span>
                 </div>
@@ -198,7 +198,7 @@ export default function SyllabusMasteryMap() {
                 </div>
                 <Link
                   href={`/student/quiz/${subject.code}`}
-                  className="text-[10px] font-black text-gray-600 hover:text-emerald-600 transition underline underline-offset-2"
+                  className="text-xs font-black text-gray-600 hover:text-emerald-600 transition underline underline-offset-2"
                 >
                   Practice →
                 </Link>
@@ -207,7 +207,7 @@ export default function SyllabusMasteryMap() {
               {/* Recommendation */}
               <div className="mt-3 flex items-start gap-2 p-2.5 bg-white/60 rounded-xl">
                 <AlertCircle size={13} className="text-gray-400 flex-shrink-0 mt-px" />
-                <p className="text-[10px] text-gray-600 leading-snug">
+                <p className="text-xs text-gray-600 leading-snug">
                   <span className="font-bold">Next step:</span> {subject.recommendation}
                 </p>
               </div>

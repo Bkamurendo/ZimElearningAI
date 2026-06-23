@@ -112,7 +112,7 @@ export default async function PrimaryResourcesPage() {
 
         {/* Grade overview */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Grade Overview</h2>
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Grade Overview</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {PRIMARY_GRADES.map(({ grade, desc, key }) => (
               <div
@@ -126,25 +126,25 @@ export default async function PrimaryResourcesPage() {
                 <p className={`font-bold text-lg ${key ? 'text-emerald-700' : 'text-gray-700'}`}>
                   Grade {grade}
                 </p>
-                <p className={`text-[10px] mt-0.5 ${key ? 'text-emerald-600 font-semibold' : 'text-gray-400'}`}>
+                <p className={`text-xs mt-0.5 ${key ? 'text-emerald-600 font-semibold' : 'text-gray-400'}`}>
                   {desc}
                 </p>
                 {key && (
-                  <span className="inline-block mt-1.5 text-[11px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                  <span className="inline-block mt-1.5 text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
                     Key Exam
                   </span>
                 )}
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-3 italic">
+          <p className="text-xs text-gray-500 mt-3 italic">
             📌 Resources cover all primary grades. Filter by document title or year to find grade-specific materials.
           </p>
         </div>
 
         {/* Subjects grid */}
         <div>
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Primary Subjects</h2>
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Primary Subjects</h2>
 
           {subjects.length === 0 ? (
             <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center shadow-sm">
@@ -175,7 +175,7 @@ export default async function PrimaryResourcesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 text-sm leading-tight">{subject.name}</h3>
-                        <p className="text-xs text-gray-400 mt-0.5">Primary · {total} resource{total !== 1 ? 's' : ''}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Primary · {total} resource{total !== 1 ? 's' : ''}</p>
                       </div>
                       <ChevronRight size={16} className="text-gray-300 group-hover:text-emerald-400 transition flex-shrink-0" />
                     </div>
@@ -192,7 +192,7 @@ export default async function PrimaryResourcesPage() {
                           )
                         })
                       ) : (
-                        <span className="text-xs text-gray-400">No resources yet</span>
+                        <span className="text-xs text-gray-500">No resources yet</span>
                       )}
                     </div>
                   </Link>

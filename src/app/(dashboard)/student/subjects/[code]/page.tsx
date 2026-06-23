@@ -237,7 +237,7 @@ export default async function StudentSubjectPage({
                         {c.description && (
                           <p className="text-sm text-gray-500 mt-0.5 truncate">{c.description}</p>
                         )}
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-xs text-gray-500 mt-2">
                           {c.completed_count}/{c.lesson_count} lessons completed
                         </p>
                       </div>
@@ -278,7 +278,7 @@ export default async function StudentSubjectPage({
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{a.title}</h3>
                       <p className="text-sm text-gray-600 mt-1">{a.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                         <span>Max: {a.max_score} marks</span>
                         {a.due_date && (
                           <span>Due: {new Date(a.due_date).toLocaleDateString()}</span>

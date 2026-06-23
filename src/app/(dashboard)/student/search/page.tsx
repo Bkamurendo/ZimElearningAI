@@ -81,7 +81,7 @@ export default async function SearchPage({
               </div>
               <div>
                 <h1 className="text-xl font-bold">Search Resources</h1>
-                <p className="text-gray-400 text-xs mt-0.5">948+ ZIMSEC documents at your fingertips</p>
+                <p className="text-gray-500 text-xs mt-0.5">948+ ZIMSEC documents at your fingertips</p>
               </div>
             </div>
             {/* Client-side search bar */}
@@ -194,11 +194,11 @@ export default async function SearchPage({
                             </span>
                           )}
                           {doc.year && <span className="text-xs text-gray-500">{doc.year}</span>}
-                          {doc.paper_number && <span className="text-xs text-gray-400">· Paper {doc.paper_number}</span>}
+                          {doc.paper_number && <span className="text-xs text-gray-500">· Paper {doc.paper_number}</span>}
                         </div>
                         <h3 className="font-semibold text-gray-900 text-sm leading-snug">{doc.title}</h3>
                         {doc.subject && (
-                          <p className="text-xs text-gray-400 mt-0.5">{doc.subject.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{doc.subject.name}</p>
                         )}
                       </div>
                       <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 flex-shrink-0 mt-0.5 transition" />
@@ -211,7 +211,7 @@ export default async function SearchPage({
                         <span key={t} className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{t}</span>
                       ))}
                       {doc.file_size && (
-                        <span className="text-xs text-gray-400 ml-auto">{formatSize(doc.file_size)}</span>
+                        <span className="text-xs text-gray-500 ml-auto">{formatSize(doc.file_size)}</span>
                       )}
                     </div>
                   </div>

@@ -64,7 +64,7 @@ export default function WorldClassOnboarding({ onComplete, error }: OnboardingPr
           >
             Begin Journey <ArrowRight size={18} className="ml-2" />
           </Button>
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-slate-500">
             Already have an account? <Link href="/login" className="text-emerald-600 font-bold hover:underline">Sign In</Link>
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function WorldClassOnboarding({ onComplete, error }: OnboardingPr
                     <p className={`font-black uppercase tracking-tighter ${formData.curriculum === cur.id ? 'text-emerald-900' : 'text-slate-900'}`}>
                       {cur.name}
                     </p>
-                    <p className="text-[11px] font-bold text-slate-400">{cur.desc}</p>
+                    <p className="text-xs font-bold text-slate-400">{cur.desc}</p>
                  </div>
                  {formData.curriculum === cur.id && <CheckCircle2 size={20} className="ml-auto text-emerald-500" />}
                </button>

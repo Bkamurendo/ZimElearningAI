@@ -205,7 +205,7 @@ export function UpgradePopup() {
             </div>
             
             {displayMode === 'welcome' && (
-              <p className="text-center text-xs text-slate-400 mt-5 font-medium">
+              <p className="text-center text-xs text-slate-500 mt-5 font-medium">
                 P.S. Use code <span className="text-emerald-600 font-bold">ZIMLEARN</span> at checkout for a surprise!
               </p>
             )}

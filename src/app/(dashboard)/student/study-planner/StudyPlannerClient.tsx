@@ -224,7 +224,7 @@ export default function StudyPlannerClient({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-gray-900">{plan.weeks[activeWeek].theme}</h3>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                       Week {plan.weeks[activeWeek].week}
                     </span>
                   </div>
@@ -235,7 +235,7 @@ export default function StudyPlannerClient({
                         <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                           <p className="text-sm font-bold text-gray-800">{day.day}</p>
                           {day.tasks.length > 0 && (
-                            <span className="text-xs text-gray-400">{dayCompleted}/{day.tasks.length} done</span>
+                            <span className="text-xs text-gray-500">{dayCompleted}/{day.tasks.length} done</span>
                           )}
                         </div>
                         {day.tasks.length === 0 ? (
@@ -255,7 +255,7 @@ export default function StudyPlannerClient({
                                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition hover:bg-gray-50 ${isDone ? 'opacity-60' : ''}`}
                                 >
                                   <div className={`w-5 h-5 flex-shrink-0 rounded-md border-2 flex items-center justify-center transition ${isDone ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                                    {isDone && <span className="text-white text-[10px] font-black">✓</span>}
+                                    {isDone && <span className="text-white text-xs font-black">✓</span>}
                                   </div>
                                   <div className="flex items-center gap-1.5 flex-shrink-0">
                                     <span className="text-sm">{TYPE_ICONS[task.type] ?? '📌'}</span>
@@ -267,7 +267,7 @@ export default function StudyPlannerClient({
                                     <p className={`text-sm font-semibold text-gray-900 ${isDone ? 'line-through' : ''}`}>{task.subject}</p>
                                     <p className="text-xs text-gray-500 truncate">{task.topic}</p>
                                   </div>
-                                  <span className="text-xs text-gray-400 flex-shrink-0 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">{task.duration}</span>
+                                  <span className="text-xs text-gray-500 flex-shrink-0 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">{task.duration}</span>
                                 </button>
                               )
                             })}

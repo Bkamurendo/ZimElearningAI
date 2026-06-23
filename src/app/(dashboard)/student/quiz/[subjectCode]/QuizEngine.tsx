@@ -321,7 +321,7 @@ export default function QuizEngine({
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
         <div>
-          <p className="text-xs text-gray-400">{subject.name} · {topic}</p>
+          <p className="text-xs text-gray-500">{subject.name} · {topic}</p>
           <p className="text-sm font-semibold text-gray-900">Question {currentQ + 1} of {questions.length}</p>
         </div>
         <div className="flex gap-1.5">

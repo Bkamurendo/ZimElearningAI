@@ -64,7 +64,7 @@ export function OnboardingTour({ role = 'student' }: { role?: string }) {
         <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed mb-6">{current.description}</p>
 
         <div className="flex items-center justify-between">
-          <button onClick={dismiss} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition">
+          <button onClick={dismiss} className="text-xs text-gray-500 hover:text-gray-600 dark:hover:text-slate-300 transition">
             Skip tour
           </button>
           <div className="flex gap-2">

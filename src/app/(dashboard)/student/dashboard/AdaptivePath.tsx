@@ -92,7 +92,7 @@ export default function AdaptivePath() {
             </div>
             <div>
                <h3 className="text-base font-black text-white uppercase tracking-tight italic">What to Study Next</h3>
-               <p className="text-[10px] font-black text-purple-300 uppercase tracking-widest leading-none mt-0.5">Suggested by your MaFundi AI Teacher</p>
+               <p className="text-xs font-black text-purple-300 uppercase tracking-widest leading-none mt-0.5">Suggested by your MaFundi AI Teacher</p>
             </div>
          </div>
          <Badge variant="premium" className="bg-purple-500/20 text-purple-300 border-purple-500/30">AI Powered</Badge>
@@ -105,7 +105,7 @@ export default function AdaptivePath() {
                 {/* Priority Indicator */}
                 <div className="flex flex-col items-center gap-1.5 shrink-0">
                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shadow-md transition-all group-hover/item:scale-110 ${
-                     idx === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                     idx === 0 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
                    }`}>
                       {item.priority}
                    </div>
@@ -114,7 +114,7 @@ export default function AdaptivePath() {
 
                 <div className="flex-1 min-w-0 space-y-1">
                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.subject}</span>
+                      <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{item.subject}</span>
                       <Badge size="xs" variant="slate" className="bg-slate-100 text-slate-500 uppercase font-black tracking-tighter">
                          {item.actionType}
                       </Badge>
@@ -134,7 +134,7 @@ export default function AdaptivePath() {
       </CardContent>
 
       <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Based on your recent lessons</p>
+         <p className="text-xs font-black text-slate-500 uppercase tracking-widest italic">Based on your recent lessons</p>
          <Button variant="ghost" size="sm" className="text-xs font-black text-indigo-600 hover:text-indigo-700 p-0 h-auto gap-1.5 uppercase tracking-widest">
             See More <ArrowRight size={12} />
          </Button>

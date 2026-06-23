@@ -242,7 +242,7 @@ export default async function StudentProjectsPage() {
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-slate-400 mt-1">
+                    <div className="flex justify-between text-xs text-slate-500 mt-1">
                       <span>Proposal</span>
                       <span>Submit</span>
                     </div>
@@ -279,7 +279,7 @@ export default async function StudentProjectsPage() {
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {asgn.subject?.name ?? 'Unknown Subject'}
                     </span>
-                    <span className="text-xs text-slate-400">{asgn.max_marks} marks</span>
+                    <span className="text-xs text-slate-500">{asgn.max_marks} marks</span>
                   </div>
 
                   <h3 className="font-semibold text-slate-900 dark:text-white mb-1 line-clamp-2">{asgn.title}</h3>
@@ -348,7 +348,7 @@ export default async function StudentProjectsPage() {
                     <span className="text-xs text-slate-500">marks awarded</span>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400">Awaiting teacher marking</p>
+                  <p className="text-xs text-slate-500">Awaiting teacher marking</p>
                 )}
               </Link>
             ))}

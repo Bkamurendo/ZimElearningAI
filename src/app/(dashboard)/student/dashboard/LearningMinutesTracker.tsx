@@ -26,7 +26,7 @@ export default function LearningMinutesTracker({
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-4 flex-1">
             <div className="space-y-1">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                 <Timer size={14} className="text-indigo-500" /> Focus Time Today
               </h3>
               <div className="flex items-baseline gap-1.5">
@@ -40,13 +40,13 @@ export default function LearningMinutesTracker({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <Target size={14} className="text-slate-400" />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">
                   Goal: {targetMinutes}m
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <TrendingUp size={14} className="text-emerald-500" />
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tight">
+                <span className="text-xs font-black text-emerald-600 uppercase tracking-tight">
                   {percentage}% Done
                 </span>
               </div>

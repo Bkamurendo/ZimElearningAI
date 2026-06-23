@@ -115,7 +115,7 @@ export default async function ProgressPage() {
             <div key={label} className={`bg-white rounded-2xl border border-gray-100 border-t-4 ${border} p-4 text-center shadow-sm animate-fade-in-up stagger-${idx + 1}`}>
               <div className="text-2xl mb-1.5">{emoji}</div>
               <p className={`text-2xl font-bold ${color}`}>{typeof value === 'number' ? value.toLocaleString() : value}</p>
-              <p className="text-xs text-gray-400 mt-0.5 font-medium">{label}</p>
+              <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
             </div>
           ))}
         </div>
@@ -125,7 +125,7 @@ export default async function ProgressPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-800">Overall Knowledge</h2>
-              <span className="text-xs text-gray-400">{totalTopics} topics tracked</span>
+              <span className="text-xs text-gray-500">{totalTopics} topics tracked</span>
             </div>
             <div className="flex h-3.5 rounded-full overflow-hidden gap-0.5 mb-4">
               {masteredCount  > 0 && <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-700" style={{ flex: masteredCount  }} />}
@@ -141,7 +141,7 @@ export default async function ProgressPage() {
                 <div key={item.label} className="flex items-center gap-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${item.dotColor}`} />
                   <span className={`text-xs font-semibold ${item.textColor}`}>{item.label}</span>
-                  <span className="text-xs text-gray-400">({item.count})</span>
+                  <span className="text-xs text-gray-500">({item.count})</span>
                 </div>
               ))}
             </div>

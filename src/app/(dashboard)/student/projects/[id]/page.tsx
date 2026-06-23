@@ -308,7 +308,7 @@ export default function ProjectWorkspacePage() {
                     <Circle size={16} className="flex-shrink-0 opacity-40" />
                   )}
                   <div className="min-w-0">
-                    <p className="text-[11px] text-slate-400">{s.label}</p>
+                    <p className="text-xs text-slate-500">{s.label}</p>
                     <p className="text-xs font-medium leading-tight truncate">{s.title}</p>
                   </div>
                 </button>
@@ -364,7 +364,7 @@ export default function ProjectWorkspacePage() {
               <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Your Entries</h3>
               {stageEntries.map(entry => (
                 <div key={entry.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                  <p className="text-xs text-slate-400 mb-2">{new Date(entry.created_at).toLocaleString('en-ZW')}</p>
+                  <p className="text-xs text-slate-500 mb-2">{new Date(entry.created_at).toLocaleString('en-ZW')}</p>
                   <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{entry.content}</div>
 
                   {/* Teacher comment */}
@@ -478,7 +478,7 @@ export default function ProjectWorkspacePage() {
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-800 dark:text-white">MaFundi</p>
-                <p className="text-[11px] text-slate-500">SBP Guidance</p>
+                <p className="text-xs text-slate-500">SBP Guidance</p>
               </div>
             </div>
 
@@ -572,7 +572,7 @@ export default function ProjectWorkspacePage() {
                 {mafundiMode === 'example' && `See ${activeStageKey.charAt(0).toUpperCase() + activeStageKey.slice(1)} Example`}
               </button>
 
-              <p className="text-xs text-slate-400 text-center">MaFundi guides — never writes your project for you</p>
+              <p className="text-xs text-slate-500 text-center">MaFundi guides — never writes your project for you</p>
 
               {/* Quick links */}
               <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-1.5">

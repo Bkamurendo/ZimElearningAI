@@ -89,7 +89,7 @@ export default function OfflineLibraryPage() {
             </div>
             <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-4">
                <div className="text-right">
-                 <p className="text-[10px] font-black text-slate-400 uppercase">Storage Used</p>
+                 <p className="text-xs font-black text-slate-400 uppercase">Storage Used</p>
                  <p className="text-xl font-black text-teal-400">124 MB</p>
                </div>
                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
@@ -152,7 +152,7 @@ export default function OfflineLibraryPage() {
                 <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
                    <div className="flex items-center gap-2">
                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                     <span className="text-[10px] font-black text-emerald-600 uppercase">Ready Offline</span>
+                     <span className="text-xs font-black text-emerald-600 uppercase">Ready Offline</span>
                    </div>
                    <Link href={`/student/courses/${course.id}`}>
                       <button className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest hover:translate-x-1 transition-transform">

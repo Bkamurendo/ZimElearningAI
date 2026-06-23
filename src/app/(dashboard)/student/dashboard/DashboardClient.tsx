@@ -126,18 +126,18 @@ export default function DashboardClient({
                 <p className="text-base sm:text-xl font-black text-white leading-none">
                   {stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0}
                 </p>
-                <p className="text-[11px] uppercase font-black text-slate-500 tracking-widest mt-0.5">Mastered</p>
+                <p className="text-xs uppercase font-black text-slate-500 tracking-widest mt-0.5">Mastered</p>
              </div>
 
              {/* Streak Pill */}
              <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
                 <p className="text-base sm:text-xl font-black text-orange-500 leading-none">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
-                <p className="text-[11px] uppercase font-black text-orange-500/60 tracking-widest mt-0.5">Day Streak</p>
+                <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest mt-0.5">Day Streak</p>
              </div>
 
              <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
                 <p className="text-base sm:text-xl font-black text-indigo-400 leading-none">⏱️ {learningMinutesToday}m</p>
-                <p className="text-[11px] uppercase font-black text-indigo-500/60 tracking-widest mt-0.5">Focus Time</p>
+                <p className="text-xs uppercase font-black text-indigo-500/60 tracking-widest mt-0.5">Focus Time</p>
               </div>
 
              <Button 
@@ -188,7 +188,7 @@ export default function DashboardClient({
                       <Icon size={20} className={color} />
                     </div>
                     <p className={`text-3xl font-black ${color}`}>{value}</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{label}</p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">{label}</p>
                   </Card>
                   )
                 })}
@@ -227,7 +227,7 @@ export default function DashboardClient({
             <div className="lg:col-span-2 space-y-6">
                <AdaptivePath />
 
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+               <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                  <PlayCircle size={14} /> Continue Learning
                </h3>
                {continueItems.length > 0 ? (
@@ -239,7 +239,7 @@ export default function DashboardClient({
                              {item.subjectCode.split('-')[1]?.slice(0, 2) ?? 'Z'}
                           </div>
                           <div className="flex-1 min-w-0">
-                             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{item.subjectName}</p>
+                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">{item.subjectName}</p>
                              <h4 className="text-base font-bold text-slate-800 dark:text-white truncate">{item.lessonTitle}</h4>
                           </div>
                           <ChevronRight className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
@@ -254,7 +254,7 @@ export default function DashboardClient({
                )}
 
                {/* Subjects Grid */}
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 pt-4">
+               <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 pt-4">
                  <BookOpen size={14} /> My ZIMSEC Subjects
                </h3>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -266,7 +266,7 @@ export default function DashboardClient({
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">{s.name}</h4>
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
+                          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{s.code}</p>
                         </div>
                         <ChevronRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
                       </Card>
@@ -277,7 +277,7 @@ export default function DashboardClient({
 
             {/* Quick Actions & Recent Achievements (Right) */}
             <div className="space-y-6">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Learning Tools</h3>
+               <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Learning Tools</h3>
                <div className="grid grid-cols-1 gap-3">
                   <Link href="/student/ai-workspace">
                     <Card hover className="bg-slate-900 border-slate-800 p-5 group flex items-center justify-between">
@@ -287,7 +287,7 @@ export default function DashboardClient({
                           </div>
                           <div>
                             <p className="text-white font-bold text-sm">Ask MaFundi AI</p>
-                            <p className="text-slate-400 text-xs uppercase font-black">24/7 Personal Tutor</p>
+                            <p className="text-slate-500 text-xs uppercase font-black">24/7 Personal Tutor</p>
                           </div>
                        </div>
                        <ChevronRight className="text-slate-600" />
@@ -302,7 +302,7 @@ export default function DashboardClient({
                           </div>
                           <div>
                             <p className="font-bold text-sm">My Progress</p>
-                            <p className="text-slate-400 text-xs uppercase font-black">In-depth Analytics</p>
+                            <p className="text-slate-500 text-xs uppercase font-black">In-depth Analytics</p>
                           </div>
                        </div>
                        <ChevronRight className="text-slate-300" />
@@ -338,7 +338,7 @@ export default function DashboardClient({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
              {/* Exams Center */}
              <div className="space-y-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                   <CalendarCheck size={14} /> Official ZIMSEC Timetable
                 </h3>
                 {upcomingExams.length > 0 ? (
@@ -356,12 +356,12 @@ export default function DashboardClient({
                                  <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">{subj?.name ?? 'Exam'}</h4>
                                  <div className="flex items-center gap-4 mt-1">
                                     <Badge variant="slate" size="xs">Paper {exam.paper_number}</Badge>
-                                    <p className="text-xs text-slate-400 font-bold">{new Date(exam.exam_date).toLocaleDateString('en-ZW', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                    <p className="text-xs text-slate-500 font-bold">{new Date(exam.exam_date).toLocaleDateString('en-ZW', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                  </div>
                               </div>
                               <div className="text-right">
                                  <p className={`text-2xl font-black ${textCls} leading-none`}>{days <= 0 ? 'GO!' : days}</p>
-                                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Days Left</p>
+                                 <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Days Left</p>
                               </div>
                            </div>
                            <Link href="/student/ai-teacher" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
@@ -380,7 +380,7 @@ export default function DashboardClient({
 
              {/* Missions & Tasks */}
              <div className="space-y-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                   <ListTodo size={14} /> My Assignments
                 </h3>
                 <Link href="/student/assignments">
@@ -389,7 +389,7 @@ export default function DashboardClient({
                         <ClipboardList size={28} className="text-orange-500" />
                      </div>
                      <p className="text-2xl font-black text-slate-800 dark:text-white">{pendingAssignmentsCount}</p>
-                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Pending Assignments</p>
+                     <p className="text-sm font-black text-slate-500 uppercase tracking-widest">Pending Assignments</p>
                      <Button variant="outline" size="sm" className="mt-4 border-slate-200 text-slate-600 hover:border-orange-500 hover:text-orange-600">
                         View All Tasks
                      </Button>
@@ -399,7 +399,7 @@ export default function DashboardClient({
                 {/* Notifications Quick-Access */}
                 <Card className="overflow-hidden">
                    <CardHeader className="bg-slate-50 dark:bg-slate-900/50 flex flex-row items-center justify-between py-3">
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Notifications</h4>
+                      <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Notifications</h4>
                       <Bell size={14} className="text-slate-400" />
                    </CardHeader>
                    <CardContent className="divide-y divide-slate-50 dark:divide-slate-800 p-0">

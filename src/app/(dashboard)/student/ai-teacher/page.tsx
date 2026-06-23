@@ -83,7 +83,7 @@ function InlineQuiz({ questions }: { questions: QuizQuestion[] }) {
         <Trophy size={32} className="text-yellow-500 mx-auto mb-2" />
         <p className="font-bold text-gray-900 text-lg">{pct >= 70 ? '🎉 Great work!' : pct >= 50 ? '📚 Keep studying!' : '💪 More practice needed'}</p>
         <p className="text-sm text-gray-600 mt-1">{score}/{questions.length} correct · {pct}%</p>
-        {pct < 70 && <p className="text-xs text-gray-400 mt-2">Ask MaFundi to explain any questions you got wrong</p>}
+        {pct < 70 && <p className="text-xs text-gray-500 mt-2">Ask MaFundi to explain any questions you got wrong</p>}
       </div>
     )
   }
@@ -93,7 +93,7 @@ function InlineQuiz({ questions }: { questions: QuizQuestion[] }) {
     <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-violet-600">Question {current + 1}/{questions.length}</span>
-        <span className="text-xs text-gray-400">{q.marks} mark{q.marks !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-gray-500">{q.marks} mark{q.marks !== 1 ? 's' : ''}</span>
       </div>
       <p className="font-semibold text-gray-900 text-sm leading-snug">{q.question}</p>
       <div className="space-y-2">
@@ -154,7 +154,7 @@ function StudyRoadmap({ data }: { data: RoadmapData }) {
               ))}
             </ul>
             {w.pastPaperFocus && (
-              <p className="text-[11px] text-rose-600 font-medium">📝 Past paper: {w.pastPaperFocus}</p>
+              <p className="text-xs text-rose-600 font-medium">📝 Past paper: {w.pastPaperFocus}</p>
             )}
           </div>
         ))}
@@ -604,7 +604,7 @@ export default function AITeacherPage() {
                   className="group flex flex-col items-center p-4 rounded-2xl border-2 border-gray-100 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200"
                 >
                   <span className="font-bold text-gray-900 text-lg group-hover:text-teal-700">{l.label}</span>
-                  <span className="text-xs text-gray-400 group-hover:text-teal-600">{l.sub}</span>
+                  <span className="text-xs text-gray-500 group-hover:text-teal-600">{l.sub}</span>
                 </button>
               ))}
             </div>
@@ -693,7 +693,7 @@ export default function AITeacherPage() {
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Recent Chats</p>
           {conversations.length === 0
-            ? <p className="text-xs text-gray-400 italic px-2 py-4 text-center">No conversations yet</p>
+            ? <p className="text-xs text-gray-500 italic px-2 py-4 text-center">No conversations yet</p>
             : conversations.map(conv => (
               <button key={conv.id} onClick={() => loadConversation(conv.id)}
                 className={`w-full text-left px-3 py-2 rounded-xl text-xs transition ${
@@ -955,7 +955,7 @@ export default function AITeacherPage() {
                     <Library size={16} className="text-indigo-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-indigo-700 truncate tracking-tight">{res.title}</p>
-                      <p className="text-[11px] text-indigo-400 font-medium">Library Resource</p>
+                      <p className="text-xs text-indigo-400 font-medium">Library Resource</p>
                     </div>
                     <button onClick={() => removeResource(res.id)} className="p-2 rounded-md hover:bg-indigo-100 transition flex-shrink-0">
                       <X size={12} className="text-indigo-500" />
@@ -1008,12 +1008,12 @@ export default function AITeacherPage() {
                       onClick={() => { fileInputRef.current?.click(); setShowAttachmentMenu(false) }}
                       className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition text-sm text-gray-700 min-h-[52px]"
                     >
-                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-50 text-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
                         <ImageIcon size={16} />
                       </div>
                       <div className="text-left">
                         <p className="font-bold text-xs">Device Files</p>
-                        <p className="text-[11px] text-gray-400">Images, PDFs, Docs</p>
+                        <p className="text-xs text-gray-500">Images, PDFs, Docs</p>
                       </div>
                     </button>
                     <button
@@ -1025,7 +1025,7 @@ export default function AITeacherPage() {
                       </div>
                       <div className="text-left">
                         <p className="font-bold text-xs">Search Library</p>
-                        <p className="text-[11px] text-gray-400">Platform Resources</p>
+                        <p className="text-xs text-gray-500">Platform Resources</p>
                       </div>
                     </button>
                   </div>
@@ -1057,7 +1057,7 @@ export default function AITeacherPage() {
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-gray-500 text-center">
               MaFundi is an AI teacher. For critical academic decisions, consult your school teacher or official ZIMSEC resources.
             </p>
           </div>

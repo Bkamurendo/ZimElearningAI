@@ -50,9 +50,9 @@ export default async function StudySquadsPage() {
         {/* My Squads Section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">My Active Squads</h2>
+            <h2 className="text-xs font-black text-gray-500 uppercase tracking-widest px-1">My Active Squads</h2>
             <Link href="/student/squads/create" 
-              className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition ${
+              className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl transition ${
                 isPro ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}>
               {isPro ? <Plus size={14} /> : <Lock size={14} />} Create Squad
@@ -63,7 +63,7 @@ export default async function StudySquadsPage() {
             <div className="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
               <Users size={32} className="mx-auto text-gray-300 mb-3" />
               <p className="text-sm font-bold text-gray-600">You aren't in any squads yet.</p>
-              <p className="text-xs text-gray-400 mt-1">Join a public squad below to start collaborating.</p>
+              <p className="text-xs text-gray-500 mt-1">Join a public squad below to start collaborating.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -74,12 +74,12 @@ export default async function StudySquadsPage() {
                     <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
                       <Users size={20} className="text-emerald-600" />
                     </div>
-                    <span className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-xs font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
                       Admin
                     </span>
                   </div>
                   <h3 className="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">{s.name}</h3>
-                  <p className="text-xs text-gray-400 mt-1 line-clamp-1">{s.description || 'No description provided.'}</p>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-1">{s.description || 'No description provided.'}</p>
                   <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
                     <div className="flex -space-x-2">
                        {/* Placeholder avatars */}
@@ -89,7 +89,7 @@ export default async function StudySquadsPage() {
                          </div>
                        ))}
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400">8 Members</span>
+                    <span className="text-xs font-bold text-slate-400">8 Members</span>
                   </div>
                 </Link>
               ))}
@@ -100,7 +100,7 @@ export default async function StudySquadsPage() {
         {/* Discovery Section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Discover Public Squads</h2>
+            <h2 className="text-xs font-black text-gray-500 uppercase tracking-widest px-1">Discover Public Squads</h2>
             <button className="text-gray-400 hover:text-emerald-600">
               <Search size={16} />
             </button>
@@ -115,11 +115,11 @@ export default async function StudySquadsPage() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-gray-900 text-sm truncate">{s.name}</h3>
-                    <p className="text-[10px] text-gray-400 font-medium">8/10 Members · Active 2h ago</p>
+                    <p className="text-xs text-gray-500 font-medium">8/10 Members · Active 2h ago</p>
                   </div>
                 </div>
                 <Link href={`/student/squads/${s.id}/join`} 
-                  className="bg-slate-900 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-slate-100">
+                  className="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-slate-100">
                   Join Squad
                 </Link>
               </div>
@@ -146,7 +146,7 @@ export default async function StudySquadsPage() {
                   Start your own Study Squad, invite friends, and share AI-generated study materials. 
                   Exclusive to Pro and Elite members.
                 </p>
-                <Link href="/student/upgrade" className="inline-flex items-center gap-2 bg-white text-indigo-700 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-amber-400 transition shadow-xl hover:scale-105">
+                <Link href="/student/upgrade" className="inline-flex items-center gap-2 bg-white text-indigo-700 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-400 transition shadow-xl hover:scale-105">
                   Upgrade Now <ChevronRight size={14} />
                 </Link>
              </div>

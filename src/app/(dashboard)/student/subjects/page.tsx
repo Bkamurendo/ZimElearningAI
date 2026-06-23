@@ -184,7 +184,7 @@ export default async function StudentSubjectsPage() {
 
           {/* Quick actions */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Quick Actions</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { href: '/student/quiz',      emoji: '🧠', label: 'Quiz',     desc: 'Test yourself'  },
@@ -197,7 +197,7 @@ export default async function StudentSubjectsPage() {
                 >
                   <div className="text-xl mb-1">{emoji}</div>
                   <p className="text-sm font-bold text-gray-800 group-hover:text-emerald-700 transition">{label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                 </Link>
               ))}
             </div>

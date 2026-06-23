@@ -45,7 +45,7 @@ export function MobileBottomNav({ role = 'student' }: { role?: 'student' | 'teac
                 className="flex flex-col items-center justify-center gap-1.5 flex-1 py-3 min-h-[60px] transition-colors text-slate-400 active:text-slate-200 active:bg-slate-800/50"
               >
                 <Icon size={22} strokeWidth={1.8} />
-                <span className="text-[11px] font-semibold leading-tight tracking-wide text-slate-500">{label}</span>
+                <span className="text-xs font-semibold leading-tight tracking-wide text-slate-500">{label}</span>
               </button>
             )
           }
@@ -62,7 +62,7 @@ export function MobileBottomNav({ role = 'student' }: { role?: 'student' | 'teac
                 <span className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 ${activeDot} rounded-full`} />
               )}
               <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-              <span className={`text-[11px] font-semibold leading-tight tracking-wide ${isActive ? '' : 'text-slate-500'}`}>
+              <span className={`text-xs font-semibold leading-tight tracking-wide ${isActive ? '' : 'text-slate-500'}`}>
                 {label}
               </span>
             </Link>

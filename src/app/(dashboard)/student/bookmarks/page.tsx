@@ -123,13 +123,13 @@ export default async function BookmarksPage() {
                             </span>
                           )}
                           {doc.year && <span className="text-xs text-gray-500">{doc.year}</span>}
-                          {doc.paper_number && <span className="text-xs text-gray-400">· Paper {doc.paper_number}</span>}
+                          {doc.paper_number && <span className="text-xs text-gray-500">· Paper {doc.paper_number}</span>}
                         </div>
                         <h3 className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-amber-700 transition">
                           {doc.title}
                         </h3>
                         {doc.subject && (
-                          <p className="text-xs text-gray-400 mt-0.5">{doc.subject.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{doc.subject.name}</p>
                         )}
                       </Link>
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -147,10 +147,10 @@ export default async function BookmarksPage() {
                     )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {(doc.topics ?? []).slice(0, 3).map((t) => (
-                        <span key={t} className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{t}</span>
+                        <span key={t} className="text-xs text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full">{t}</span>
                       ))}
                       {doc.file_size && (
-                        <span className="text-xs text-gray-400 ml-auto">{formatSize(doc.file_size)}</span>
+                        <span className="text-xs text-gray-500 ml-auto">{formatSize(doc.file_size)}</span>
                       )}
                     </div>
                   </div>
@@ -162,7 +162,7 @@ export default async function BookmarksPage() {
 
         {/* Hint */}
         {bookmarks.length > 0 && (
-          <p className="text-center text-xs text-gray-400 pb-4">
+          <p className="text-center text-xs text-gray-500 pb-4">
             Click the bookmark icon on any document to add or remove it from your collection.
           </p>
         )}

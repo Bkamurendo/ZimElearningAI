@@ -161,7 +161,7 @@ export function AccessibilityControls({ className = '' }: { className?: string }
       <label className="flex items-center justify-between gap-3 cursor-pointer group">
         <div>
           <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition">Reduced Motion</p>
-          <p className="text-xs text-slate-400 mt-0.5">Minimise animations and transitions</p>
+          <p className="text-xs text-slate-500 mt-0.5">Minimise animations and transitions</p>
         </div>
         <button
           role="switch"
@@ -183,7 +183,7 @@ export function AccessibilityControls({ className = '' }: { className?: string }
       <label className="flex items-center justify-between gap-3 cursor-pointer group">
         <div>
           <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition">Dyslexic-Friendly Font</p>
-          <p className="text-xs text-slate-400 mt-0.5">Easier to read for dyslexic users</p>
+          <p className="text-xs text-slate-500 mt-0.5">Easier to read for dyslexic users</p>
         </div>
         <button
           role="switch"
@@ -204,7 +204,7 @@ export function AccessibilityControls({ className = '' }: { className?: string }
       {/* ── Reset ─────────────────────────────────────────────────────── */}
       <button
         onClick={() => update(DEFAULT_SETTINGS)}
-        className="w-full text-xs text-slate-400 hover:text-slate-600 transition py-1 border border-dashed border-slate-200 rounded-xl hover:border-slate-300"
+        className="w-full text-xs text-slate-500 hover:text-slate-600 transition py-1 border border-dashed border-slate-200 rounded-xl hover:border-slate-300"
       >
         Reset to defaults
       </button>

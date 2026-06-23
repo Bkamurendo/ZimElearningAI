@@ -83,7 +83,7 @@ const markdownComponents = {
     if (isBlock) {
       return (
         <div className="my-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
-          <div className="bg-slate-800 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-slate-400">Code</div>
+          <div className="bg-slate-800 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-slate-500">Code</div>
           <pre className="bg-slate-900 px-4 py-3 overflow-x-auto">
             <code className="text-sm font-mono text-emerald-400 whitespace-pre">{children}</code>
           </pre>
@@ -242,7 +242,7 @@ export default function AiTutorChat({
           </div>
           <div className="min-w-0">
             <p className="font-black text-slate-900 dark:text-white text-sm truncate uppercase tracking-tight">{subjectName} AI Tutor</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                <Sparkles size={10} className="text-indigo-400" />
                MaFundi Intelligence · {levelLabel}
             </p>
@@ -414,12 +414,12 @@ export default function AiTutorChat({
           
           <div className="flex items-center justify-center gap-6 mt-4 opacity-40">
              <div className="flex items-center gap-1.5">
-                <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[11px] font-black text-slate-500">ENTER</kbd>
-                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Send</span>
+                <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs font-black text-slate-500">ENTER</kbd>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-500">Send</span>
              </div>
              <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-slate-800 pl-6">
                 <Info size={10} className="text-slate-500" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">MaFundi AI v2.1</span>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-500">MaFundi AI v2.1</span>
              </div>
           </div>
         </div>

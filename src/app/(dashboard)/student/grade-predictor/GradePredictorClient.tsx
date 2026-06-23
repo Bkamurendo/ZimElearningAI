@@ -131,7 +131,7 @@ export default function GradePredictorClient({
                 <div className="px-5 sm:px-6 py-4 flex items-center justify-between border-b border-gray-50">
                   <div>
                     <h3 className="font-semibold text-gray-900">{subject.name}</h3>
-                    <p className="text-xs text-gray-400">ZIMSEC {levelLabel(subject.zimsec_level)} · {attempts} quiz attempt{attempts !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-gray-500">ZIMSEC {levelLabel(subject.zimsec_level)} · {attempts} quiz attempt{attempts !== 1 ? 's' : ''}</p>
                   </div>
                   <button
                     onClick={() => predict(subject)}
@@ -153,7 +153,7 @@ export default function GradePredictorClient({
                     <div className="w-9 h-9 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0 text-lg">📊</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-700">No quiz data yet</p>
-                      <p className="text-xs text-gray-400">Complete at least 1 quiz to unlock your grade prediction</p>
+                      <p className="text-xs text-gray-500">Complete at least 1 quiz to unlock your grade prediction</p>
                     </div>
                     <Link href={`/student/quiz/${subject.code}`} className="flex-shrink-0 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-200 px-3 py-1.5 rounded-lg hover:bg-violet-100 transition whitespace-nowrap">
                       Take quiz →
@@ -185,7 +185,7 @@ export default function GradePredictorClient({
                       <div className={`w-24 h-24 rounded-2xl ${gradeStyle.bg} ${gradeStyle.text} flex flex-col items-center justify-center ring-4 ${gradeStyle.ring} flex-shrink-0 shadow-lg`}>
                         <span className="text-4xl font-black leading-none">{prediction.predictedGrade}</span>
                         <span className="text-xs font-bold opacity-80 mt-1">{prediction.predictedPercentage}%</span>
-                        <span className="text-[11px] opacity-60 uppercase tracking-wider mt-0.5">predicted</span>
+                        <span className="text-xs opacity-60 uppercase tracking-wider mt-0.5">predicted</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
@@ -279,7 +279,7 @@ export default function GradePredictorClient({
                           </div>
                           <div>
                             <p className="text-xs font-bold text-gray-900">Comprehensive AI Performance Report</p>
-                            <p className="text-[10px] text-gray-500 mt-0.5">10-page deep-dive analysis, predicted grade, and custom 4-week study plan.</p>
+                            <p className="text-xs text-gray-500 mt-0.5">10-page deep-dive analysis, predicted grade, and custom 4-week study plan.</p>
                           </div>
                         </div>
                         <button
@@ -287,7 +287,7 @@ export default function GradePredictorClient({
                             // Redirect to checkout for ai_grade_report
                             window.location.href = `/student/upgrade?plan=ai_grade_report&subject=${subject.id}`
                           }}
-                          className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg transition shadow-md shadow-indigo-100"
+                          className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-md shadow-indigo-100"
                         >
                           Get for $2
                         </button>

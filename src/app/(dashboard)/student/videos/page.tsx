@@ -82,7 +82,7 @@ export default async function VideosPage() {
                     <BookOpen size={15} className="text-white" />
                   </div>
                   <h2 className="text-base font-semibold text-gray-900">{subject}</h2>
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{vids.length} videos</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{vids.length} videos</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {vids.map(video => (
@@ -116,7 +116,7 @@ export default async function VideosPage() {
                       </div>
                       <div className="p-4">
                         <p className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors uppercase">{video.title}</p>
-                        {video.topic && <p className="text-xs text-gray-400 mt-1 uppercase">{video.topic}</p>}
+                        {video.topic && <p className="text-xs text-gray-500 mt-1 uppercase">{video.topic}</p>}
                       </div>
                     </Link>
                   ))}

@@ -187,7 +187,7 @@ export default async function StudentAssignmentsPage({
                       </div>
                       <h3 className="font-semibold text-gray-900">{a.title}</h3>
                       <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{a.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                         <span>Max: {a.max_score} marks</span>
                         {a.due_date && (
                           <span className={a.overdue ? 'text-red-500 font-medium' : ''}>
@@ -201,7 +201,7 @@ export default async function StudentAssignmentsPage({
                         <div>
                           <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full">Graded</span>
                           {a.score !== null && (
-                            <p className="text-lg font-bold text-gray-900 mt-1">{a.score}<span className="text-xs text-gray-400">/{a.max_score}</span></p>
+                            <p className="text-lg font-bold text-gray-900 mt-1">{a.score}<span className="text-xs text-gray-500">/{a.max_score}</span></p>
                           )}
                         </div>
                       ) : a.submitted ? (

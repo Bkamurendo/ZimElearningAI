@@ -201,7 +201,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-gray-400 mt-3 italic">
+          <p className="text-xs text-gray-500 mt-3 italic">
             Click the lightning bolt to have MaFundi generate a targeted revision sheet for that topic.
           </p>
         </div>
@@ -274,7 +274,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                     placeholder="e.g. Photosynthesis, Quadratic Equations, World War 2..."
                     className="w-full border border-gray-200 bg-white rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400" />
                 </div>
-                <p className="text-xs text-gray-400">MaFundi will generate ZIMSEC-aligned notes with worked examples. ~20 seconds.</p>
+                <p className="text-xs text-gray-500">MaFundi will generate ZIMSEC-aligned notes with worked examples. ~20 seconds.</p>
               </div>
             )}
 
@@ -298,7 +298,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                     <option value="3">Paper 3 — Essay Questions</option>
                   </select>
                 </div>
-                <p className="text-xs text-gray-400">Full ZIMSEC-format exam with model answers. Your weak topics are prioritised. ~30 seconds.</p>
+                <p className="text-xs text-gray-500">Full ZIMSEC-format exam with model answers. Your weak topics are prioritised. ~30 seconds.</p>
               </div>
             )}
 
@@ -344,7 +344,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
                   <PlayCircle size={18} className="text-violet-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-bold text-gray-800">Animated video lesson</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       MaFundi builds a full animated lesson with voice narration, diagrams, equations and worked examples — all ZIMSEC-aligned.
                     </p>
                   </div>
@@ -373,7 +373,7 @@ export default function WorkspaceActions({ subjects, weakTopics }: Props) {
 
                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
                   <span className="text-amber-500 text-base">⏱</span>
-                  <p className="text-[11px] text-amber-700">
+                  <p className="text-xs text-amber-700">
                     Lesson generation takes ~25–35 seconds. The player opens automatically when ready.
                   </p>
                 </div>
