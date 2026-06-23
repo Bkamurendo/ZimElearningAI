@@ -102,9 +102,10 @@ export default function DashboardClient({
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6">
       
       {/* Premium Welcome Header */}
-      <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 border border-slate-800 p-6 sm:p-10 shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 blur-[80px] translate-y-1/2 -translate-x-1/4" />
+      <div className="relative overflow-hidden rounded-[2rem] border border-emerald-900/60 p-6 sm:p-10 shadow-2xl"
+        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #0f172a 100%)' }}>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 blur-[100px] -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/10 blur-[80px] translate-y-1/2 -translate-x-1/4" />
         
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">

@@ -34,7 +34,7 @@ export default function RegisterClient({ error: serverError }: { error?: string 
   }
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
       <WorldClassOnboarding onComplete={handleComplete} error={error} />
     </div>
   )

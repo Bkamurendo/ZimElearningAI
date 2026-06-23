@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
       <div className="w-full max-w-sm">
 
         {/* Logo */}
@@ -84,17 +84,17 @@ export default function ResetPasswordPage() {
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-md shadow-emerald-200">
             <GraduationCap size={20} className="text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-xl">ZimLearn</span>
+          <span className="font-bold text-gray-900 dark:text-white text-xl">ZimLearn</span>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 p-8">
           {done ? (
             /* ── Success state ── */
             <div className="text-center py-4">
               <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <CheckCircle size={32} className="text-emerald-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Password updated!</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Password updated!</h2>
               <p className="text-gray-400 text-sm">
                 Your password has been changed successfully. Redirecting you to sign in…
               </p>
@@ -106,8 +106,8 @@ export default function ResetPasswordPage() {
                 <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
                   <KeyRound size={28} className="text-emerald-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Set new password</h2>
-                <p className="text-gray-400 text-sm mt-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Set new password</h2>
+                <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">
                   Choose a strong password for your account.
                 </p>
               </div>
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+                    className="block text-xs font-bold text-gray-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider"
                   >
                     New password
                   </label>
@@ -138,7 +138,7 @@ export default function ResetPasswordPage() {
                       autoFocus
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-11 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
+                      className="w-full px-4 py-3 pr-11 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 hover:border-gray-300"
                       placeholder="Min. 8 characters"
                     />
                     <button
@@ -179,7 +179,7 @@ export default function ResetPasswordPage() {
                 <div>
                   <label
                     htmlFor="confirm"
-                    className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+                    className="block text-xs font-bold text-gray-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider"
                   >
                     Confirm password
                   </label>
@@ -190,7 +190,7 @@ export default function ResetPasswordPage() {
                       required
                       value={confirm}
                       onChange={e => setConfirm(e.target.value)}
-                      className={`w-full px-4 py-3 pr-11 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300 ${
+                      className={`w-full px-4 py-3 pr-11 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 hover:border-gray-300 ${
                         mismatch ? 'border-red-300' : 'border-gray-200'
                       }`}
                       placeholder="Repeat password"
