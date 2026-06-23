@@ -21,6 +21,7 @@ type LessonPlan = {
   homework: string
   differentiation: string
   crossCurricular: string
+  pedagogicalAudit?: string
 }
 
 const gradeOptions = [
@@ -163,6 +164,13 @@ export default function LessonPlannerPage() {
                 </div>
               </div>
             </div>
+
+            {plan.pedagogicalAudit && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl shadow-sm p-5">
+                <h3 className="font-semibold text-amber-900 text-sm mb-2 flex items-center gap-2">⚠️ Syllabus Gap Auditor Alert</h3>
+                <p className="text-sm text-amber-800 leading-relaxed whitespace-pre-wrap">{plan.pedagogicalAudit}</p>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-2 gap-4">
               {/* Objectives */}

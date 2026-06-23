@@ -298,7 +298,7 @@ export default function StudentMessagesPage() {
                       {msg.subject && (
                         <p className="text-[11px] text-gray-400 mb-0.5">{msg.subject.name}</p>
                       )}
-                      <p className="text-xs text-gray-500 line-clamp-1">{msg.content}</p>
+                      <p className="text-xs text-gray-500 line-clamp-1 break-words">{msg.content}</p>
                     </div>
                     {isUnread && (
                       <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 mt-2" />

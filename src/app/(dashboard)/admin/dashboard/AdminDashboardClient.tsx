@@ -368,7 +368,8 @@ export default function AdminDashboardClient({
                 { href: '/admin/monitoring', title: 'System Pulse', desc: 'Real-time performance', icon: Monitor, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
                 { href: '/admin/payments', title: 'Treasury', desc: 'Revenue & Subscription tracking', icon: CreditCard, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 { href: '/admin/cohort', title: 'Cohort Science', desc: 'Advanced conversion funnels', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-                { href: '/admin/reports', title: 'Data Foundry', desc: 'Export & Custom Reporting', icon: BarChart3, color: 'text-slate-500', bg: 'bg-slate-500/10' },
+                { href: '/admin/usage-assessment', title: 'Usage Assessment', desc: 'Detailed student behavior report', icon: BarChart3, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { href: '/admin/reports', title: 'Data Foundry', desc: 'Export & Custom Reporting', icon: ClipboardList, color: 'text-slate-500', bg: 'bg-slate-500/10' },
               ].map((item) => (
                 <Link key={item.title} href={item.href}>
                   <Card hover glass className="p-6 group">

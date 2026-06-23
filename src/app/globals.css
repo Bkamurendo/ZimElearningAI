@@ -217,3 +217,45 @@ body {
 .dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3) !important; }
 .dark .hover\:bg-gray-50:hover { background-color: #1e293b !important; }
 .dark .hover\:bg-emerald-50\/30:hover { background-color: rgba(6,78,59,0.15) !important; }
+
+/* ─── Mobile Native Overrides ─────────────────────────────────────────────── */
+@layer base {
+  html, body {
+    overscroll-behavior: none; /* Prevents browser rubber-banding */
+    -webkit-tap-highlight-color: transparent; /* Removes blue tap box on mobile */
+    scrollbar-width: none; /* Hides scrollbar on Firefox */
+  }
+  
+  body::-webkit-scrollbar {
+    display: none; /* Hides scrollbar on Chrome/Safari */
+  }
+
+  /* Prevent text selection on UI elements to feel native */
+  button, a, nav, .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  /* Haptic simulation classes */
+  .haptic-press {
+    @apply transition-transform active:scale-95;
+  }
+  .haptic-pop {
+    @apply transition-transform active:scale-105;
+  }
+}
+
+/* Scroll masking for premium feel */
+.mask-fade-bottom {
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}

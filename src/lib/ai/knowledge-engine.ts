@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse/lib/pdf-parse.js')
 
 let openaiInstance: OpenAI | null = null
@@ -92,7 +93,7 @@ export class KnowledgeEngine {
         const chunk = chunks[i]
         const embedding = await this.generateEmbedding(chunk)
         
-        await supabase.from('knowledge_vectors').upsert({
+        const { error: insertError, status, statusText, data: insertResult } = await supabase.from('knowledge_vectors').insert({
             source_id: sourceId,
             source_type: sourceType,
             content: chunk,
@@ -103,7 +104,17 @@ export class KnowledgeEngine {
                 chunk_index: i,
                 total_chunks: chunks.length
             }
-        }, { onConflict: 'source_id, content' }) // Simple conflict handling
+        }).select()
+
+        if (insertError) {
+          console.error(`[KNOWLEDGE ENGINE] DB Error (URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL}) for "${title}":`, insertError.message)
+          throw new Error(insertError.message)
+        } else {
+          console.log(`[KNOWLEDGE ENGINE] OK [${status} ${statusText}]. Rows Inserted: ${insertResult?.length || 0}`)
+        }
+
+        // Safety Throttle: 2.5s between inserts — essential for Free Tier stability as table grows
+        await new Promise(resolve => setTimeout(resolve, 2500))
     }
     
     console.log(`[KNOWLEDGE ENGINE] Successfully ingested ${chunks.length} chunks for ${title}.`)
@@ -130,16 +141,26 @@ export class KnowledgeEngine {
     // 2. Extract text
     const buffer = Buffer.from(await fileData.arrayBuffer())
     let text = ''
+    let isScanned = false
     try {
       const parsed = await pdfParse(buffer)
       text = parsed.text?.trim() || ''
-    } catch (err) {
+      if (!text && parsed.numpages > 0) {
+        isScanned = true
+      }
+    } catch (_err) {
       console.warn(`[KNOWLEDGE ENGINE] PDF Parse failed for ${doc.title}`)
       return
     }
 
     if (!text) {
-      console.warn(`[KNOWLEDGE ENGINE] No text found in ${doc.title}`)
+      if (isScanned) {
+        console.warn(`[KNOWLEDGE ENGINE] 📷 Scanned Image PDF skipping (OCR Required): ${doc.title}`)
+        // We update with a special placeholder so we don't keep retrying it
+        await supabase.from('uploaded_documents').update({ extracted_text: '[SCANNED_IMAGE_OCR_REQUIRED]' }).eq('id', doc.id)
+      } else {
+        console.warn(`[KNOWLEDGE ENGINE] No text found in ${doc.title}`)
+      }
       return
     }
 
@@ -162,7 +183,7 @@ export class KnowledgeEngine {
     const { 
         grade = 'all', 
         level = 'all', 
-        limit = 5, 
+        limit = 4, 
         threshold = 0.5 
     } = options
 

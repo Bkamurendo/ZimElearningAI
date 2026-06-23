@@ -173,13 +173,13 @@ export const PLANS = {
     days: 30,
     description: 'ZimLearn Starter — 1 Month Access',
   },
-  starter_quarterly: {
-    id: 'starter_quarterly',
-    label: 'Starter Quarterly',
+  starter_yearly: {
+    id: 'starter_yearly',
+    label: 'Starter Yearly',
     tier: 'starter' as const,
-    amountUsd: 5.00,
-    days: 90,
-    description: 'ZimLearn Starter — 3 Months Access',
+    amountUsd: 15.00,
+    days: 365,
+    description: 'ZimLearn Starter — 1 Year Access',
   },
   // ── Pro Scholar ────────────────────────────────────────────────────────────
   pro_monthly: {
@@ -190,19 +190,11 @@ export const PLANS = {
     days: 30,
     description: 'ZimLearn Pro — 1 Month Access',
   },
-  pro_quarterly: {
-    id: 'pro_quarterly',
-    label: 'Pro Quarterly',
-    tier: 'pro' as const,
-    amountUsd: 12.00,
-    days: 90,
-    description: 'ZimLearn Pro — 3 Months Access',
-  },
   pro_yearly: {
     id: 'pro_yearly',
     label: 'Pro Yearly',
     tier: 'pro' as const,
-    amountUsd: 35.00,
+    amountUsd: 40.00,
     days: 365,
     description: 'ZimLearn Pro — 1 Year Access',
   },
@@ -211,7 +203,7 @@ export const PLANS = {
     id: 'elite_monthly',
     label: 'Elite Monthly',
     tier: 'elite' as const,
-    amountUsd: 8.00,
+    amountUsd: 12.00,
     days: 30,
     description: 'ZimLearn Elite — 1 Month Access',
   },
@@ -219,9 +211,26 @@ export const PLANS = {
     id: 'elite_yearly',
     label: 'Elite Yearly',
     tier: 'elite' as const,
-    amountUsd: 60.00,
+    amountUsd: 90.00,
     days: 365,
     description: 'ZimLearn Elite — 1 Year Access',
+  },
+  // ── Ultimate ───────────────────────────────────────────────────────────────
+  ultimate_monthly: {
+    id: 'ultimate_monthly',
+    label: 'Ultimate Monthly',
+    tier: 'ultimate' as const,
+    amountUsd: 25.00,
+    days: 30,
+    description: 'ZimLearn Ultimate — 1 Month Access',
+  },
+  ultimate_yearly: {
+    id: 'ultimate_yearly',
+    label: 'Ultimate Yearly',
+    tier: 'ultimate' as const,
+    amountUsd: 200.00,
+    days: 365,
+    description: 'ZimLearn Ultimate — 1 Year Access',
   },
   // ── Exam Bootcamp (seasonal) ────────────────────────────────────────────────
   bootcamp_2week: {
@@ -328,6 +337,16 @@ export const PLANS = {
     days: 365,
     tier: 'elite' as const,
     description: 'Fund a pool of 50 student scholarships for 1 year + branding.',
+  },
+  
+  // MICRO-PASS (NEW)
+  exam_micro_pass: {
+    id: 'exam_micro_pass',
+    label: '24-Hour Exam Micro-Pass',
+    amountUsd: 0.50,
+    days: 1,
+    tier: 'pro' as const,
+    description: '24 hours of full Pro access for emergency ZIMSEC exam preparation.',
   },
 } as const
 

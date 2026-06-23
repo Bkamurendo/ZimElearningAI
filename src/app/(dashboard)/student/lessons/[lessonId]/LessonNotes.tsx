@@ -96,6 +96,32 @@ export default function LessonNotes({
     setTimeout(() => setGenToast(null), 5000)
   }
 
+  const [briefingLoading, setBriefingLoading] = useState(false)
+  const [briefing, setBriefing] = useState<{ script: string; title: string } | null>(null)
+
+  async function generateAudioBriefing() {
+    setBriefingLoading(true)
+    setGenToast(null)
+    try {
+      const res = await fetch('/api/student/audio/briefing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lesson_id: lessonId }),
+      })
+      const data = await res.json()
+      if (data.script) {
+        setBriefing(data)
+        setGenToast('✓ Briefing script ready! Audio generation starting...')
+      } else {
+        setGenToast(data.error ?? 'Failed to generate briefing')
+      }
+    } catch (err) {
+      setGenToast('Connection error')
+    } finally {
+      setBriefingLoading(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Header toggle */}
@@ -105,7 +131,7 @@ export default function LessonNotes({
       >
         <div className="flex items-center gap-2">
           <FileText size={16} className="text-emerald-600" />
-          <span className="font-semibold text-gray-800 text-sm">My Notes for this lesson</span>
+          <span className="font-semibold text-gray-800 text-sm">My Notes & Audio Briefings</span>
           {notes.length > 0 && (
             <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">{notes.length}</span>
           )}
@@ -115,17 +141,44 @@ export default function LessonNotes({
 
       {open && (
         <div className="border-t border-gray-50 px-5 pb-5 pt-4 space-y-4">
-          {/* Generate flashcards button */}
+          {/* Action buttons */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <button onClick={() => setAdding(a => !a)}
-              className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-              <Plus size={15} /> Add Note
-            </button>
-            <button onClick={generateFlashcards} disabled={generating}
-              className="flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-700 font-medium disabled:opacity-50">
-              <Sparkles size={14} /> {generating ? 'Generating…' : 'Generate Flashcards'}
-            </button>
+            <div className="flex items-center gap-4">
+              <button onClick={() => setAdding(a => !a)}
+                className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                <Plus size={15} /> Add Note
+              </button>
+              <button onClick={generateFlashcards} disabled={generating}
+                className="flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-700 font-medium disabled:opacity-50">
+                <Sparkles size={14} /> {generating ? 'Generating…' : 'Flashcards'}
+              </button>
+              <button onClick={generateAudioBriefing} disabled={briefingLoading}
+                className="flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-700 font-medium disabled:opacity-50">
+                <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center">
+                   <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                </div>
+                {briefingLoading ? 'Creating Briefing…' : 'Audio Briefing'}
+              </button>
+            </div>
           </div>
+
+          {briefing && (
+            <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black text-orange-800 uppercase tracking-tight">{briefing.title}</p>
+                <button onClick={() => setBriefing(null)} className="text-orange-400 hover:text-orange-600">×</button>
+              </div>
+              <p className="text-sm text-orange-900 leading-relaxed italic line-clamp-3">
+                "{briefing.script}"
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1 bg-orange-200 rounded-full overflow-hidden">
+                   <div className="w-1/3 h-full bg-orange-500 animate-[loading_2s_infinite]" />
+                </div>
+                <span className="text-[10px] font-bold text-orange-700">PREVIEW SCRIPT</span>
+              </div>
+            </div>
+          )}
 
           {genToast && (
             <p className={`text-xs font-medium px-3 py-2 rounded-xl ${genToast.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>

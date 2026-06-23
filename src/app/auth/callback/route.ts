@@ -8,17 +8,16 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error')
   const errorCode = searchParams.get('error_code')
 
-  // Use custom domain for redirects if set, otherwise fallback to request origin
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestOrigin
   const origin = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl
 
-  // Handle incoming OAuth errors immediately
+  // Handle incoming OAuth errors from the provider immediately
   if (error || errorCode) {
     console.error(`[auth-callback] OAuth Error: ${error} (${errorCode}): ${searchParams.get('error_description')}`)
     return NextResponse.redirect(`${origin}/login?error=${errorCode || 'bad_oauth_state'}`)
   }
 
-  // Security: validate `next` is a safe relative path
+  // Security: only allow safe relative paths
   const explicitNext =
     rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.includes('://')
       ? rawNext
@@ -28,18 +27,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
   }
 
-  // ─── IMPORTANT: Create the redirect response FIRST, then attach ───
-  // cookies to it. This ensures session cookies from exchangeCodeForSession
-  // are included in the very response the browser receives, so subsequent
-  // requests (middleware, dashboard) see an authenticated session.
-  // Using next/headers cookies() + a separate NextResponse.redirect() loses
-  // the cookies because they live on different response objects.
+  // Create the redirect response first, then attach session cookies to it.
+  // This ensures cookies set by exchangeCodeForSession are included in the
+  // same response the browser receives so middleware sees an authed session.
+  const response = NextResponse.redirect(new URL('/login?error=auth_callback_failed', origin))
 
-  // Start with a placeholder redirect (we'll update the Location header below)
-  const placeholderUrl = new URL('/login?error=auth_callback_failed', origin)
-  const response = NextResponse.redirect(placeholderUrl)
-
-  // Create a supabase client whose cookie setter writes to `response`
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createServerClient<any>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,11 +39,9 @@ export async function GET(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          // Read from the incoming request
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          // Write to the outgoing response so they survive the redirect
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options)
           })
@@ -65,54 +55,70 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error('[auth-callback] Code exchange failed:', exchangeError.message)
-      const errUrl = new URL('/login', origin)
-      errUrl.searchParams.set('error', 'auth_callback_failed')
-      errUrl.searchParams.set('error_description', exchangeError.message)
-      response.headers.set('Location', errUrl.toString())
+
+      // Recovery: if the code is expired/already-used but there's a valid
+      // existing session (e.g. user hit Back after a successful login),
+      // don't strand them on the error page — redirect to their dashboard.
+      const { data: existingSession } = await supabase.auth.getSession()
+      if (existingSession?.session?.user) {
+        return redirectToDashboard(supabase, existingSession.session.user.id, explicitNext, origin, response)
+      }
+
+      response.headers.set(
+        'Location',
+        new URL(`/login?error=auth_callback_failed`, origin).toString()
+      )
       return response
     }
 
-    // ── Code exchanged successfully; cookies are now on `response` ──
+    // Code exchanged successfully — cookies are now on `response`
 
-    // 1. If a specific destination was requested (e.g. /reset-password), honour it
     if (explicitNext) {
       response.headers.set('Location', new URL(explicitNext, origin).toString())
       return response
     }
 
-    // 2. Smart redirect based on profile state
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    const user = userData?.user
-
-    if (user && !userError) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, onboarding_completed')
-        .eq('id', user.id)
-        .single()
-
-      if (profile) {
-        if (!profile.onboarding_completed) {
-          response.headers.set('Location', new URL('/onboarding', origin).toString())
-          return response
-        }
-
-        const safeRole = profile.role?.toLowerCase() || 'student'
-        const dest = safeRole === 'school_admin' ? '/school-admin/dashboard' : `/${safeRole}/dashboard`
-        response.headers.set('Location', new URL(dest, origin).toString())
-        return response
-      }
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData?.user) {
+      return redirectToDashboard(supabase, userData.user.id, explicitNext, origin, response)
     }
 
-    // 3. Fall back to onboarding for new / incomplete users
+    // New user with no profile yet — send to onboarding
     response.headers.set('Location', new URL('/onboarding', origin).toString())
     return response
 
   } catch (err) {
     console.error('[auth-callback] Critical route failure:', err)
-    const errUrl = new URL('/login', origin)
-    errUrl.searchParams.set('error', 'auth_callback_failed')
-    response.headers.set('Location', errUrl.toString())
+    response.headers.set('Location', new URL('/login?error=auth_callback_failed', origin).toString())
     return response
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function redirectToDashboard(supabase: any, userId: string, explicitNext: string, origin: string, response: NextResponse) {
+  if (explicitNext) {
+    response.headers.set('Location', new URL(explicitNext, origin).toString())
+    return response
+  }
+
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, onboarding_completed')
+      .eq('id', userId)
+      .single()
+
+    if (!profile || !profile.onboarding_completed) {
+      response.headers.set('Location', new URL('/onboarding', origin).toString())
+      return response
+    }
+
+    const role = profile.role?.toLowerCase() ?? 'student'
+    const dest = role === 'school_admin' ? '/school-admin/dashboard' : `/${role}/dashboard`
+    response.headers.set('Location', new URL(dest, origin).toString())
+  } catch {
+    response.headers.set('Location', new URL('/onboarding', origin).toString())
+  }
+
+  return response
 }

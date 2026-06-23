@@ -22,8 +22,8 @@ export async function retrievePlatformKnowledge(
     const vectorResults = await KnowledgeEngine.search(query, {
         grade,
         level,
-        limit: 8,
-        threshold: 0.3 // Lower threshold for educational content to catch partial matches
+        limit: 4, // Slimmed down for Free Tier reliability
+        threshold: 0.45 // Higher quality threshold = less database work
     })
 
     if (vectorResults && vectorResults.length > 0) {

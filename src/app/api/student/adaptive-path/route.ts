@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
@@ -37,7 +38,6 @@ export async function GET() {
       { data: quizAttempts },
       { data: masteryData },
       { data: examTimetable },
-      { data: lessonProgress },
     ] = await Promise.all([
       // Enrolled subjects
       supabase
@@ -67,15 +67,9 @@ export async function GET() {
         .gte('exam_date', new Date().toISOString().split('T')[0])
         .order('exam_date', { ascending: true })
         .limit(10),
-
-      // Lesson progress
-      supabase
-        .from('lesson_progress')
-        .select('lesson:lessons(id, title, course:courses(subject_id))')
-        .eq('student_id', studentProfile.id),
     ])
 
-    const subjects = (enrolledSubjects ?? []).map((s: Record<string, unknown>) => s.subject).filter(Boolean)
+    const subjects = (enrolledSubjects ?? []).map((s: any) => s.subject).filter(Boolean) as { id: string; name: string; code?: string }[]
 
     // If no enrolled subjects, return empty path
     if (subjects.length === 0) {

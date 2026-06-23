@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -58,6 +59,14 @@ export default async function ResourcesLandingPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // PREMIUM CHECK: Resource Library is a premium feature
+  const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPremium = ['starter', 'pro', 'elite'].includes(profile?.plan || 'free')
+
+  if (!isPremium) {
+    redirect('/student/upgrade?feature=resource-library')
+  }
 
   // Parallel queries — subjects count + published docs by level & type
   const [subjectsRes, docsRes] = await Promise.all([

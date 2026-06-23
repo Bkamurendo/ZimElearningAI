@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { FlaskConical, User, ChevronDown, Trophy, Clock, CheckCircle2, Leaf } from 'lucide-react'

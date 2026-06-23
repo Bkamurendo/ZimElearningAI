@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Users, TrendingDown, AlertTriangle, CheckCircle2, Clock, BarChart3 } from 'lucide-react'

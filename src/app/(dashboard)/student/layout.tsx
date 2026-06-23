@@ -14,34 +14,51 @@ export default async function StudentLayout({ children }: { children: React.Reac
   let streak = 0
   let unreadNotifications = 0
   let unreadMessages = 0
-  let plan: 'free' | 'starter' | 'pro' | 'elite' = 'free'
+  let plan: 'free' | 'starter' | 'pro' | 'elite' | 'ultimate' = 'free'
   let aiUsed = 0
   let trialEndsAt: string | null = null
   let subscriptionExpiresAt: string | null = null
   let hasChallenge = false
-
+ 
   if (user) {
     try {
+      // Step 1: guaranteed columns (always exist)
       const { data: profile, error: pError } = await supabase
         .from('profiles')
-        .select('full_name, plan, ai_requests_today, ai_quota_reset_at, trial_ends_at, subscription_expires_at')
+        .select('full_name, schools(subscription_plan, subscription_expires_at)')
         .eq('id', user.id)
         .single()
-      
+
       if (pError || !profile) {
-        console.warn('[StudentLayout] Profile not found or quota columns missing:', pError?.message)
+        console.warn('[StudentLayout] Profile not found:', pError?.message)
       } else {
         userName = profile.full_name ?? 'Student'
-        plan = (profile.plan ?? 'free') as typeof plan
-        trialEndsAt = profile.trial_ends_at ?? null
-        subscriptionExpiresAt = profile.subscription_expires_at ?? null
-        
-        // Calculate today's usage (reset if new day)
-        const now = new Date()
-        const resetAt = new Date(profile.ai_quota_reset_at ?? now)
-        const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000
-        aiUsed = isNewDay ? 0 : (profile.ai_requests_today ?? 0)
       }
+
+      // Step 2: optional monetisation columns (added by PRODUCTION_RUN_THIS.sql)
+      try {
+        const { data: planData } = await supabase
+          .from('profiles')
+          .select('plan, ai_requests_today, ai_quota_reset_at, trial_ends_at, pro_expires_at')
+          .eq('id', user.id)
+          .single()
+
+        if (planData) {
+          let effectivePlan = (planData.plan ?? 'free') as typeof plan
+          const schoolSub = (profile as any)?.schools
+          if (effectivePlan === 'free' && schoolSub?.subscription_plan === 'pro') {
+            const expiresAt = schoolSub.subscription_expires_at
+            if (!expiresAt || new Date(expiresAt) > new Date()) effectivePlan = 'pro'
+          }
+          plan = effectivePlan
+          trialEndsAt = planData.trial_ends_at ?? null
+          subscriptionExpiresAt = planData.pro_expires_at ?? null
+          const now = new Date()
+          const resetAt = new Date(planData.ai_quota_reset_at ?? now)
+          const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000
+          aiUsed = isNewDay ? 0 : (planData.ai_requests_today ?? 0)
+        }
+      } catch { /* columns may not exist yet — use free defaults */ }
     } catch (e) {
       console.error('[StudentLayout] Critical error fetching profile:', e)
     }

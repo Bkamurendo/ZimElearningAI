@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/gift/redeem
  * Requires authentication (the student must be logged in).

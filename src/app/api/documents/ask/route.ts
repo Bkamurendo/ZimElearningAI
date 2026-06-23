@@ -1,7 +1,8 @@
+export const dynamic = 'force-dynamic';
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
-import { getUserPlan, isPaidPlan } from '@/lib/ai-quota'
+import { isPremium } from '@/lib/subscription'
 
 export const maxDuration = 60
 
@@ -20,10 +21,14 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
-  const plan = await getUserPlan(supabase, user.id)
-  if (!isPaidPlan(plan)) {
-    return new Response('AI Chat on documents is a premium feature. Upgrade to access it.', { status: 403 })
-  }
+  // 1. Fetch user profile to check subscription status
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, plan, pro_expires_at, trial_ends_at, schools(subscription_plan, subscription_expires_at)')
+    .eq('id', user.id)
+    .single()
+
+  const isUserPremium = isPremium(profile)
 
   const {
     documentId,
@@ -37,15 +42,29 @@ export async function POST(req: NextRequest) {
     conversationHistory?: { role: 'user' | 'assistant'; content: string }[]
   } = await req.json()
 
+  // Check AI quota before hitting Anthropic
+  const { checkAIQuota } = await import('@/lib/ai-quota')
+  const quota = await checkAIQuota(supabase, user.id)
+  if (!quota.allowed) {
+    return new Response(JSON.stringify({ 
+      type: 'error', 
+      message: `Daily AI limit reached (${quota.limit} requests/day). Upgrade to Pro for unlimited access.`,
+      quota 
+    }), { status: 429, headers: { 'Content-Type': 'application/json' } })
+  }
+
   // Fetch document (user must own it or it must be published)
   const { data: docOrNull } = await supabase
     .from('uploaded_documents')
-    .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number, file_path')
+    .select('id, title, document_type, ai_summary, extracted_text, topics, zimsec_level, year, paper_number, file_path, uploaded_by')
     .eq('id', documentId)
     .or(`uploaded_by.eq.${user.id},moderation_status.eq.published`)
     .single()
 
   if (!docOrNull) return new Response('Document not found or access denied', { status: 404 })
+
+  // 2. Access control: Allow everyone (quota handles free tier)
+  const isOwner = docOrNull.uploaded_by === user.id
 
   // Re-bind to a definitely-non-null const so TypeScript's closure analysis
   // keeps the narrowed type inside nested helper functions below.

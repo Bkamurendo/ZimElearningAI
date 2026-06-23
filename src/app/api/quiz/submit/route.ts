@@ -1,5 +1,7 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { logActivity } from '@/lib/activity'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -43,6 +45,16 @@ export async function POST(req: NextRequest) {
 
   // Update topic mastery
   const pct = safeTotal > 0 ? safeScore / safeTotal : 0
+
+  // Log activity
+  logActivity(user.id, 'complete_quiz', `Completed ${topic} quiz with ${score}/${total}`, {
+    subjectCode,
+    topic,
+    score,
+    total,
+    percentage: pct
+  })
+
   const mastery =
     pct >= 0.85 ? 'mastered' : pct >= 0.65 ? 'competent' : pct >= 0.35 ? 'learning' : 'not_started'
 
@@ -97,7 +109,47 @@ export async function POST(req: NextRequest) {
   // Award badges
   await checkAndAwardBadges(supabase, student.id, score, total, pct)
 
-  return NextResponse.json({ mastery, xpEarned })
+  // Notify Parent of progress (Phase 2: Stickiness)
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, parent_phone')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.parent_phone) {
+      const { sendSMS, SMS_TEMPLATES } = await import('@/lib/sms')
+      const firstName = profile.full_name?.split(' ')[0] ?? 'Student'
+      
+      let parentMsg = ''
+      if (pct === 1) {
+        parentMsg = `ZimLearn Update: ${firstName} just got a PERFECT SCORE (100%) in their ${topic} quiz! 🏆 Great progress towards ZIMSEC.`
+      } else if (pct >= 0.85) {
+        parentMsg = `ZimLearn Alert: ${firstName} scored ${score}/${total} (${Math.round(pct*100)}%) in ${topic}. They are mastering this subject! 📚`
+      } else if (count === 1) {
+        parentMsg = `Mhoro/Salibonani! ${firstName} just completed their first AI quiz on ZimLearn. We'll keep you updated on their ZIMSEC prep.`
+      }
+
+      if (parentMsg) {
+        await sendSMS(profile.parent_phone, parentMsg)
+      }
+    }
+  } catch (err) {
+    console.error('Failed to notify parent:', err)
+  }
+
+  // Proactive Remediation (Phase 8: Super Teacher V2)
+  let recoveryMission = null
+  if (pct < 0.65) {
+    try {
+      const { createRecoveryMission } = await import('@/lib/ai/remediation')
+      recoveryMission = await createRecoveryMission(supabase, student.id, subject.id, topic, score, total)
+    } catch (err) {
+      console.error('Failed to trigger recovery mission:', err)
+    }
+  }
+
+  return NextResponse.json({ mastery, xpEarned, recoveryMission })
 }
 
 async function checkAndAwardBadges(
@@ -127,5 +179,34 @@ async function checkAndAwardBadges(
     await supabase
       .from('student_badges')
       .upsert({ student_id: studentId, ...badge }, { onConflict: 'student_id,badge_type' })
+  }
+
+  // Award CPD points to referring teacher (Phase 3: Institutional Adoption)
+  try {
+    const { data: studentProf } = await supabase
+      .from('profiles')
+      .select('referred_by')
+      .eq('id', studentId)
+      .single()
+
+    if (studentProf?.referred_by) {
+      const { data: referrer } = await supabase
+        .from('profiles')
+        .select('id, role, full_name')
+        .eq('id', studentProf.referred_by)
+        .single()
+
+      if (referrer?.role === 'teacher') {
+        await supabase.from('teacher_cpd_points').insert({
+          teacher_id: referrer.id,
+          points: 5,
+          activity_type: 'mentorship',
+          description: `Mentored student activity: Quiz completed`,
+          metadata: { student_id: studentId }
+        })
+      }
+    }
+  } catch (err) {
+    console.error('Failed to award CPD points:', err)
   }
 }

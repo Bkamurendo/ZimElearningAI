@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react'
 import WorkspaceActions from './WorkspaceActions'
 import { MasteryHeatmap } from '@/components/MasteryHeatmap'
+import MaFundiWelcomeExperience from '@/components/MaFundiWelcomeExperience'
 
 type SubjectCtx = {
   id: string; name: string; code: string; zimsec_level: string
@@ -38,6 +40,14 @@ export default async function AIWorkspacePage() {
     .single() as { data: { id: string; zimsec_level: string; grade: string } | null; error: unknown }
 
   if (!studentProfile) redirect('/student/dashboard')
+
+  // PREMIUM CHECK: MaFundi AI Workspace is a premium feature
+  const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const isPremium = ['starter', 'pro', 'elite'].includes(profile?.plan || 'free')
+
+  if (!isPremium) {
+    redirect('/student/upgrade?feature=ai-workspace')
+  }
 
   const sid = studentProfile.id
 
@@ -149,6 +159,7 @@ export default async function AIWorkspacePage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
+      <MaFundiWelcomeExperience />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
         {/* Header */}

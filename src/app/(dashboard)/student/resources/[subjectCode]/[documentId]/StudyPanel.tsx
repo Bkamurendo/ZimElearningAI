@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Send, Loader2, Sparkles, RotateCcw, Zap, BookOpen,
   FileText, Book, HelpCircle, RefreshCw, CheckCircle,
-  ChevronDown, ChevronRight, AlertCircle, Copy, Check, Lock,
+  ChevronDown, ChevronRight, AlertCircle, Copy, Check, Lock, Star
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -43,7 +43,8 @@ interface Props {
   subjectCode: string
   quickPrompts: string[]
   preloaded?: CachedContent
-  isPaid: boolean
+  isPremium?: boolean
+  isOwner?: boolean
 }
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -71,6 +72,19 @@ const MODE_OPTIONS = [
 
 // ── Helper: Markdown renderer ─────────────────────────────────────────────────
 
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={i} className="bg-gray-100 text-purple-700 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>
+    }
+    return part
+  })
+}
+
 function renderMarkdown(text: string) {
   const lines = text.split('\n')
   const elements: React.ReactNode[] = []
@@ -79,10 +93,55 @@ function renderMarkdown(text: string) {
   while (i < lines.length) {
     const line = lines[i]
 
+    // ── TABLE: collect consecutive lines starting with | ────────────────────
+    if (line.trimStart().startsWith('|')) {
+      const tableLines: string[] = []
+      while (i < lines.length && lines[i].trimStart().startsWith('|')) {
+        tableLines.push(lines[i])
+        i++
+      }
+      const isSeparator = (row: string) => /^\|[\s\-:|]+\|$/.test(row.trim())
+      const parseRow = (row: string) =>
+        row.split('|').slice(1, -1).map((cell) => cell.trim())
+      const nonSep = tableLines.filter((row) => !isSeparator(row))
+      const [headerRow, ...dataRows] = nonSep
+      if (headerRow) {
+        const headers = parseRow(headerRow)
+        elements.push(
+          <div key={`tbl-${i}`} className="overflow-x-auto my-3 rounded-xl border border-gray-200 shadow-sm">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-indigo-50 border-b-2 border-indigo-200">
+                  {headers.map((h, j) => (
+                    <th key={j} className="px-3 py-2.5 text-left font-semibold text-indigo-900 whitespace-nowrap">
+                      {renderInline(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dataRows.map((row, ri) => (
+                  <tr key={ri} className={`border-b border-gray-100 ${ri % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
+                    {parseRow(row).map((cell, ci) => (
+                      <td key={ci} className="px-3 py-2 text-gray-700 leading-relaxed align-top">
+                        {renderInline(cell)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+      continue  // i already advanced past all table lines
+    }
+
+    // ── All other single-line patterns ───────────────────────────────────────
     if (line.startsWith('## ')) {
-      elements.push(<h2 key={i} className="text-base font-bold text-gray-900 mt-5 mb-2 pb-1 border-b border-gray-100">{line.slice(3)}</h2>)
+      elements.push(<h2 key={i} className="text-base font-bold text-gray-900 mt-5 mb-2 pb-1 border-b border-gray-100">{renderInline(line.slice(3))}</h2>)
     } else if (line.startsWith('### ')) {
-      elements.push(<h3 key={i} className="text-sm font-bold text-gray-800 mt-4 mb-1.5">{line.slice(4)}</h3>)
+      elements.push(<h3 key={i} className="text-sm font-bold text-gray-800 mt-4 mb-1.5">{renderInline(line.slice(4))}</h3>)
     } else if (line.startsWith('> ')) {
       elements.push(
         <div key={i} className="my-2 pl-3 border-l-4 border-amber-400 bg-amber-50 py-2 pr-3 rounded-r-lg">
@@ -104,19 +163,6 @@ function renderMarkdown(text: string) {
     i++
   }
   return <div className="space-y-0.5">{elements}</div>
-}
-
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-gray-100 text-purple-700 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>
-    }
-    return part
-  })
 }
 
 // ── Copy button ───────────────────────────────────────────────────────────────
@@ -151,12 +197,14 @@ function DifficultyBadge({ level }: { level: string }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function StudyPanel({
-  documentId, documentTitle, documentType, quickPrompts, preloaded = {}, isPaid,
+  documentId, documentTitle, documentType, quickPrompts, preloaded = {},
+  isPremium = false, isOwner = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>('chat')
   const [cached, setCached] = useState<CachedContent>(preloaded)
   const [loading, setLoading] = useState<Record<string, boolean>>({})
   const [errors, setErrors]   = useState<Record<string, string>>({})
+  const [isSample, setIsSample] = useState<Record<string, boolean>>({})
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([])
@@ -206,6 +254,10 @@ export default function StudyPanel({
         }
         setErrors((p) => ({ ...p, [contentType]: data.error ?? 'Generation failed' }))
         return
+      }
+
+      if (data.is_sample) {
+        setIsSample((p) => ({ ...p, [contentType]: true }))
       }
 
       // Parse JSON content for structured types
@@ -266,10 +318,7 @@ export default function StudyPanel({
         body: JSON.stringify({ documentId, question: msg, mode, conversationHistory: messages.slice(-10) }),
       })
       if (!res.ok || !res.body) {
-        const msg = res.status === 403
-          ? '🔒 AI Chat is a premium feature. Upgrade from $2/month to unlock unlimited AI study tools on every document.'
-          : 'Something went wrong. Please try again.'
-        setMessages((p) => [...p, { role: 'assistant', content: msg }])
+        setMessages((p) => [...p, { role: 'assistant', content: 'Something went wrong. Please try again.' }])
         return
       }
       setMessages((p) => [...p, { role: 'assistant', content: '' }])
@@ -295,8 +344,23 @@ export default function StudyPanel({
                 if (last?.role === 'assistant') n[n.length - 1] = { ...last, content: last.content + p.text }
                 return n
               })
+            } else if (p.type === 'error' && p.message) {
+              // Show API errors as a readable assistant message
+              const friendly = p.message.includes('100 PDF pages')
+                ? "This document has too many pages to read directly. I'll answer based on the document details and my ZIMSEC knowledge instead — try asking again."
+                : `Something went wrong: ${p.message}. Please try again.`
+              setMessages((prev) => {
+                const n = [...prev]
+                const last = n[n.length - 1]
+                if (last?.role === 'assistant' && last.content === '') {
+                  n[n.length - 1] = { ...last, content: friendly }
+                } else {
+                  n.push({ role: 'assistant', content: friendly })
+                }
+                return n
+              })
             }
-          } catch { /* skip */ }
+          } catch { /* skip malformed SSE lines */ }
         }
       }
     } catch {
@@ -310,6 +374,9 @@ export default function StudyPanel({
 
   function renderTabContent() {
     if (activeTab === 'chat') return renderChat()
+    if (!isPremium && !isOwner && !cached[activeTab as keyof CachedContent] && !loading[activeTab]) {
+      return renderLockedState()
+    }
 
     const key = activeTab as keyof CachedContent
     const isLoading = loading[activeTab]
@@ -350,12 +417,31 @@ export default function StudyPanel({
 
     if (!content) return null
 
-    if (activeTab === 'snap_notes') return renderSnapNotes(content as SnapNote[])
-    if (activeTab === 'detailed_notes') return renderDetailedNotes(content as string)
-    if (activeTab === 'model_answers') return renderModelAnswers(content as ModelAnswer[])
-    if (activeTab === 'glossary') return renderGlossary(content as GlossaryItem[])
-    if (activeTab === 'practice_questions') return renderPracticeQuestions(content as PracticeQuestion[])
-    return null
+    let view = null
+    if (activeTab === 'snap_notes') view = renderSnapNotes(content as SnapNote[])
+    if (activeTab === 'detailed_notes') view = renderDetailedNotes(content as string)
+    if (activeTab === 'model_answers') view = renderModelAnswers(content as ModelAnswer[])
+    if (activeTab === 'glossary') view = renderGlossary(content as GlossaryItem[])
+    if (activeTab === 'practice_questions') view = renderPracticeQuestions(content as PracticeQuestion[])
+
+    if ((!isPremium && !isOwner) || isSample[activeTab]) {
+      return (
+        <div className="relative">
+          {view}
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white/90 to-transparent flex flex-col items-center justify-end pb-6 px-6">
+            <div className="bg-indigo-600 text-white rounded-2xl p-4 shadow-xl border border-indigo-400 max-w-sm w-full text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Free Sample</p>
+               <p className="text-sm font-bold mb-3">Upgrade to unlock all {tabs.find(t => t.key === activeTab)?.label}</p>
+               <Link href="/student/upgrade" className="inline-flex items-center gap-2 bg-white text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-50 transition">
+                 <Sparkles size={14} /> Get Full Access
+               </Link>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return view
   }
 
   // ── Snap Notes renderer ───────────────────────────────────────────────────
@@ -549,20 +635,23 @@ export default function StudyPanel({
                     <Sparkles size={12} />
                   </div>
                 )}
-                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-indigo-600 text-white rounded-tr-sm shadow-sm'
-                    : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-tl-sm'
-                }`}>
-                  {msg.content}
-                  {msg.role === 'assistant' && msg.content === '' && streaming && (
-                    <span className="inline-flex gap-1 ml-1">
-                      <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:0ms]" />
-                      <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:150ms]" />
-                      <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:300ms]" />
-                    </span>
-                  )}
-                </div>
+                {msg.role === 'user' ? (
+                  <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed bg-indigo-600 text-white shadow-sm">
+                    {msg.content}
+                  </div>
+                ) : (
+                  <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-tl-sm bg-gray-50 border border-gray-200 text-gray-800">
+                    {msg.content === '' && streaming ? (
+                      <span className="inline-flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:0ms]" />
+                        <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:300ms]" />
+                      </span>
+                    ) : (
+                      renderMarkdown(msg.content)
+                    )}
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -596,6 +685,49 @@ export default function StudyPanel({
           </div>
           <p className="text-center text-[10px] text-gray-400 mt-2">Grounded in the actual document content</p>
         </div>
+      </div>
+    )
+  }
+
+  // ── Locked State renderer ────────────────────────────────────────────────
+  
+  function renderLockedState() {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 mt-12 text-center">
+        <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-600 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-amber-100 mb-8 transform -rotate-6">
+          <Lock size={40} fill="white" />
+        </div>
+        
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Unlock Study Engine</h3>
+        <p className="text-sm text-gray-500 mb-8 max-w-[280px]">
+          Join thousands of students using AI to master {documentType.replace('_', ' ')}s.
+        </p>
+
+        <div className="space-y-4 w-full mb-10">
+          {[
+            { icon: Zap, text: 'Snap Notes for 5-min revision', color: 'text-amber-500' },
+            { icon: Sparkles, text: 'AI Chat that reads your documents', color: 'text-indigo-500' },
+            { icon: FileText, text: 'Detailed Step-by-Step Model Answers', color: 'text-rose-500' },
+            { icon: HelpCircle, text: 'Exam-style Practice Questions', color: 'text-blue-500' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-3 text-left bg-gray-50 p-3 rounded-2xl border border-gray-100">
+              <div className={`p-2 bg-white rounded-lg shadow-sm ${item.color}`}>
+                <item.icon size={16} />
+              </div>
+              <span className="text-xs font-semibold text-gray-700">{item.text}</span>
+              <Star size={12} className="ml-auto text-amber-400 fill-amber-400" />
+            </div>
+          ))}
+        </div>
+
+        <Link
+          href="/student/upgrade"
+          className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <Sparkles size={18} />
+          Upgrade to Unlock All
+        </Link>
+        <p className="text-[10px] text-gray-400 mt-4 uppercase tracking-widest font-bold">Starting from $2 USD / month</p>
       </div>
     )
   }
