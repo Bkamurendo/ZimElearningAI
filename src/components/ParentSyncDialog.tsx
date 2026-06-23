@@ -25,12 +25,18 @@ export default function ParentSyncDialog({ existingPhone }: ParentSyncDialogProp
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    // Show dialog if no parent phone exists and after a small delay
-    if (!existingPhone) {
-      const timer = setTimeout(() => setIsOpen(true), 3000)
-      return () => clearTimeout(timer)
-    }
+    if (existingPhone) return
+    // Respect 7-day snooze from "Maybe Later"
+    const snoozed = localStorage.getItem('parent-sync-snoozed')
+    if (snoozed && Date.now() - Number(snoozed) < 7 * 24 * 60 * 60 * 1000) return
+    const timer = setTimeout(() => setIsOpen(true), 3000)
+    return () => clearTimeout(timer)
   }, [existingPhone])
+
+  const handleMaybeLater = () => {
+    localStorage.setItem('parent-sync-snoozed', String(Date.now()))
+    setIsOpen(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,9 +85,9 @@ export default function ParentSyncDialog({ existingPhone }: ParentSyncDialogProp
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Unlock Parental Support</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Keep your parent in the loop</h2>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                  Connect your parent's WhatsApp to share your study wins and get the support you need to ace your exams.
+                  Add your parent&apos;s WhatsApp number so they can get weekly updates on your progress.
                 </p>
               </div>
 
@@ -121,9 +127,13 @@ export default function ParentSyncDialog({ existingPhone }: ParentSyncDialogProp
                     </>
                   )}
                 </Button>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  Official ZimLearn AI Progress Sync
-                </p>
+                <button
+                  type="button"
+                  onClick={handleMaybeLater}
+                  className="w-full text-xs text-slate-400 hover:text-slate-600 font-medium py-1 transition"
+                >
+                  Maybe later
+                </button>
               </form>
             </div>
           )}

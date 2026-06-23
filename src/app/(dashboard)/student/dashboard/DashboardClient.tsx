@@ -279,26 +279,15 @@ export default function DashboardClient({
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {subjects.map((s, idx) => (
                     <Link key={s.code} href={`/student/subjects/${s.code}`}>
-                      <Card hover glass className="p-4 flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                           <div className={`w-10 h-10 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-xs`}>
-                              {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
-                           </div>
-                           <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-xs uppercase">
-                              {/* Calculate a realistic proxy for progress */}
-                              {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% done
-                           </Badge>
+                      <Card hover glass className="p-4 flex items-center gap-4 group">
+                        <div className={`w-12 h-12 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-sm flex-shrink-0`}>
+                          {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
                         </div>
-                        <div>
-                          <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">{s.name}</h4>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">{s.name}</h4>
                           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
                         </div>
-                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                           <div 
-                             className={`h-full bg-gradient-to-r ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-full`} 
-                             style={{ width: `${Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}%` }} 
-                           />
-                        </div>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
                       </Card>
                     </Link>
                   ))}
@@ -376,10 +365,11 @@ export default function DashboardClient({
                      {upcomingExams.map(exam => {
                        const subj = exam.subjects as any
                        const days = Math.ceil((new Date(exam.exam_date).getTime() - Date.now()) / 86400000)
-                       const urgencyStatus = days <= 7 ? 'rose' : days <= 14 ? 'amber' : 'emerald'
-                       
+                       const borderCls = days <= 7 ? 'border-l-rose-500' : days <= 14 ? 'border-l-amber-500' : 'border-l-emerald-500'
+                       const textCls   = days <= 7 ? 'text-rose-600'   : days <= 14 ? 'text-amber-600'   : 'text-emerald-600'
+
                        return (
-                         <Card key={exam.id} hover className={`p-5 relative border-l-8 border-l-${urgencyStatus}-500 overflow-hidden`}>
+                         <Card key={exam.id} hover className={`p-5 relative border-l-8 ${borderCls} overflow-hidden`}>
                            <div className="flex items-start justify-between">
                               <div>
                                  <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">{subj?.name ?? 'Exam'}</h4>
@@ -389,12 +379,12 @@ export default function DashboardClient({
                                  </div>
                               </div>
                               <div className="text-right">
-                                 <p className={`text-2xl font-black text-${urgencyStatus}-600 leading-none`}>{days <= 0 ? 'GO!' : days}</p>
+                                 <p className={`text-2xl font-black ${textCls} leading-none`}>{days <= 0 ? 'GO!' : days}</p>
                                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Days Left</p>
                               </div>
                            </div>
-                           <Link href="/student/ai-workspace" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
-                              <Sparkles size={12} /> Personalized Prep
+                           <Link href="/student/ai-teacher" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                              <Sparkles size={12} /> Revise with MaFundi
                            </Link>
                          </Card>
                        )
