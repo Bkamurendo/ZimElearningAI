@@ -7,13 +7,14 @@ import Image from 'next/image'
 import { logout } from '@/app/actions/auth'
 import {
   LayoutDashboard, TrendingUp, CalendarCheck, LogOut,
-  Flame, X, Calculator,
+  Flame, X, Calculator, Moon, Sun,
   Search, Bookmark, Trophy, Bell, MessageSquare, BookOpen, Zap, Settings, User, Library,
   ClipboardList, FileText, Layers, Bot, Sparkles, CalendarDays, FlaskConical, Crown,
   Accessibility, Gift, Users, AlertTriangle, ChevronDown, ChevronRight, Lock, Package,
   Target,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { useTheme } from '@/components/ThemeProvider'
 import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityControls'
 
 // ── Navigation ─────────────────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ export default function StudentSidebar({
   const [moreOpen, setMoreOpen] = useState(false)
   const [a11yOpen, setA11yOpen] = useState(false)
   const pathname = usePathname()
+  const { theme, toggle: toggleTheme } = useTheme()
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
@@ -296,6 +298,29 @@ export default function StudentSidebar({
               </div>
             )}
           </div>
+
+          {/* Theme + Sign Out — always visible, labelled */}
+          <div className="border-t border-slate-800 pt-3 mt-1 space-y-0.5">
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 transition-all"
+            >
+              {theme === 'dark'
+                ? <Sun size={16} className="text-amber-400 flex-shrink-0" />
+                : <Moon size={16} className="flex-shrink-0" />
+              }
+              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              >
+                <LogOut size={16} className="flex-shrink-0" />
+                <span>Sign Out</span>
+              </button>
+            </form>
+          </div>
         </nav>
 
         {/* Footer — 2 rows only */}
@@ -304,7 +329,7 @@ export default function StudentSidebar({
           {/* Row 1: compact plan/quota status */}
           <PlanStatus />
 
-          {/* Row 2: user info + controls */}
+          {/* Row 2: user info + accessibility */}
           <div className="flex items-center gap-2.5 px-2 py-1.5">
             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-500/40"
               style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
@@ -319,21 +344,14 @@ export default function StudentSidebar({
                 )}
               </div>
             </div>
-            <ThemeToggle />
             <button
               onClick={() => setA11yOpen(v => !v)}
-              className={`p-1.5 rounded-lg transition-all ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800/50 text-slate-400'}`}
+              className={`p-2 rounded-lg transition-all ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800/50 text-slate-400'}`}
               title="Accessibility settings"
               aria-label="Toggle accessibility settings"
             >
-              <Accessibility size={15} />
+              <Accessibility size={16} />
             </button>
-            <form action={logout}>
-              <button type="submit" title="Sign out"
-                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                <LogOut size={15} />
-              </button>
-            </form>
           </div>
         </div>
       </aside>
@@ -359,16 +377,7 @@ export default function StudentSidebar({
           <Link href="/student/search" className="p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition">
             <Search size={18} className="text-slate-300" />
           </Link>
-          <button
-            onClick={() => setA11yOpen(v => !v)}
-            className={`p-1.5 rounded-lg transition ${a11yOpen ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-slate-800 text-slate-300'}`}
-            aria-label="Accessibility settings"
-          >
-            <Accessibility size={18} />
-          </button>
-          <Link href="/student/settings" className="p-1.5 rounded-lg hover:bg-slate-800 active:bg-slate-700 transition" aria-label="Profile & Settings">
-            <User size={18} className="text-slate-300" />
-          </Link>
+          <ThemeToggle className="text-slate-300" />
           <button onClick={() => setOpen(true)} className="p-2 rounded-xl hover:bg-slate-800 active:bg-slate-700 transition" aria-label="Open menu">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-slate-300">
               <rect x="2" y="5" width="16" height="1.5" rx="0.75" fill="currentColor"/>
