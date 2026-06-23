@@ -190,7 +190,7 @@ export default function UpgradePage() {
   const searchParams = useSearchParams()
 
   const [selectedTier,   setSelectedTier]   = useState<Tier>('pro')
-  const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('pro_quarterly')
+  const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('pro_monthly')
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('ecocash')
   const [gateway,        setGateway]        = useState<Gateway>('local')
   const [phone,          setPhone]          = useState('')
@@ -231,7 +231,7 @@ export default function UpgradePage() {
       const res = await fetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode.trim(), planId: selectedPlan, amountUsd: PLANS[selectedPlan].amountUsd }),
+        body: JSON.stringify({ code: couponCode.trim(), planId: selectedPlan, amountUsd: PLANS[selectedPlan]?.amountUsd ?? 0 }),
       })
       const data = await res.json()
       if (!data.valid) {
@@ -325,10 +325,10 @@ export default function UpgradePage() {
     } finally { setLoading(false) }
   }
 
-  const plan            = PLANS[selectedPlan]
+  const plan            = PLANS[selectedPlan] ?? null
   const tier            = TIERS.find(t => t.id === selectedTier)!
   const selectedLocal   = LOCAL_METHODS.find(m => m.id === selectedMethod)
-  const effectiveAmount = couponResult ? couponResult.discountedAmount : plan.amountUsd
+  const effectiveAmount = couponResult ? couponResult.discountedAmount : (plan?.amountUsd ?? 0)
 
   // ── Paid ────────────────────────────────────────────────────────────────────
   if (paymentStatus === 'paid') {
@@ -522,7 +522,7 @@ export default function UpgradePage() {
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900 leading-tight">One-Time Addition</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  You are purchasing <strong>{PLANS[selectedPlan].label}</strong>
+                  You are purchasing <strong>{PLANS[selectedPlan]?.label ?? selectedPlan}</strong>
                 </p>
               </div>
               <button 
@@ -572,7 +572,7 @@ export default function UpgradePage() {
                     <span className="text-2xl font-black">{firstMeta.perMonth}</span>
                     <span className="text-white/60 text-xs ml-1">/mo</span>
                   </div>
-                  <p className="text-white/50 text-[10px] mt-0.5">from ${firstPlan.amountUsd.toFixed(2)} USD</p>
+                  <p className="text-white/50 text-[10px] mt-0.5">from ${firstPlan?.amountUsd?.toFixed(2) ?? '—'} USD</p>
                 </div>
 
                 {/* Features */}
