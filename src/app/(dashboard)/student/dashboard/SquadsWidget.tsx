@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Plus, ShieldCheck, ArrowRight, Lock } from 'lucide-react'
-import { Card, CardHeader, CardContent } from '@/components/ui/Card'
+import { Users, Plus, ArrowRight, Lock } from 'lucide-react'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import Link from 'next/link'
 
 export default function SquadsWidget() {
@@ -53,20 +52,13 @@ export default function SquadsWidget() {
                     <h4 className="font-black text-slate-800 uppercase tracking-tight truncate pr-8">{squad.name}</h4>
                     {squad.is_private && <Lock size={12} className="text-slate-400" />}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="indigo" size="xs" className="bg-indigo-50 text-indigo-600 border-indigo-100">
-                      {squad.study_squad_members?.[0]?.count || 1} Members
-                    </Badge>
-                    <div className="flex -space-x-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[8px] font-bold">
-                          {String.fromCharCode(64 + i)}
-                        </div>
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Users size={12} className="text-indigo-400" />
+                    <span className="text-xs text-slate-500 font-semibold">
+                      {squad.study_squad_members?.[0]?.count || 1} member{(squad.study_squad_members?.[0]?.count || 1) !== 1 ? 's' : ''}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Now</span>
+                  <div className="flex justify-end pt-2">
                     <ArrowRight size={14} className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>

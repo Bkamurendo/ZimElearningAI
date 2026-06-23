@@ -185,7 +185,7 @@ export default function GradePredictorClient({
                       <div className={`w-24 h-24 rounded-2xl ${gradeStyle.bg} ${gradeStyle.text} flex flex-col items-center justify-center ring-4 ${gradeStyle.ring} flex-shrink-0 shadow-lg`}>
                         <span className="text-4xl font-black leading-none">{prediction.predictedGrade}</span>
                         <span className="text-xs font-bold opacity-80 mt-1">{prediction.predictedPercentage}%</span>
-                        <span className="text-[9px] opacity-60 uppercase tracking-wider mt-0.5">predicted</span>
+                        <span className="text-[11px] opacity-60 uppercase tracking-wider mt-0.5">predicted</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">

@@ -51,7 +51,7 @@ export default function AdaptivePath() {
         <div className="bg-slate-900 px-6 py-4 flex items-center justify-between border-b border-slate-800">
            <div className="flex items-center gap-2">
               <Brain className="text-purple-400 animate-pulse" size={18} />
-              <h3 className="text-sm font-black text-white uppercase tracking-widest">Generating AI Learning Path</h3>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest">Preparing your study plan…</h3>
            </div>
            <Loader2 className="text-slate-500 animate-spin" size={16} />
         </div>
@@ -75,7 +75,7 @@ export default function AdaptivePath() {
       <Card glass className="p-6 text-center border-dashed border-slate-200">
         <AlertCircle className="mx-auto text-slate-300 mb-2" size={24} />
         <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">
-          {error || 'Start some lessons to unlock your AI Study Path!'}
+          {error || 'Complete a few lessons and MaFundi will suggest what to study next.'}
         </p>
       </Card>
     )
@@ -91,11 +91,11 @@ export default function AdaptivePath() {
                <Brain size={20} className="group-hover:rotate-12 transition-transform duration-500" />
             </div>
             <div>
-               <h3 className="text-base font-black text-white uppercase tracking-tight italic">Adaptive Mastery Path</h3>
-               <p className="text-[10px] font-black text-purple-300 uppercase tracking-widest leading-none mt-0.5">Powered by MaFundi AI Intelligence</p>
+               <h3 className="text-base font-black text-white uppercase tracking-tight italic">What to Study Next</h3>
+               <p className="text-[10px] font-black text-purple-300 uppercase tracking-widest leading-none mt-0.5">Suggested by your MaFundi AI Teacher</p>
             </div>
          </div>
-         <Badge variant="premium" className="bg-purple-500/20 text-purple-300 border-purple-500/30">Claude G3 Enabled</Badge>
+         <Badge variant="premium" className="bg-purple-500/20 text-purple-300 border-purple-500/30">AI Powered</Badge>
       </div>
 
       <CardContent className="p-0 divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -134,9 +134,9 @@ export default function AdaptivePath() {
       </CardContent>
 
       <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Updated based on your last 24h activity</p>
+         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Based on your recent lessons</p>
          <Button variant="ghost" size="sm" className="text-xs font-black text-indigo-600 hover:text-indigo-700 p-0 h-auto gap-1.5 uppercase tracking-widest">
-            Detailed Audit <ArrowRight size={12} />
+            See More <ArrowRight size={12} />
          </Button>
       </div>
     </Card>

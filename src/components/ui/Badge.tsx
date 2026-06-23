@@ -32,7 +32,7 @@ export function Badge({
   }
 
   const sizes = {
-    xs: 'px-1.5 py-0.5 text-[9px] rounded-md gap-0.5',
+    xs: 'px-1.5 py-0.5 text-[11px] rounded-md gap-0.5',
     sm: 'px-2.5 py-1 text-[10px] rounded-full gap-1',
     md: 'px-3 py-1.5 text-xs rounded-full gap-1.5'
   }

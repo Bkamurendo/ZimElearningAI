@@ -509,7 +509,7 @@ export default function ProjectWorkspacePage() {
                     <button
                       key={tab.key}
                       onClick={() => { setMafundiMode(tab.key); setAiFeedback('') }}
-                      className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
+                      className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         mafundiMode === tab.key
                           ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm'
                           : 'text-slate-500 hover:text-slate-700'
@@ -572,7 +572,7 @@ export default function ProjectWorkspacePage() {
                 {mafundiMode === 'example' && `See ${activeStageKey.charAt(0).toUpperCase() + activeStageKey.slice(1)} Example`}
               </button>
 
-              <p className="text-[10px] text-slate-400 text-center">MaFundi guides — never writes your project for you</p>
+              <p className="text-xs text-slate-400 text-center">MaFundi guides — never writes your project for you</p>
 
               {/* Quick links */}
               <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-1.5">

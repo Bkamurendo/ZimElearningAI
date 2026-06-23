@@ -233,12 +233,12 @@ export default async function StudentAssignmentsPage({
                       <textarea
                         name="content"
                         required
-                        rows={3}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none resize-none"
+                        rows={5}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none resize-none"
                         placeholder="Type your answer here…"
                       />
                       <button type="submit"
-                        className="mt-2 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition shadow-sm">
+                        className="mt-2 w-full sm:w-auto px-5 py-3 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold rounded-xl transition shadow-sm min-h-[44px]">
                         Submit Answer
                       </button>
                     </form>

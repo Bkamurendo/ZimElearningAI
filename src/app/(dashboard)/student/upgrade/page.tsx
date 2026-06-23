@@ -39,7 +39,7 @@ const TIERS: {
   {
     id: 'starter',
     name: 'Starter',
-    tagline: 'Boost your studies',
+    tagline: 'More help for your studies',
     color: 'text-blue-600',
     headerBg: 'bg-blue-600',
     icon: <Zap size={20} className="text-blue-500" />,
@@ -81,7 +81,7 @@ const TIERS: {
   {
     id: 'elite',
     name: 'Elite',
-    tagline: 'The ultimate edge',
+    tagline: 'All the tools you need',
     color: 'text-amber-600',
     headerBg: 'bg-gradient-to-r from-amber-500 to-orange-500',
     badge: '👑 Best Value',
@@ -103,7 +103,7 @@ const TIERS: {
   {
     id: 'ultimate',
     name: 'Ultimate',
-    tagline: 'Unstoppable learning',
+    tagline: 'Everything included',
     color: 'text-rose-600',
     headerBg: 'bg-gradient-to-r from-rose-500 to-red-600',
     badge: '🚀 Limitless',
@@ -136,7 +136,7 @@ const PLAN_META: Record<PlanId, { perMonth: string; period: string; badge?: stri
   ultimate_monthly:     { perMonth: '$25.00', period: 'per month' },
   ultimate_yearly:      { perMonth: '$16.67', period: 'per month, billed $200 yearly', badge: 'Save 33%' },
   bootcamp_2week:       { perMonth: '$3.00', period: '2-week access (ZIMSEC exam prep)', badge: 'One-time' },
-  bootcamp_4week:       { perMonth: '$5.00', period: '4-week access (ZIMSEC exam prep)', badge: 'Best Bootcamp' },
+  bootcamp_4week:       { perMonth: '$5.00', period: '4-week access (ZIMSEC exam prep)', badge: 'Best Value' },
   school_basic_monthly: { perMonth: '$50.00', period: 'per month (up to 50 students)' },
   school_pro_monthly:   { perMonth: '$120.00', period: 'per month (unlimited students)' },
   school_pro_yearly:    { perMonth: '$83.33', period: 'per month, billed $1,000 yearly', badge: 'Save 31%' },
@@ -190,7 +190,7 @@ export default function UpgradePage() {
   const searchParams = useSearchParams()
 
   const [selectedTier,   setSelectedTier]   = useState<Tier>('pro')
-  const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('pro_quarterly')
+  const [selectedPlan,   setSelectedPlan]   = useState<PlanId>('pro_monthly')
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('ecocash')
   const [gateway,        setGateway]        = useState<Gateway>('local')
   const [phone,          setPhone]          = useState('')
@@ -231,7 +231,7 @@ export default function UpgradePage() {
       const res = await fetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode.trim(), planId: selectedPlan, amountUsd: PLANS[selectedPlan].amountUsd }),
+        body: JSON.stringify({ code: couponCode.trim(), planId: selectedPlan, amountUsd: PLANS[selectedPlan]?.amountUsd ?? 0 }),
       })
       const data = await res.json()
       if (!data.valid) {
@@ -325,10 +325,10 @@ export default function UpgradePage() {
     } finally { setLoading(false) }
   }
 
-  const plan            = PLANS[selectedPlan]
+  const plan            = PLANS[selectedPlan] ?? null
   const tier            = TIERS.find(t => t.id === selectedTier)!
   const selectedLocal   = LOCAL_METHODS.find(m => m.id === selectedMethod)
-  const effectiveAmount = couponResult ? couponResult.discountedAmount : plan.amountUsd
+  const effectiveAmount = couponResult ? couponResult.discountedAmount : (plan?.amountUsd ?? 0)
 
   // ── Paid ────────────────────────────────────────────────────────────────────
   if (paymentStatus === 'paid') {
@@ -522,7 +522,7 @@ export default function UpgradePage() {
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900 leading-tight">One-Time Addition</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  You are purchasing <strong>{PLANS[selectedPlan].label}</strong>
+                  You are purchasing <strong>{PLANS[selectedPlan]?.label ?? selectedPlan}</strong>
                 </p>
               </div>
               <button 
@@ -572,7 +572,7 @@ export default function UpgradePage() {
                     <span className="text-2xl font-black">{firstMeta.perMonth}</span>
                     <span className="text-white/60 text-xs ml-1">/mo</span>
                   </div>
-                  <p className="text-white/50 text-[10px] mt-0.5">from ${firstPlan.amountUsd.toFixed(2)} USD</p>
+                  <p className="text-white/50 text-[10px] mt-0.5">from ${firstPlan?.amountUsd?.toFixed(2) ?? '—'} USD</p>
                 </div>
 
                 {/* Features */}
@@ -900,7 +900,7 @@ export default function UpgradePage() {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">📅</span>
-            <h3 className="font-bold text-white text-base">Exam Bootcamp Passes</h3>
+            <h3 className="font-bold text-white text-base">Exam Prep Passes</h3>
             <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-semibold">ZIMSEC Season</span>
           </div>
           <p className="text-xs text-slate-400 mb-4">Short-term Pro access for the weeks before exams. No subscription commitment.</p>

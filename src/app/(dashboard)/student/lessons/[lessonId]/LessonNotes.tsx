@@ -175,7 +175,7 @@ export default function LessonNotes({
                 <div className="flex-1 h-1 bg-orange-200 rounded-full overflow-hidden">
                    <div className="w-1/3 h-full bg-orange-500 animate-[loading_2s_infinite]" />
                 </div>
-                <span className="text-[10px] font-bold text-orange-700">PREVIEW SCRIPT</span>
+                <span className="text-xs font-bold text-orange-700">PREVIEW SCRIPT</span>
               </div>
             </div>
           )}

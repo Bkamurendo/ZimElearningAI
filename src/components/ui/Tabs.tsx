@@ -26,7 +26,7 @@ export function Tabs({ tabs, activeTab, onChange, className = '' }: TabsProps) {
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`
-              relative flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all duration-200 rounded-xl
+              relative flex items-center gap-2 px-3 sm:px-4 py-3 sm:py-2.5 text-xs sm:text-sm font-bold transition-all duration-200 rounded-xl min-h-[44px]
               ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}
             `}
           >

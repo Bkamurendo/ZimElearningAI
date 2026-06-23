@@ -120,25 +120,25 @@ export default function DashboardClient({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+          <div className="flex items-stretch gap-2 sm:gap-4 w-full sm:w-auto">
              {/* Dynamic Stats Pill */}
-             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <Zap size={20} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
-                <p className="text-lg sm:text-xl font-black text-white">
+             <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <Zap size={18} className="text-yellow-400 mx-auto mb-1 animate-pulse" />
+                <p className="text-base sm:text-xl font-black text-white leading-none">
                   {stats?.find(s => s?.label === 'Topics mastered')?.value ?? 0}
                 </p>
-                <p className="text-xs uppercase font-black text-slate-500 tracking-widest">Mastered</p>
+                <p className="text-[11px] uppercase font-black text-slate-500 tracking-widest mt-0.5">Mastered</p>
              </div>
 
              {/* Streak Pill */}
-             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <p className="text-lg sm:text-xl font-black text-orange-500">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
-                <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest">Day Streak</p>
+             <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <p className="text-base sm:text-xl font-black text-orange-500 leading-none">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
+                <p className="text-[11px] uppercase font-black text-orange-500/60 tracking-widest mt-0.5">Day Streak</p>
              </div>
 
-             <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-3xl text-center min-w-0 flex-1 sm:flex-none sm:min-w-[100px]">
-                <p className="text-lg sm:text-xl font-black text-indigo-400">⏱️ {learningMinutesToday}m</p>
-                <p className="text-xs uppercase font-black text-indigo-500/60 tracking-widest">Focus Time</p>
+             <div className="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <p className="text-base sm:text-xl font-black text-indigo-400 leading-none">⏱️ {learningMinutesToday}m</p>
+                <p className="text-[11px] uppercase font-black text-indigo-500/60 tracking-widest mt-0.5">Focus Time</p>
               </div>
 
              <Button 
@@ -168,7 +168,7 @@ export default function DashboardClient({
       />
 
       {/* Modern Tabbed Navigation */}
-      <div className="sticky top-4 z-40 flex justify-center">
+      <div className="sticky top-16 lg:top-4 z-40 flex justify-center">
         <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} className="shadow-xl shadow-slate-900/5" />
       </div>
 
@@ -183,9 +183,9 @@ export default function DashboardClient({
                     <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center">
                        <CheckCircle2 size={16} className="text-white" />
                     </div>
-                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Syllabus Mastery Hub</h2>
+                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Your Learning Progress</h2>
                   </div>
-                  <Badge variant="blue">Real-time ZIMSEC Alignment</Badge>
+                  <Badge variant="blue">Your ZIMSEC Topics</Badge>
                </CardHeader>
                <CardContent>
                   <div className="min-h-[100px]">
@@ -223,16 +223,16 @@ export default function DashboardClient({
                        {dailyChallengeCompleted ? <Trophy size={24} className="text-yellow-300" /> : <Zap size={24} className="text-yellow-300 animate-bounce" />}
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-white italic tracking-tight uppercase">DAILY SURVIVAL MISSION</h3>
+                      <h3 className="text-xl font-black text-white italic tracking-tight uppercase">Today&apos;s Challenge</h3>
                       <p className="text-amber-100 text-sm font-black uppercase tracking-tight">
-                        {dailyChallengeCompleted 
-                          ? `COMPLETED: RECEIVED ${(_dailyChallengeScore || 0) * 10} XP` 
-                          : '5 Questions · 50 XP Reward · One Life.'}
+                        {dailyChallengeCompleted
+                          ? `Well done! You earned ${(_dailyChallengeScore || 0) * 10} XP`
+                          : '5 Questions · Earn 50 XP · One attempt'}
                       </p>
                     </div>
                   </div>
                   <Button variant="secondary" size="md" className="bg-white text-orange-600 border-none font-black shadow-lg">
-                    {dailyChallengeCompleted ? 'Leaderboard' : 'Start Mission'}
+                    {dailyChallengeCompleted ? 'Leaderboard' : 'Start Quiz'}
                   </Button>
                 </CardContent>
               </Card>
@@ -247,7 +247,7 @@ export default function DashboardClient({
                <AdaptivePath />
 
                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                 <PlayCircle size={14} /> Resume Learning Path
+                 <PlayCircle size={14} /> Continue Learning
                </h3>
                {continueItems.length > 0 ? (
                  <div className="grid gap-3">
@@ -279,26 +279,15 @@ export default function DashboardClient({
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {subjects.map((s, idx) => (
                     <Link key={s.code} href={`/student/subjects/${s.code}`}>
-                      <Card hover glass className="p-4 flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                           <div className={`w-10 h-10 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-xs`}>
-                              {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
-                           </div>
-                           <Badge variant="emerald" className="bg-emerald-500/10 text-emerald-500 font-black text-xs uppercase">
-                              {/* Calculate a realistic proxy for progress */}
-                              {Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}% PREP
-                           </Badge>
+                      <Card hover glass className="p-4 flex items-center gap-4 group">
+                        <div className={`w-12 h-12 bg-gradient-to-br ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-xl flex items-center justify-center shadow-lg text-white font-black text-sm flex-shrink-0`}>
+                          {s.code.split('-')[1]?.slice(0, 2) ?? 'Z'}
                         </div>
-                        <div>
-                          <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">{s.name}</h4>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">{s.name}</h4>
                           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{s.code}</p>
                         </div>
-                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                           <div 
-                             className={`h-full bg-gradient-to-r ${SUBJECT_COLORS[idx % SUBJECT_COLORS.length]} rounded-full`} 
-                             style={{ width: `${Math.round((stats?.find(st => st.label === 'Topics mastered')?.value || 0) / (subjects.length || 1) + (idx * 5)) % 100}%` }} 
-                           />
-                        </div>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
                       </Card>
                     </Link>
                   ))}
@@ -307,7 +296,7 @@ export default function DashboardClient({
 
             {/* Quick Actions & Recent Achievements (Right) */}
             <div className="space-y-6">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Growth Center</h3>
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Learning Tools</h3>
                <div className="grid grid-cols-1 gap-3">
                   <Link href="/student/ai-workspace">
                     <Card hover className="bg-slate-900 border-slate-800 p-5 group flex items-center justify-between">
@@ -376,10 +365,11 @@ export default function DashboardClient({
                      {upcomingExams.map(exam => {
                        const subj = exam.subjects as any
                        const days = Math.ceil((new Date(exam.exam_date).getTime() - Date.now()) / 86400000)
-                       const urgencyStatus = days <= 7 ? 'rose' : days <= 14 ? 'amber' : 'emerald'
-                       
+                       const borderCls = days <= 7 ? 'border-l-rose-500' : days <= 14 ? 'border-l-amber-500' : 'border-l-emerald-500'
+                       const textCls   = days <= 7 ? 'text-rose-600'   : days <= 14 ? 'text-amber-600'   : 'text-emerald-600'
+
                        return (
-                         <Card key={exam.id} hover className={`p-5 relative border-l-8 border-l-${urgencyStatus}-500 overflow-hidden`}>
+                         <Card key={exam.id} hover className={`p-5 relative border-l-8 ${borderCls} overflow-hidden`}>
                            <div className="flex items-start justify-between">
                               <div>
                                  <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">{subj?.name ?? 'Exam'}</h4>
@@ -389,12 +379,12 @@ export default function DashboardClient({
                                  </div>
                               </div>
                               <div className="text-right">
-                                 <p className={`text-2xl font-black text-${urgencyStatus}-600 leading-none`}>{days <= 0 ? 'GO!' : days}</p>
+                                 <p className={`text-2xl font-black ${textCls} leading-none`}>{days <= 0 ? 'GO!' : days}</p>
                                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Days Left</p>
                               </div>
                            </div>
-                           <Link href="/student/ai-workspace" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
-                              <Sparkles size={12} /> Personalized Prep
+                           <Link href="/student/ai-teacher" className="mt-4 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                              <Sparkles size={12} /> Revise with MaFundi
                            </Link>
                          </Card>
                        )

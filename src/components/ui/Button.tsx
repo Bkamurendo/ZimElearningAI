@@ -33,10 +33,10 @@ export function Button({
   }
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs font-semibold rounded-lg gap-1.5',
-    md: 'px-5 py-2.5 text-sm font-bold rounded-xl gap-2',
-    lg: 'px-8 py-3.5 text-base font-bold rounded-2xl gap-2.5',
-    icon: 'p-2 rounded-xl'
+    sm: 'px-3 py-2.5 text-xs font-semibold rounded-lg gap-1.5 min-h-[40px]',
+    md: 'px-5 py-2.5 text-sm font-bold rounded-xl gap-2 min-h-[44px]',
+    lg: 'px-8 py-3.5 text-base font-bold rounded-2xl gap-2.5 min-h-[48px]',
+    icon: 'p-2.5 rounded-xl min-h-[44px] min-w-[44px]'
   }
 
   return (
