@@ -44,17 +44,17 @@ export function LoginForm({
   return (
     <div className="w-full max-w-sm">
       {/* Glass card */}
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 p-8">
         <div className="mb-7">
           <div className="flex items-center gap-3 mb-4">
             <Image src="/zimlearn-logo.svg" alt="ZimLearn" width={44} height={44} className="rounded-xl" />
             <div>
-              <p className="font-extrabold text-gray-900 text-lg leading-tight">ZimLearn</p>
+              <p className="font-extrabold text-gray-900 dark:text-white text-lg leading-tight">ZimLearn</p>
               <p className="text-xs text-emerald-600 font-medium">ZIMSEC E-Learning Platform</p>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Sign in</h2>
-          <p className="text-gray-400 text-sm mt-1">Continue your learning journey</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign in</h2>
+          <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">Continue your learning journey</p>
         </div>
 
         {/* Error */}
@@ -81,11 +81,11 @@ export function LoginForm({
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-gray-100" />
-          <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+          <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
+          <span className="text-xs text-gray-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
             or email
           </span>
-          <div className="flex-1 h-px bg-gray-100" />
+          <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
         </div>
 
         <form
@@ -96,7 +96,7 @@ export function LoginForm({
           <div>
             <label
               htmlFor="email"
-              className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+              className="block text-xs font-bold text-gray-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider"
             >
               Email address
             </label>
@@ -106,7 +106,7 @@ export function LoginForm({
               type="email"
               required
               autoComplete="email"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 hover:border-gray-300 dark:hover:border-slate-500"
               placeholder="you@example.com"
             />
           </div>
@@ -116,7 +116,7 @@ export function LoginForm({
             <div className="flex items-center justify-between mb-1.5">
               <label
                 htmlFor="password"
-                className="text-xs font-bold text-gray-600 uppercase tracking-wider"
+                className="text-xs font-bold text-gray-600 dark:text-slate-300 uppercase tracking-wider"
               >
                 Password
               </label>
@@ -134,13 +134,13 @@ export function LoginForm({
                 type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
-                className="w-full px-4 py-3 pr-11 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
+                className="w-full px-4 py-3 pr-11 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 hover:border-gray-300 dark:hover:border-slate-500"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -152,7 +152,7 @@ export function LoginForm({
         </form>
 
         {/* Terms note */}
-        <p className="text-center text-[11px] text-gray-300 mt-5 leading-relaxed">
+        <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-5 leading-relaxed">
           By signing in, you agree to our{' '}
           <Link href="/terms" className="hover:text-gray-500 underline transition">
             Terms of Service
@@ -166,7 +166,7 @@ export function LoginForm({
 
       {/* Register link */}
       <div className="mt-5 text-center space-y-1.5">
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           Don&apos;t have an account?{' '}
           <Link
             href="/register"
@@ -175,7 +175,7 @@ export function LoginForm({
             Create one free
           </Link>
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-500 dark:text-slate-400">
           Are you a school?{' '}
           <Link href="/schools" className="text-indigo-600 font-semibold hover:text-indigo-700 transition">
             School licensing →

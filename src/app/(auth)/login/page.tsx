@@ -119,13 +119,13 @@ export default function LoginPage({
       </div>
 
       {/* ── Right panel: login form ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-gray-50">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-gray-50 dark:bg-slate-900">
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2.5 mb-10">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-md shadow-emerald-200">
             <Sparkles size={20} className="text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-xl">ZimLearn<span className="text-emerald-500">AI</span></span>
+          <span className="font-bold text-gray-900 dark:text-white text-xl">ZimLearn<span className="text-emerald-500">AI</span></span>
         </div>
 
         <LoginForm error={searchParams.error} successMessage={successMessage} />

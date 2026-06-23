@@ -78,7 +78,7 @@ export default async function QuizIndexPage() {
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+        <div className="max-w-2xl mx-auto px-4 py-6 pb-28" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
           {subjects.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 text-center">
               <BookOpen size={40} className="mx-auto text-slate-300 mb-3" />

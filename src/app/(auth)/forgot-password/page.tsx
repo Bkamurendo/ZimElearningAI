@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
       <div className="w-full max-w-sm">
 
         {/* Logo */}
@@ -41,25 +41,25 @@ export default function ForgotPasswordPage() {
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-md shadow-emerald-200">
             <GraduationCap size={20} className="text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-xl">ZimLearn</span>
+          <span className="font-bold text-gray-900 dark:text-white text-xl">ZimLearn</span>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 p-8">
           {sent ? (
             /* ── Success state ── */
             <div className="text-center py-4">
               <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <CheckCircle size={32} className="text-emerald-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-              <p className="text-gray-400 text-sm leading-relaxed mb-2">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Check your email</h2>
+              <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-2">
                 We&apos;ve sent a password reset link to{' '}
                 <strong className="text-gray-600">{email}</strong>.
               </p>
-              <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
                 Click the link in the email to set a new password. It expires in 1 hour.
               </p>
-              <p className="text-xs text-gray-400 mb-6">
+              <p className="text-xs text-gray-500 dark:text-slate-400 mb-6">
                 Didn&apos;t receive it? Check your spam folder or{' '}
                 <button
                   onClick={() => setSent(false)}
@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 href="/login"
-                className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-600 transition"
+                className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition"
               >
                 <ArrowLeft size={15} />
                 Back to sign in
@@ -83,8 +83,8 @@ export default function ForgotPasswordPage() {
                 <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
                   <Mail size={28} className="text-emerald-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Reset password</h2>
-                <p className="text-gray-400 text-sm mt-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reset password</h2>
+                <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">
                   Enter your email and we&apos;ll send a secure reset link.
                 </p>
               </div>
@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
+                    className="block text-xs font-bold text-gray-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider"
                   >
                     Email address
                   </label>
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
                     autoFocus
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm placeholder:text-gray-300 hover:border-gray-300"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 hover:border-gray-300"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -129,7 +129,7 @@ export default function ForgotPasswordPage() {
               <div className="mt-6 text-center">
                 <Link
                   href="/login"
-                  className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-600 transition"
+                  className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition"
                 >
                   <ArrowLeft size={14} />
                   Back to sign in
