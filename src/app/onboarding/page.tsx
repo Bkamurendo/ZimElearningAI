@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
-import { isRedirectError } from 'next/dist/client/components/redirect'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { Button } from '@/components/ui/Button'
 import StudentOnboarding from './StudentOnboarding'
 import GeneralOnboarding from './GeneralOnboarding'
 
@@ -12,48 +13,52 @@ export default async function OnboardingPage() {
 
   if (authError || !user) redirect('/login')
 
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, full_name, onboarding_completed')
-      .eq('id', user.id)
-      .single()
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role, full_name, onboarding_completed')
+    .eq('id', user.id)
+    .single()
 
-    // Must be outside nested try/catch so redirect() propagates correctly
-    if (profile?.onboarding_completed) {
-      const role = profile.role?.toLowerCase() ?? 'student'
-      redirect(`/${role === 'school_admin' ? 'school-admin' : role}/dashboard`)
-    }
-
-    const role = profile?.role ?? 'student'
-
-    if (role === 'student') {
-      const { data: subjects } = await supabase
-        .from('subjects')
-        .select('*')
-        .order('name')
-
-      return (
-        <StudentOnboarding
-          fullName={profile?.full_name ?? ''}
-          subjects={subjects ?? []}
-        />
-      )
-    }
-
-    return <GeneralOnboarding role={role} fullName={profile?.full_name ?? ''} />
-  } catch (err) {
-    if (isRedirectError(err)) throw err  // let Next.js handle redirects
-    console.error('[Onboarding] Runtime error:', err)
+  if (profileError && profileError.code !== 'PGRST116') {
+    // PGRST116 means no rows found, which we might want to handle differently,
+    // but assuming standard error handling for now.
+    console.error('[Onboarding] Profile error:', profileError)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Setup error</h2>
-        <p className="text-slate-600 mb-6 text-center">We encountered a problem setting up your account. Please try refreshing.</p>
-        <a href="/login" className="mt-4 px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition">
-          Back to Login
-        </a>
+        <p className="text-slate-600 mb-6 text-center">We encountered a problem while fetching your profile. Please try refreshing.</p>
+        <Link href="/login">
+          <Button variant="premium">Back to Login</Button>
+        </Link>
       </div>
     )
   }
-}
 
+  if (profile?.onboarding_completed) {
+    const role = profile.role?.toLowerCase() ?? 'student'
+    redirect(`/${role === 'school_admin' ? 'school-admin' : role}/dashboard`)
+  }
+
+  const role = profile?.role ?? 'student'
+
+  if (role === 'student') {
+    // Fetch subjects for all levels so the client component can filter
+    const { data: subjects, error: subjectsError } = await supabase
+      .from('subjects')
+      .select('*')
+      .order('name')
+
+    if (subjectsError) {
+      console.error('[Onboarding] Subjects error:', subjectsError)
+    }
+
+    return (
+      <StudentOnboarding
+        fullName={profile?.full_name ?? ''}
+        subjects={subjects ?? []}
+      />
+    )
+  }
+
+  return <GeneralOnboarding role={role} fullName={profile?.full_name ?? ''} />
+}
