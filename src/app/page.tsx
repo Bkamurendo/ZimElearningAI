@@ -3,17 +3,21 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function Home() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, onboarding_completed')
-      .eq('id', user.id)
-      .single()
-    if (!profile?.onboarding_completed) redirect('/onboarding')
-    redirect(`/${profile.role}/dashboard`)
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, onboarding_completed')
+        .eq('id', user.id)
+        .single()
+      if (!profile?.onboarding_completed) redirect('/onboarding')
+      redirect(`/${profile.role}/dashboard`)
+    }
+  } catch {
+    // Supabase unavailable — show landing page unauthenticated
   }
 
   return (
