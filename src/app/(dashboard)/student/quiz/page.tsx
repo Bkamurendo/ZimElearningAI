@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { HelpCircle, ChevronRight, BookOpen } from 'lucide-react'
+import { HelpCircle, ChevronRight, BookOpen, History } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 const SUBJECT_GRADIENTS = [
@@ -66,11 +66,20 @@ export default async function QuizIndexPage() {
         {/* Header */}
         <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 px-4 pt-10 pb-8">
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <HelpCircle size={22} className="text-white" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <HelpCircle size={22} className="text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-white uppercase">AI Quiz</h1>
               </div>
-              <h1 className="text-2xl font-bold text-white uppercase">AI Quiz</h1>
+              <Link
+                href="/student/quiz/history"
+                className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 transition text-white text-xs font-semibold px-3 py-2 rounded-xl"
+              >
+                <History size={14} />
+                History
+              </Link>
             </div>
             <p className="text-blue-100 text-sm">
               Choose a subject to generate ZIMSEC-style practice questions
