@@ -415,7 +415,7 @@ export default function StudentOnboarding({ fullName, subjects }: Props) {
                 )}
 
                 <a
-                  href="/student/dashboard"
+                  href="/student/welcome"
                   className="w-full py-3 text-gray-400 hover:text-gray-600 font-medium text-sm text-center block transition"
                 >
                   Continue with free trial →

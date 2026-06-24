@@ -211,7 +211,7 @@ export default function AITeacherPage() {
   const [studentProfile, setStudentProfile] = useState<any>(null)
   const [_isPrimary, setIsPrimary] = useState(false)
   const [showLanguageModal, setShowLanguageModal] = useState(false)
-
+  const [showMobileHistory, setShowMobileHistory] = useState(false)
 
   // Upgrade modal (shown when quota exceeded)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -240,6 +240,25 @@ export default function AITeacherPage() {
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Restore last session preferences from localStorage
+  useEffect(() => {
+    try {
+      const lastSubject = localStorage.getItem('mafundi_last_subject') || ''
+      const lastMode = (localStorage.getItem('mafundi_last_mode') as Mode) || 'normal'
+      if (lastSubject) setSelectedSubject(lastSubject)
+      if (lastMode && MODES[lastMode]) setMode(lastMode)
+    } catch { /* localStorage unavailable */ }
+  }, [])
+
+  // Persist subject + mode selections
+  useEffect(() => {
+    try { localStorage.setItem('mafundi_last_subject', selectedSubject) } catch { /* ignore */ }
+  }, [selectedSubject])
+
+  useEffect(() => {
+    try { localStorage.setItem('mafundi_last_mode', mode) } catch { /* ignore */ }
+  }, [mode])
 
   useEffect(() => {
     Promise.all([
@@ -583,6 +602,62 @@ export default function AITeacherPage() {
   return (
     <div className="flex h-[calc(100vh-112px)] lg:h-screen overflow-hidden bg-gray-50">
 
+      {/* ── Mobile Conversation History Drawer ── */}
+      {showMobileHistory && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileHistory(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl max-h-[75vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <p className="font-bold text-gray-900 text-sm">Conversations</p>
+              <button onClick={() => setShowMobileHistory(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
+                <X size={16} className="text-gray-500" />
+              </button>
+            </div>
+            {/* Subject + mode selectors on mobile */}
+            <div className="px-4 py-3 border-b border-gray-100 space-y-2">
+              <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none bg-white text-gray-700">
+                <option value="">All Subjects</option>
+                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              <div className="flex gap-1.5 flex-wrap">
+                {(Object.entries(MODES) as [Mode, typeof MODES[Mode]][]).map(([key, cfg]) => {
+                  const Icon = cfg.icon
+                  return (
+                    <button key={key} onClick={() => { setMode(key); setShowMobileHistory(false) }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                        mode === key ? `${cfg.color} text-white` : 'bg-gray-100 text-gray-600'
+                      }`}>
+                      <Icon size={12} />{cfg.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-2">
+              <button onClick={() => { newConversation(); setShowMobileHistory(false) }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 mb-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition">
+                <Plus size={14} /> New Conversation
+              </button>
+              {conversations.length === 0
+                ? <p className="text-xs text-gray-400 text-center py-4">No conversations yet</p>
+                : conversations.map(conv => (
+                  <button key={conv.id} onClick={() => { loadConversation(conv.id); setShowMobileHistory(false) }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition mb-1 ${
+                      activeConvId === conv.id ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                    }`}>
+                    <div className="flex items-start gap-2">
+                      <MessageCircle size={13} className="mt-0.5 flex-shrink-0 opacity-50" />
+                      <span className="truncate">{conv.title}</span>
+                    </div>
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Language Selection Modal (Proactive) ── */}
       {showLanguageModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -716,12 +791,18 @@ export default function AITeacherPage() {
         {/* Header */}
         <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+            {/* Mobile history button */}
+            <button onClick={() => setShowMobileHistory(true)}
+              className="lg:hidden w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition flex-shrink-0"
+              title="Conversation history">
+              <MessageCircle size={15} className="text-gray-600" />
+            </button>
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl items-center justify-center shadow-sm flex-shrink-0 hidden lg:flex">
               <Bot size={16} className="text-white" />
             </div>
             <div>
               <p className="font-bold text-gray-900 text-sm">MaFundi — AI ZIMSEC Teacher</p>
-              <p className="text-xs text-teal-600">Expert in all ZIMSEC subjects · Primary, O-Level &amp; A-Level</p>
+              <p className="text-xs text-teal-600 hidden sm:block">Expert in all ZIMSEC subjects · Primary, O-Level &amp; A-Level</p>
             </div>
           </div>
           {/* Language Toggle */}
