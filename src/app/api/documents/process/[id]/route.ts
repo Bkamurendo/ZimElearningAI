@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 
 export const maxDuration = 120
 
@@ -266,6 +267,22 @@ Respond with JSON only:
         processed_at: new Date().toISOString(),
       })
       .eq('id', docId)
+
+    // Auto-ingest into knowledge_vectors whenever a document is published
+    if (finalStatus === 'published' && extractionData.extracted_text) {
+      try {
+        await KnowledgeEngine.ingestResource(
+          docId,
+          'document',
+          doc.title,
+          extractionData.extracted_text,
+          { zimsec_level: doc.zimsec_level }
+        )
+      } catch (ingestErr) {
+        // Non-fatal — document is saved, ingest can be retried via admin panel
+        console.error('[process] Knowledge ingest failed (non-fatal):', ingestErr)
+      }
+    }
 
     return NextResponse.json({
       success: true,
