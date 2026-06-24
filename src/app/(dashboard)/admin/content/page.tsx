@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { FileText, Upload, Trash2, Edit, Eye, ArrowLeft, Search, Filter, Download, CheckSquare, Square, MoreVertical, AlertTriangle } from 'lucide-react'
+import { FileText, Upload, Trash2, Edit, Eye, ArrowLeft, Search, Filter, Download, CheckSquare, Square, MoreVertical, AlertTriangle, Sparkles } from 'lucide-react'
 
 export const metadata = { title: 'Content Management — Admin' }
 
@@ -158,6 +158,10 @@ export default async function AdminContentPage() {
                   className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
+              <Link href="/admin/content/generate" className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
+                <Sparkles size={16} />
+                AI Generate
+              </Link>
               <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition">
                 <Upload size={16} />
                 Upload Content
