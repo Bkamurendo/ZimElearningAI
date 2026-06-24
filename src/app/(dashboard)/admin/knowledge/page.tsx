@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Brain, ChevronLeft, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, Sparkles, BookOpen, Cpu } from 'lucide-react'
+import { Brain, ChevronLeft, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, Sparkles, BookOpen, Cpu, Zap, Database } from 'lucide-react'
 
 interface DocStatus {
   id: string
@@ -10,6 +10,7 @@ interface DocStatus {
   status: string
   hasText: boolean
   embedded: boolean
+  inKnowledgeBase: boolean
 }
 
 interface PipelineStatus {
@@ -17,6 +18,7 @@ interface PipelineStatus {
   unprocessed: number
   processed: number
   embedded: number
+  inKnowledgeBase: number
   docs: DocStatus[]
 }
 
@@ -27,7 +29,17 @@ interface EmbedResult {
   status: string
 }
 
+interface SyncResult {
+  lessonsProcessed: number
+  docsProcessed: number
+  docsExtracted: number
+  migrated: number
+  skipped: number
+  errors: string[]
+}
+
 type Stage = 'idle' | 'processing' | 'embedding' | 'done'
+type SyncStage = 'idle' | 'running' | 'done'
 
 export default function KnowledgePage() {
   const [status, setStatus] = useState<PipelineStatus | null>(null)
@@ -37,6 +49,10 @@ export default function KnowledgePage() {
   const [results, setResults] = useState<EmbedResult[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reprocess, setReprocess] = useState(false)
+
+  const [syncStage, setSyncStage] = useState<SyncStage>('idle')
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
 
   const fetchStatus = useCallback(async () => {
     setLoading(true)
@@ -59,7 +75,7 @@ export default function KnowledgePage() {
     setError(null)
 
     try {
-      // Step 1: Find all unprocessed documents and process them with Claude
+      // Step 1: Find and extract text from unprocessed documents with Claude
       const enrichRes = await fetch('/api/admin/enrich', { method: 'GET' })
       const enrichData = await enrichRes.json()
       const pendingIds = (enrichData.documents ?? []).map((d: { id: string }) => d.id)
@@ -72,8 +88,6 @@ export default function KnowledgePage() {
           body: JSON.stringify({ ids: pendingIds }),
         })
         if (!processRes.ok) throw new Error('Claude text extraction failed')
-
-        // Wait for processing to complete (poll every 3s, max 2 minutes)
         setStageMessage('Step 1/2 — Waiting for Claude to finish reading all documents…')
         await waitForProcessing(30)
       } else {
@@ -81,9 +95,9 @@ export default function KnowledgePage() {
         await new Promise(r => setTimeout(r, 800))
       }
 
-      // Step 2: Generate embeddings for all processed docs
+      // Step 2: Generate embeddings (now dual-writes to document_chunks AND knowledge_vectors)
       setStage('embedding')
-      setStageMessage('Step 2/2 — Generating semantic embeddings with OpenAI…')
+      setStageMessage('Step 2/2 — Generating semantic embeddings and syncing to MaFundi knowledge base…')
 
       const embedRes = await fetch('/api/admin/generate-embeddings', {
         method: 'POST',
@@ -104,6 +118,28 @@ export default function KnowledgePage() {
     }
   }
 
+  async function syncMaFundi(type: 'migrate' | 'documents') {
+    setSyncStage('running')
+    setSyncResult(null)
+    setSyncError(null)
+
+    try {
+      const res = await fetch('/api/admin/knowledge/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, limit: 50 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Sync failed')
+      setSyncResult(data.summary)
+      await fetchStatus()
+      setSyncStage('done')
+    } catch (e) {
+      setSyncError(e instanceof Error ? e.message : 'Sync failed')
+      setSyncStage('idle')
+    }
+  }
+
   async function waitForProcessing(maxAttempts: number) {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(r => setTimeout(r, 4000))
@@ -117,7 +153,12 @@ export default function KnowledgePage() {
     ? Math.round((status.embedded / Math.max(status.total, 1)) * 100)
     : 0
 
+  const kbPct = status
+    ? Math.round(((status.inKnowledgeBase ?? 0) / Math.max(status.total, 1)) * 100)
+    : 0
+
   const isRunning = stage === 'processing' || stage === 'embedding'
+  const isSyncing = syncStage === 'running'
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -157,7 +198,7 @@ export default function KnowledgePage() {
                 <BookOpen size={14} className="text-violet-500" />
                 <span className="text-xs font-semibold text-violet-800">Step 1 — Read</span>
               </div>
-              <p className="text-xs text-gray-600">Claude reads every PDF and extracts all the text and key topics</p>
+              <p className="text-xs text-gray-600">Claude reads every PDF (including scanned papers via Vision OCR) and extracts all text and key topics</p>
             </div>
             <div className="bg-white rounded-xl p-3 border border-violet-100">
               <div className="flex items-center gap-2 mb-1">
@@ -171,7 +212,7 @@ export default function KnowledgePage() {
                 <Brain size={14} className="text-violet-500" />
                 <span className="text-xs font-semibold text-violet-800">Step 3 — Answer</span>
               </div>
-              <p className="text-xs text-gray-600">When a student asks a question, Fundi finds the most relevant passages and answers from them</p>
+              <p className="text-xs text-gray-600">When a student asks MaFundi or Solver a question, the most relevant passages are found and used to answer</p>
             </div>
           </div>
         </div>
@@ -181,10 +222,10 @@ export default function KnowledgePage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <h2 className="font-semibold text-gray-900">Training Status</h2>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{status.total}</p>
-                <p className="text-xs text-gray-500 mt-1">Total documents</p>
+                <p className="text-xs text-gray-500 mt-1">Total docs</p>
               </div>
               <div className="bg-amber-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-amber-700">{status.unprocessed}</p>
@@ -196,19 +237,38 @@ export default function KnowledgePage() {
               </div>
               <div className="bg-emerald-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-emerald-700">{status.embedded}</p>
-                <p className="text-xs text-gray-500 mt-1">Fully trained</p>
+                <p className="text-xs text-gray-500 mt-1">Study Panel ready</p>
+              </div>
+              <div className="bg-violet-50 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-violet-700">{status.inKnowledgeBase ?? 0}</p>
+                <p className="text-xs text-gray-500 mt-1">MaFundi ready</p>
               </div>
             </div>
 
+            {/* Study Panel progress */}
             <div>
               <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Training coverage</span>
-                <span>{status.embedded} of {status.total} documents ({progressPct}%)</span>
+                <span>Study Panel coverage (document_chunks)</span>
+                <span>{status.embedded}/{status.total} ({progressPct}%)</span>
               </div>
-              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-violet-500 to-violet-400 rounded-full transition-all duration-700"
+                  className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-700"
                   style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* MaFundi/Solver progress */}
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>MaFundi &amp; Solver coverage (knowledge_vectors)</span>
+                <span>{status.inKnowledgeBase ?? 0}/{status.total} ({kbPct}%)</span>
+              </div>
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-violet-400 to-violet-500 rounded-full transition-all duration-700"
+                  style={{ width: `${kbPct}%` }}
                 />
               </div>
             </div>
@@ -216,15 +276,18 @@ export default function KnowledgePage() {
             {status.embedded === status.total && status.total > 0 && (
               <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 rounded-xl p-3">
                 <CheckCircle size={16} />
-                Fundi AI has learned all {status.total} documents. Students are getting the best possible answers.
+                All {status.total} documents are embedded and ready for the Study Panel.
               </div>
             )}
           </div>
         )}
 
-        {/* Main action */}
+        {/* Main train action */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">Train Fundi AI</h2>
+          <div>
+            <h2 className="font-semibold text-gray-900">Train Fundi AI</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Reads unprocessed PDFs with Claude (including scanned papers via Vision OCR), then embeds and syncs to both the Study Panel and MaFundi knowledge base.</p>
+          </div>
 
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -238,14 +301,13 @@ export default function KnowledgePage() {
             </span>
           </label>
 
-          {/* Running state */}
           {isRunning && (
             <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 flex items-start gap-3">
               <RefreshCw size={16} className="text-violet-600 animate-spin mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-semibold text-violet-800 text-sm">Training in progress…</p>
                 <p className="text-violet-700 text-xs mt-0.5">{stageMessage}</p>
-                <p className="text-violet-500 text-xs mt-1">This can take several minutes for large document sets. Do not close this page.</p>
+                <p className="text-violet-500 text-xs mt-1">This can take several minutes. Do not close this page.</p>
               </div>
             </div>
           )}
@@ -259,7 +321,7 @@ export default function KnowledgePage() {
 
           <button
             onClick={teachFundiEverything}
-            disabled={isRunning || (status?.total === 0)}
+            disabled={isRunning || isSyncing || (status?.total === 0)}
             className="w-full flex items-center justify-center gap-3 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-4 px-6 rounded-xl transition text-sm"
           >
             {isRunning ? (
@@ -268,11 +330,62 @@ export default function KnowledgePage() {
               <><Brain size={16} /> Teach Fundi AI Everything</>
             )}
           </button>
+        </div>
 
-          <p className="text-xs text-gray-400 text-center">
-            Processes up to 20 documents per run with Claude, then embeds up to 50 at a time.
-            Run again if you have more documents. Cost: ~$0.0001 per document for embeddings.
-          </p>
+        {/* MaFundi sync section */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Database size={16} className="text-violet-500" />
+              Sync MaFundi &amp; Solver Knowledge Base
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Use these if MaFundi or Solver aren&apos;t using your uploaded documents. The first button migrates documents already embedded in the Study Panel. The second re-ingests all published documents (including OCR for scanned PDFs).
+            </p>
+          </div>
+
+          {isSyncing && (
+            <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 flex items-start gap-3">
+              <RefreshCw size={16} className="text-violet-600 animate-spin mt-0.5 flex-shrink-0" />
+              <p className="text-violet-700 text-sm">Syncing to knowledge base… this may take a few minutes.</p>
+            </div>
+          )}
+
+          {syncStage === 'done' && syncResult && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-1">
+              <p className="text-emerald-800 text-sm font-semibold flex items-center gap-2"><CheckCircle size={14} /> Sync complete</p>
+              <p className="text-emerald-700 text-xs">
+                Migrated: {syncResult.migrated} · Docs ingested: {syncResult.docsProcessed} · OCR extracted: {syncResult.docsExtracted} · Skipped (already done): {syncResult.skipped}
+                {syncResult.errors.length > 0 && ` · Errors: ${syncResult.errors.length}`}
+              </p>
+            </div>
+          )}
+
+          {syncError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm">
+              {syncError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => syncMaFundi('migrate')}
+              disabled={isRunning || isSyncing}
+              className="flex items-center justify-center gap-2 bg-violet-50 border border-violet-200 hover:bg-violet-100 disabled:opacity-40 text-violet-800 font-semibold py-3 px-4 rounded-xl transition text-sm"
+            >
+              {isSyncing ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+              Migrate existing docs to MaFundi
+            </button>
+            <button
+              onClick={() => syncMaFundi('documents')}
+              disabled={isRunning || isSyncing}
+              className="flex items-center justify-center gap-2 bg-violet-50 border border-violet-200 hover:bg-violet-100 disabled:opacity-40 text-violet-800 font-semibold py-3 px-4 rounded-xl transition text-sm"
+            >
+              {isSyncing ? <RefreshCw size={14} className="animate-spin" /> : <Database size={14} />}
+              Re-ingest all published docs
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">Processes up to 50 documents per run. Run again if you have more.</p>
         </div>
 
         {/* Error */}
@@ -322,20 +435,24 @@ export default function KnowledgePage() {
             <div className="space-y-1 max-h-96 overflow-y-auto">
               {status.docs.map(d => (
                 <div key={d.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  {d.embedded
-                    ? <CheckCircle size={13} className="text-emerald-500 flex-shrink-0" />
+                  {d.inKnowledgeBase
+                    ? <CheckCircle size={13} className="text-violet-500 flex-shrink-0" />
+                    : d.embedded
+                    ? <Clock size={13} className="text-emerald-400 flex-shrink-0" />
                     : d.hasText
                     ? <Clock size={13} className="text-blue-400 flex-shrink-0" />
                     : <Clock size={13} className="text-amber-400 flex-shrink-0" />}
                   <span className="flex-1 text-sm text-gray-700 truncate">{d.title}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                    d.embedded
+                    d.inKnowledgeBase
+                      ? 'bg-violet-50 text-violet-700'
+                      : d.embedded
                       ? 'bg-emerald-50 text-emerald-700'
                       : d.hasText
                       ? 'bg-blue-50 text-blue-700'
                       : 'bg-amber-50 text-amber-700'
                   }`}>
-                    {d.embedded ? 'trained' : d.hasText ? 'read, not embedded' : 'not yet read'}
+                    {d.inKnowledgeBase ? 'MaFundi ready' : d.embedded ? 'Study Panel only' : d.hasText ? 'read, not embedded' : 'not yet read'}
                   </span>
                 </div>
               ))}
