@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { embedBatch } from '@/lib/openai'
 import { chunkText } from '@/lib/chunking'
+import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 
 export const maxDuration = 300
 
@@ -20,12 +21,18 @@ export async function GET() {
     .select('id, title, moderation_status, extracted_text')
     .order('created_at', { ascending: false })
 
-  // Which document IDs have chunks
+  // Which document IDs have chunks (document_chunks = Study Panel store)
   const { data: chunked } = await supabase
     .from('document_chunks')
     .select('document_id')
 
+  // Which document IDs are in knowledge_vectors (MaFundi/Solver store)
+  const { data: vectored } = await supabase
+    .from('knowledge_vectors')
+    .select('source_id')
+
   const embeddedIds = new Set((chunked ?? []).map((c: { document_id: string }) => c.document_id))
+  const vectoredIds = new Set((vectored ?? []).map((v: { source_id: string }) => v.source_id))
 
   const docs = (allDocs ?? []).map(d => ({
     id: d.id,
@@ -33,6 +40,7 @@ export async function GET() {
     status: d.moderation_status,
     hasText: !!d.extracted_text,
     embedded: embeddedIds.has(d.id),
+    inKnowledgeBase: vectoredIds.has(d.id),
   }))
 
   return NextResponse.json({
@@ -40,6 +48,7 @@ export async function GET() {
     unprocessed: docs.filter(d => !d.hasText).length,
     processed: docs.filter(d => d.hasText && !d.embedded).length,
     embedded: docs.filter(d => d.embedded).length,
+    inKnowledgeBase: docs.filter(d => d.inKnowledgeBase).length,
     docs,
   })
 }
@@ -128,6 +137,19 @@ export async function POST(req: NextRequest) {
         const { error: insertError } = await supabase.from('document_chunks').insert(rows)
         if (insertError) throw new Error(insertError.message)
         totalInserted += rows.length
+      }
+
+      // Dual-write to knowledge_vectors so MaFundi/Solver can search this doc
+      try {
+        await KnowledgeEngine.ingestResource(
+          doc.id,
+          'document',
+          doc.title,
+          fullText,
+          {}
+        )
+      } catch (kvErr) {
+        console.warn(`[generate-embeddings] knowledge_vectors ingest failed for "${doc.title}":`, kvErr)
       }
 
       results.push({ id: doc.id, title: doc.title, chunks: totalInserted, status: 'ok' })
