@@ -8,11 +8,32 @@ import { KnowledgeEngine } from '@/lib/ai/knowledge-engine'
 const client = new Anthropic()
 
 // Core system prompt (simplified for WhatsApp)
-const WHATSAPP_PROMPT = `You are MaFundi, the official AI Teacher for ZimLearn. 
+const WHATSAPP_PROMPT = `You are MaFundi, the official AI Teacher for ZimLearn.
 You are communicating via WhatsApp. Keep your responses concise (under 800 characters) but highly informative.
-Use ZIMSEC syllabus alignment. Be encouraging. 
+Use ZIMSEC syllabus alignment. Be encouraging.
 If the student asks for a past paper, tell them to log in to zim-elearningai.co.zw for full access.
 Always prefer local Zimbabwean examples.`
+
+// Free plan daily limit for WhatsApp
+const FREE_WHATSAPP_DAILY_LIMIT = 10
+
+/**
+ * GET — webhook verification challenge for Twilio / Meta / Africa's Talking.
+ * Providers send a GET with a hub.challenge or just check for a 200.
+ */
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const challenge = searchParams.get('hub.challenge')
+  const verify_token = searchParams.get('hub.verify_token')
+
+  // Meta WhatsApp Business API verification
+  if (challenge && verify_token === (process.env.WHATSAPP_VERIFY_TOKEN || 'zimlearn_verify')) {
+    return new NextResponse(challenge, { status: 200 })
+  }
+
+  // Generic 200 OK for Twilio / Africa's Talking health checks
+  return NextResponse.json({ ok: true, service: 'MaFundi WhatsApp Webhook' })
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -101,8 +122,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Quota check for free plan students
     if (profile.plan === 'free') {
-      // Free limits logic placeholder
+      const { data: quota } = await supabase
+        .from('profiles')
+        .select('ai_requests_today, ai_quota_reset_at')
+        .eq('id', profile.id)
+        .single()
+
+      const resetAt = quota?.ai_quota_reset_at ? new Date(quota.ai_quota_reset_at) : new Date(0)
+      const now = new Date()
+      const needsReset = now.getUTCDate() !== resetAt.getUTCDate() || now.getUTCMonth() !== resetAt.getUTCMonth()
+
+      if (needsReset) {
+        await supabase.from('profiles').update({ ai_requests_today: 0, ai_quota_reset_at: now.toISOString() }).eq('id', profile.id)
+      } else if ((quota?.ai_requests_today ?? 0) >= FREE_WHATSAPP_DAILY_LIMIT) {
+        await sendSMS(from, `You've reached your free daily limit of ${FREE_WHATSAPP_DAILY_LIMIT} WhatsApp questions. Upgrade at zim-elearningai.co.zw for unlimited access!`)
+        return NextResponse.json({ ok: true })
+      }
+
+      await supabase.from('profiles').update({ ai_requests_today: (quota?.ai_requests_today ?? 0) + 1 }).eq('id', profile.id)
     }
 
     // 3. Retrieve ZIMSEC Knowledge Context (RAG)
@@ -122,7 +161,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Generate AI Response using mapped history (Vision supported)
     const response = await client.messages.create({
-      model: numMedia > 0 ? 'claude-sonnet-4-5' : 'claude-3-5-sonnet-20240620',
+      model: numMedia > 0 ? 'claude-sonnet-4-5' : 'claude-haiku-4-5',
       max_tokens: 500,
       system: WHATSAPP_PROMPT + ragContext,
       messages: mappedMessages,
