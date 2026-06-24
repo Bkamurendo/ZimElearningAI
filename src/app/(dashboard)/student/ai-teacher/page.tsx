@@ -27,6 +27,7 @@ type Message = {
   savedToNotes?: boolean
   docType?: string
   suggestedActions?: string[]
+  sources?: { title: string; type: string }[]
 }
 type Conversation = { id: string; title: string; updated_at: string }
 type Subject = { id: string; name: string }
@@ -468,6 +469,7 @@ export default function AITeacherPage() {
           roadmapData,
           docType: data.doc_type,
           suggestedActions: data.suggested_actions,
+          sources: data.sources,
         }])
 
         if (!activeConvId && data.conversation_id) {
@@ -851,6 +853,17 @@ export default function AITeacherPage() {
                     {msg.quizData && <div className="mt-2"><InlineQuiz questions={msg.quizData} /></div>}
                     {/* Roadmap widget */}
                     {msg.roadmapData && <div className="mt-2"><StudyRoadmap data={msg.roadmapData} /></div>}
+                    {/* Knowledge base sources */}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-xs text-gray-400 font-medium self-center">📚 Sources:</span>
+                        {msg.sources.map((src, si) => (
+                          <span key={si} className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800 px-2 py-0.5 rounded-full font-medium truncate max-w-[200px]" title={src.title}>
+                            {src.title}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Assistant action bar */}
                     {msg.role === 'assistant' && (

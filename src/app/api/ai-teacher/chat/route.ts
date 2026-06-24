@@ -730,6 +730,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Retrieve platform resources (search internal knowledge base)
     let resourcesContext = "No specific platform resources found for this exact topic. Use your general ZIMSEC Heritage-Based Curriculum knowledge."
+    let sourcedDocuments: { title: string; type: string }[] = []
     try {
       const internalKnowledge = await retrievePlatformKnowledge(
         message || (docContext ? 'analyse document' : 'zimbabwe heritage based curriculum'),
@@ -738,6 +739,9 @@ export async function POST(req: NextRequest) {
       )
       if (internalKnowledge.length > 0) {
         resourcesContext = internalKnowledge.map(k => `[Source: ${k.source_type} - ${k.title}]\n${k.content}`).join('\n\n')
+        sourcedDocuments = internalKnowledge
+          .filter(k => k.source_type === 'document')
+          .map(k => ({ title: k.title, type: 'document' }))
       }
     } catch (err) {
       console.error('Retriever error:', err)
@@ -926,13 +930,14 @@ Language Preference: ${preferred_language?.toUpperCase() ?? 'ENGLISH'}
       .update({ updated_at: new Date().toISOString() })
       .eq('id', convId)
 
-    return NextResponse.json({ 
-      reply, 
-      quiz, 
-      roadmap, 
-      doc_type: docType, 
-      suggested_actions: suggestedActions, 
-      conversation_id: convId 
+    return NextResponse.json({
+      reply,
+      quiz,
+      roadmap,
+      doc_type: docType,
+      suggested_actions: suggestedActions,
+      conversation_id: convId,
+      sources: sourcedDocuments.length > 0 ? sourcedDocuments : undefined,
     })
   } catch (err) {
     console.error('AI Teacher error:', err)

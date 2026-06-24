@@ -18,28 +18,62 @@ export async function retrievePlatformKnowledge(
   level?: string
 ): Promise<SearchResult[]> {
   try {
-    // Perform semantic search via the new Knowledge Engine
+    const supabase = createClient()
+
+    // Primary: semantic vector search — threshold lowered to 0.30 to match
+    // the Solver and catch relevant docs that 0.45 was silently excluding
     const vectorResults = await KnowledgeEngine.search(query, {
-        grade,
-        level,
-        limit: 4, // Slimmed down for Free Tier reliability
-        threshold: 0.45 // Higher quality threshold = less database work
+      grade,
+      level,
+      limit: 6,
+      threshold: 0.30,
     })
 
-    if (vectorResults && vectorResults.length > 0) {
+    if (vectorResults && vectorResults.length >= 2) {
       return vectorResults.map(res => ({
         title: res.metadata?.title || 'Knowledge Resource',
         content: res.content,
         source_type: res.source_type as any,
-        relevance: res.similarity
+        relevance: res.similarity,
       }))
     }
 
-    // Fallback to legacy text search if vector search returns nothing
-    const supabase = createClient()
-    const results: SearchResult[] = []
+    // Secondary: direct document search — catches uploaded past papers and
+    // textbooks that haven't yet been ingested into knowledge_vectors
+    const results: SearchResult[] = vectorResults?.map(res => ({
+      title: res.metadata?.title || 'Knowledge Resource',
+      content: res.content,
+      source_type: res.source_type as any,
+      relevance: res.similarity,
+    })) ?? []
 
-    // Legacy Search Lessons
+    const { data: docs } = await supabase
+      .from('uploaded_documents')
+      .select('title, ai_summary, topics, document_type, year, zimsec_level')
+      .eq('moderation_status', 'published')
+      .eq('zimsec_level', level || 'olevel')
+      .not('ai_summary', 'is', null)
+      .limit(4)
+
+    if (docs && docs.length > 0) {
+      docs.forEach((doc: any) => {
+        const typeLabel = doc.document_type === 'past_paper'
+          ? `Past Paper ${doc.year ?? ''}`.trim()
+          : doc.document_type?.replace(/_/g, ' ') ?? 'Document'
+        results.push({
+          title: `${doc.title} (${typeLabel})`,
+          content: doc.ai_summary || '',
+          source_type: 'document',
+          relevance: 0.6,
+        })
+      })
+    }
+
+    if (results.length > 0) {
+      return results.sort((a, b) => b.relevance - a.relevance).slice(0, 6)
+    }
+
+    // Tertiary: legacy full-text search on lessons
     const { data: lessons } = await supabase
       .from('lessons')
       .select('title, content, courses(title, subject_id, subjects(name, zimsec_level))')
@@ -53,7 +87,7 @@ export async function retrievePlatformKnowledge(
             title: `${l.courses?.subjects?.name}: ${l.title}`,
             content: l.content.slice(0, 1000),
             source_type: 'lesson',
-            relevance: 0.8
+            relevance: 0.5,
           })
         }
       })
@@ -65,3 +99,4 @@ export async function retrievePlatformKnowledge(
     return []
   }
 }
+

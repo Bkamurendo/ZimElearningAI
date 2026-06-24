@@ -13,6 +13,8 @@ import {
   ClipboardList,
   PlayCircle,
   CalendarCheck,
+  FileText,
+  Library,
   Sparkles,
   LayoutDashboard,
   GraduationCap,
@@ -195,6 +197,32 @@ export default function DashboardClient({
                 })}
             </div>
 
+            {/* Study Materials quick access */}
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/student/resources?filter=past_paper">
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-amber-100 dark:border-amber-900/30 hover:border-amber-300 rounded-2xl p-4 transition group shadow-sm">
+                  <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileText size={18} className="text-amber-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-800 dark:text-white truncate">Past Papers</p>
+                    <p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Practice now</p>
+                  </div>
+                </div>
+              </Link>
+              <Link href="/student/resources">
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-indigo-100 dark:border-indigo-900/30 hover:border-indigo-300 rounded-2xl p-4 transition group shadow-sm">
+                  <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Library size={18} className="text-indigo-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-800 dark:text-white truncate">Study Materials</p>
+                    <p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Books & notes</p>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
             {/* Daily Challenge Promo */}
             <Link href="/student/challenges">
               <Card className="bg-gradient-to-r from-amber-500 to-orange-600 border-none relative overflow-hidden group">
@@ -307,6 +335,36 @@ export default function DashboardClient({
                           </div>
                        </div>
                        <ChevronRight className="text-slate-300" />
+                    </Card>
+                  </Link>
+
+                  <Link href="/student/resources?filter=past_paper">
+                    <Card hover className="p-5 group flex items-center justify-between border-t-4 border-t-amber-400">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                             <FileText size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm">Past Papers</p>
+                            <p className="text-slate-500 text-xs uppercase font-black">ZIMSEC Real Papers</p>
+                          </div>
+                       </div>
+                       <ChevronRight className="text-slate-300 group-hover:text-amber-500 transition-colors" />
+                    </Card>
+                  </Link>
+
+                  <Link href="/student/resources">
+                    <Card hover className="p-5 group flex items-center justify-between border-t-4 border-t-indigo-400">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                             <Library size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm">Resource Library</p>
+                            <p className="text-slate-500 text-xs uppercase font-black">Books · Notes · Syllabi</p>
+                          </div>
+                       </div>
+                       <ChevronRight className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </Card>
                   </Link>
                </div>
