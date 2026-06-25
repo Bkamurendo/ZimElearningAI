@@ -79,11 +79,12 @@ export default async function StudentDashboard() {
       { count: lessonsCompleted },
       { count: quizzesCompleted },
       { count: topicsMastered },
-      { data: _streak },
+      { data: streakData },
       { data: notifications },
       { data: recentBadges },
       { data: studyPlan },
-      _learningSessions
+      learningSessions,
+      { count: activeMissionsCount },
     ] = await Promise.all([
       supabase.from('lesson_progress').select('id', { count: 'exact', head: true }).eq('student_id', studentProfile?.id ?? ''),
       supabase.from('quiz_attempts').select('id', { count: 'exact', head: true }).eq('student_id', studentProfile?.id ?? ''),
@@ -93,9 +94,10 @@ export default async function StudentDashboard() {
       supabase.from('student_badges').select('badge_name, earned_at').eq('student_id', studentProfile?.id ?? '').order('earned_at', { ascending: false }).limit(3),
       supabase.from('study_plans').select('exam_date').eq('student_id', studentProfile?.id ?? '').single(),
       supabase.from('learning_sessions').select('duration_minutes').eq('user_id', user.id).gte('created_at', new Date().toISOString().split('T')[0]),
+      supabase.from('student_remediation_missions').select('id', { count: 'exact', head: true }).eq('student_id', studentProfile?.id ?? '').eq('status', 'active'),
     ])
 
-    const learningMinutesToday = (_learningSessions?.data ?? []).reduce((acc: number, s: any) => acc + (s.duration_minutes || 0), 0)
+    const learningMinutesToday = (learningSessions?.data ?? []).reduce((acc: number, s: any) => acc + (s.duration_minutes || 0), 0)
 
     // Pending assignments count
     let pendingAssignmentsCount = 0
@@ -209,7 +211,7 @@ export default async function StudentDashboard() {
     logActivity(user.id, 'dashboard_visit', 'Viewed student dashboard')
 
     return (
-      <DashboardClient 
+      <DashboardClient
         user={user}
         profile={mergedProfile || {}}
         studentProfile={studentProfile || {}}
@@ -226,6 +228,8 @@ export default async function StudentDashboard() {
         learningMinutesToday={learningMinutesToday}
         hasExamDates={hasExamDates}
         hasUsedMaFundi={hasUsedMaFundi}
+        streak={streakData || null}
+        activeMissionsCount={activeMissionsCount ?? 0}
       />
     )
   } catch (err: any) {

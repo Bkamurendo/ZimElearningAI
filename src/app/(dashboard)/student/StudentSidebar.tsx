@@ -20,11 +20,12 @@ import { AccessibilityControls, A11yProvider } from '@/components/AccessibilityC
 // ── Navigation ─────────────────────────────────────────────────────────────────
 
 const CORE_ITEMS = [
-  { href: '/student/dashboard',    label: 'Dashboard',      icon: LayoutDashboard, badge: null },
-  { href: '/student/subjects',     label: 'My Subjects',    icon: BookOpen,        badge: null },
-  { href: '/student/ai-teacher',   label: 'MaFundi AI',     icon: Bot,             badge: null },
-  { href: '/student/progress',     label: 'My Progress',    icon: TrendingUp,      badge: null },
-  { href: '/student/assignments',  label: 'Assignments',    icon: ClipboardList,   badge: null },
+  { href: '/student/dashboard',          label: 'Dashboard',         icon: LayoutDashboard, badge: null },
+  { href: '/student/subjects',           label: 'My Subjects',       icon: BookOpen,        badge: null },
+  { href: '/student/ai-teacher',         label: 'MaFundi AI',        icon: Bot,             badge: null },
+  { href: '/student/progress',           label: 'My Progress',       icon: TrendingUp,      badge: null },
+  { href: '/student/assignments',        label: 'Assignments',       icon: ClipboardList,   badge: null },
+  { href: '/student/recovery-missions',  label: 'Recovery Missions', icon: AlertTriangle,   badge: 'missions' as const },
 ]
 
 const STUDY_ITEMS = [
@@ -65,6 +66,7 @@ interface Props {
   trialEndsAt?: string | null
   subscriptionExpiresAt?: string | null
   hasChallenge?: boolean
+  activeMissionsCount?: number
 }
 
 const PLAN_LIMITS: Record<string, number> = { free: 3, starter: 10, pro: 40, elite: 120, ultimate: 9999 }
@@ -82,6 +84,7 @@ export default function StudentSidebar({
   trialEndsAt = null,
   subscriptionExpiresAt = null,
   hasChallenge = false,
+  activeMissionsCount = 0,
 }: Props) {
   const [open, setOpen]         = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -101,6 +104,7 @@ export default function StudentSidebar({
     notifications: unreadNotifications,
     messages: unreadMessages,
     challenge: hasChallenge ? 1 : 0,
+    missions: activeMissionsCount,
   }
 
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'S'

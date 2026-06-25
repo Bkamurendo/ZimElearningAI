@@ -21,6 +21,7 @@ import {
   ListTodo,
   Brain,
   Star,
+  AlertTriangle,
 } from 'lucide-react'
 
 // Icons mapped by stat label — avoids passing component functions across the server/client boundary
@@ -35,7 +36,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabContent } from '@/components/ui/Tabs'
-import { fireConfetti } from '@/lib/confetti'
 import LearningMinutesTracker from './LearningMinutesTracker'
 import AdaptivePath from './AdaptivePath'
 
@@ -67,6 +67,8 @@ interface DashboardClientProps {
   hasExamDates?: boolean
   hasUsedMaFundi?: boolean
   learningMinutesToday: number
+  streak?: { current_streak: number; total_xp: number } | null
+  activeMissionsCount?: number
 }
 
 export default function DashboardClient({
@@ -86,6 +88,8 @@ export default function DashboardClient({
   hasExamDates = false,
   hasUsedMaFundi = false,
   learningMinutesToday = 0,
+  streak = null,
+  activeMissionsCount = 0,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -134,7 +138,7 @@ export default function DashboardClient({
 
              {/* Streak Pill */}
              <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
-                <p className="text-base sm:text-xl font-black text-orange-500 leading-none">🔥 {studentProfile?.current_streak ?? profile?.current_streak ?? 0}</p>
+                <p className="text-base sm:text-xl font-black text-orange-500 leading-none">🔥 {streak?.current_streak ?? 0}</p>
                 <p className="text-xs uppercase font-black text-orange-500/60 tracking-widest mt-0.5">Day Streak</p>
              </div>
 
@@ -143,21 +147,11 @@ export default function DashboardClient({
                 <p className="text-xs uppercase font-black text-indigo-500/60 tracking-widest mt-0.5">Focus Time</p>
               </div>
 
-             <Button 
-                onClick={() => {
-                  try {
-                    fireConfetti()
-                  } catch (e) {
-                    console.error('Confetti failed', e)
-                  }
-                }} 
-                variant="premium" 
-                size="icon" 
-                className="rounded-full w-12 h-12 shrink-0 animate-bounce"
-                title="Celebrate your progress!"
-              >
-                🎉
-              </Button>
+             {/* XP Pill */}
+             <div className="bg-yellow-500/10 backdrop-blur-md border border-yellow-500/20 p-3 sm:p-4 rounded-2xl text-center flex-1 sm:flex-none sm:min-w-[100px] min-h-[72px] flex flex-col items-center justify-center">
+                <p className="text-base sm:text-xl font-black text-yellow-400 leading-none">⚡ {streak?.total_xp ?? 0}</p>
+                <p className="text-xs uppercase font-black text-yellow-500/60 tracking-widest mt-0.5">Total XP</p>
+             </div>
           </div>
         </div>
       </div>
@@ -168,6 +162,28 @@ export default function DashboardClient({
         hasExamDates={hasExamDates}
         hasUsedMaFundi={hasUsedMaFundi}
       />
+
+      {/* Recovery Missions Alert */}
+      {activeMissionsCount > 0 && (
+        <Link href="/student/recovery-missions">
+          <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 hover:bg-red-100 transition group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition">
+                <AlertTriangle size={20} className="text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-red-700">
+                  {activeMissionsCount} Recovery Mission{activeMissionsCount > 1 ? 's' : ''} Active
+                </p>
+                <p className="text-xs text-red-500 font-medium">
+                  You scored below 65% — MaFundi has a 3-step plan to help you recover.
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-red-400 group-hover:text-red-600 transition flex-shrink-0" />
+          </div>
+        </Link>
+      )}
 
       {/* Modern Tabbed Navigation */}
       <div className="sticky top-16 lg:top-4 z-40 flex justify-center">
