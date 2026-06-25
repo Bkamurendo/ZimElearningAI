@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect } from 'react'
 
 export default function Error({
   error,
@@ -9,16 +10,18 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    // Log digest for debugging without exposing to users
+    if (error.digest) console.error('[Error boundary]', error.digest)
+  }, [error])
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="text-6xl mb-4">😕</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
         <p className="text-gray-500 text-sm mb-6">
-          An error occurred while loading this page.
-          {error.digest && (
-            <span className="block mt-1 text-xs text-gray-400">Ref: {error.digest}</span>
-          )}
+          Something unexpected happened. Please try again — if the problem continues, check your connection or contact support.
         </p>
         <div className="flex items-center justify-center gap-3">
           <button

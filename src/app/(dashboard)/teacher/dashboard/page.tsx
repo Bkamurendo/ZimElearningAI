@@ -10,6 +10,7 @@ import {
   PenLine,
   Plus,
   Sparkles,
+  BarChart3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { isRedirectError } from 'next/dist/client/components/redirect'
@@ -208,6 +209,20 @@ export default async function TeacherDashboard() {
                   <p className="text-sm text-gray-400 uppercase">Generate teaching materials</p>
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-violet-500 transition" />
+              </Link>
+
+              <Link
+                href="/teacher/analytics/content"
+                className="group bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:scale-[1.01] transition-all duration-200 shadow-sm flex items-center gap-4"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-200 group-hover:scale-105 transition-transform">
+                  <BarChart3 size={22} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900 uppercase">Content Analytics</p>
+                  <p className="text-sm text-gray-400 uppercase">See how students use your content</p>
+                </div>
+                <ChevronRight size={18} className="text-gray-300 group-hover:text-amber-500 transition" />
               </Link>
 
               <div className="grid grid-cols-2 gap-3">

@@ -3,17 +3,21 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function Home() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, onboarding_completed')
-      .eq('id', user.id)
-      .single()
-    if (!profile?.onboarding_completed) redirect('/onboarding')
-    redirect(`/${profile.role}/dashboard`)
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, onboarding_completed')
+        .eq('id', user.id)
+        .single()
+      if (!profile?.onboarding_completed) redirect('/onboarding')
+      redirect(`/${profile.role}/dashboard`)
+    }
+  } catch {
+    // Supabase unavailable — show landing page unauthenticated
   }
 
   return (
@@ -308,7 +312,7 @@ export default async function Home() {
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><Link href="/schools" className="hover:text-white transition-colors">For Schools</Link></li>
-                <li><Link href="/login" className="hover:text-white transition-colors">Download app</Link></li>
+                <li><a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Download app</a></li>
               </ul>
             </div>
             <div>
@@ -317,7 +321,7 @@ export default async function Home() {
                 <li><a href="#about" className="hover:text-white transition-colors">About</a></li>
                 <li><a href="#about" className="hover:text-white transition-colors">Our mission</a></li>
                 <li><a href="mailto:admin@zim-elearningai.co.zw" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="mailto:admin@zim-elearningai.co.zw" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="mailto:careers@zim-elearningai.co.zw" className="hover:text-white transition-colors">Careers</a></li>
               </ul>
             </div>
             <div>
@@ -325,16 +329,16 @@ export default async function Home() {
               <ul className="space-y-2 text-sm">
                 <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Data protection</Link></li>
+                <li><Link href="/privacy#data-protection" className="hover:text-white transition-colors">Data protection</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold text-white text-sm mb-4">Connect</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="https://wa.me/263782876599" className="hover:text-white transition-colors">WhatsApp</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Facebook</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Instagram</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Twitter / X</a></li>
+                <li><a href="https://wa.me/263782876599" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</a></li>
+                <li><a href="https://facebook.com/zimlearnai" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Facebook</a></li>
+                <li><a href="https://instagram.com/zimlearnai" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a></li>
+                <li><a href="https://x.com/zimlearnai" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Twitter / X</a></li>
               </ul>
             </div>
           </div>

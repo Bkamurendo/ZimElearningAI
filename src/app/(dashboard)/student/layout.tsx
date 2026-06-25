@@ -19,7 +19,8 @@ export default async function StudentLayout({ children }: { children: React.Reac
   let trialEndsAt: string | null = null
   let subscriptionExpiresAt: string | null = null
   let hasChallenge = false
- 
+  let activeMissionsCount = 0
+
   if (user) {
     try {
       // Step 1: guaranteed columns (always exist)
@@ -88,6 +89,18 @@ export default async function StudentLayout({ children }: { children: React.Reac
       unreadMessages = count ?? 0
     } catch { /* table may not exist */ }
 
+    // Active recovery missions count
+    try {
+      if (sp) {
+        const { count } = await supabase
+          .from('student_remediation_missions')
+          .select('id', { count: 'exact', head: true })
+          .eq('student_id', sp.id)
+          .eq('status', 'active')
+        activeMissionsCount = count ?? 0
+      }
+    } catch { /* table may not exist yet */ }
+
     // Check if today's challenge is available and not yet attempted
     try {
       if (sp) {
@@ -135,6 +148,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         trialEndsAt={trialEndsAt}
         subscriptionExpiresAt={subscriptionExpiresAt}
         hasChallenge={hasChallenge}
+        activeMissionsCount={activeMissionsCount}
       />
       <div className="lg:pl-64 pb-20 lg:pb-0">
         <div className="pt-14 lg:pt-0">

@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-
 // Build allowed origins from env — supports localhost in dev + real domain in prod
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 const allowedOrigins = ['localhost:3000']
@@ -60,6 +59,9 @@ const nextConfig = {
     serverActions: {
       allowedOrigins,
     },
+  },
+  turbopack: {
+    root: process.cwd(),
   },
   async redirects() {
     return []

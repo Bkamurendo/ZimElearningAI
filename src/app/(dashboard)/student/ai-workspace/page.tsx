@@ -46,7 +46,7 @@ export default async function AIWorkspacePage() {
   const isPremium = ['starter', 'pro', 'elite'].includes(profile?.plan || 'free')
 
   if (!isPremium) {
-    redirect('/student/upgrade?feature=ai-workspace')
+    redirect('/student/ai-teacher?from=workspace')
   }
 
   const sid = studentProfile.id
