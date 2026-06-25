@@ -2,10 +2,11 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link'
 import { register } from '@/app/actions/auth'
 import type { UserRole } from '@/types/database'
-import { GraduationCap, Users, BookOpen, User, Zap } from 'lucide-react'
+import { GraduationCap, Users, BookOpen, User, Zap, Sparkles, Globe, Star } from 'lucide-react'
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
 import { FacebookAuthButton } from '@/components/auth/FacebookAuthButton'
 import { PlatformTourButton } from '@/components/PlatformTourButton'
+import RegisterClient from './RegisterClient'
 
 const ROLES: {
   value: UserRole
